@@ -15,9 +15,7 @@
 
     <title>Nushud - Plataforma Espiritual</title>
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4">
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
@@ -74,7 +72,7 @@
         .glass-player {
 
             background:
-                rgba(9,9,11,.85);
+                rgba(9,9,11,.88);
 
             backdrop-filter:
                 blur(20px);
@@ -245,7 +243,7 @@
 
 
         /* =========================================================
-           SUBTÍTULOS KARAOKE
+           SUBTÍTULOS
            ========================================================= */
 
         #subtitle-overlay {
@@ -278,9 +276,9 @@
                 hidden;
 
             transition:
-                opacity .35s ease,
-                transform .35s ease,
-                visibility .35s ease;
+                opacity .25s ease,
+                transform .25s ease,
+                visibility .25s ease;
 
         }
 
@@ -314,7 +312,7 @@
                 18px 24px 20px;
 
             background:
-                rgba(8,8,11,.48);
+                rgba(8,8,11,.58);
 
             border:
                 1px solid
@@ -374,7 +372,7 @@
                 0;
 
             background:
-                rgba(5,5,8,.58);
+                rgba(5,5,8,.60);
 
         }
 
@@ -389,9 +387,6 @@
 
             text-align:
                 center;
-
-            direction:
-                rtl;
 
         }
 
@@ -420,18 +415,21 @@
             font-weight:
                 700;
 
-            letter-spacing:
-                0;
+            direction:
+                rtl;
 
-            text-shadow:
-                0 2px 8px rgba(0,0,0,.75),
-                0 0 24px rgba(0,0,0,.35);
+            text-align:
+                right;
+
+            unicode-bidi:
+                plaintext;
 
             color:
                 rgba(255,255,255,.92);
 
-            unicode-bidi:
-                plaintext;
+            text-shadow:
+                0 2px 8px rgba(0,0,0,.75),
+                0 0 24px rgba(0,0,0,.35);
 
         }
 
@@ -473,15 +471,60 @@
             direction:
                 rtl;
 
+            text-align:
+                right;
+
+            unicode-bidi:
+                plaintext;
+
             text-shadow:
                 0 2px 10px rgba(0,0,0,.75),
                 0 0 18px rgba(245,158,11,.20);
 
             clip-path:
-                inset(0 100% 0 0);
+                inset(0 0 0 100%);
 
             transition:
                 clip-path .08s linear;
+
+        }
+
+
+        .subtitle-secondary {
+
+            position:
+                relative;
+
+            z-index:
+                3;
+
+            margin-top:
+                4px;
+
+            font-family:
+                'Plus Jakarta Sans',
+                sans-serif;
+
+            font-size:
+                clamp(11px,1.5vw,16px);
+
+            line-height:
+                1.4;
+
+            font-weight:
+                500;
+
+            color:
+                rgba(255,255,255,.68);
+
+            direction:
+                ltr;
+
+            text-align:
+                center;
+
+            min-height:
+                0;
 
         }
 
@@ -536,22 +579,449 @@
         }
 
 
-        .subtitle-empty {
+        /* =========================================================
+           BOTÓN SUBTÍTULOS
+           ========================================================= */
 
-            font-family:
-                'Amiri',
-                serif;
+        .subtitle-menu-wrapper {
 
-            font-size:
-                25px;
+            position:
+                relative;
+
+        }
+
+
+        .subtitle-button {
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                6px;
+
+            padding:
+                7px 10px;
+
+            border-radius:
+                10px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            background:
+                rgba(255,255,255,.04);
 
             color:
-                rgba(255,255,255,.85);
+                rgb(161,161,170);
+
+            font-size:
+                10px;
+
+            font-weight:
+                700;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .subtitle-button:hover,
+        .subtitle-button.active {
+
+            color:
+                #fbbf24;
+
+            background:
+                rgba(245,158,11,.10);
+
+            border-color:
+                rgba(245,158,11,.25);
+
+        }
+
+
+        .subtitle-menu {
+
+            position:
+                absolute;
+
+            right:
+                0;
+
+            bottom:
+                calc(100% + 9px);
+
+            width:
+                190px;
+
+            padding:
+                8px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            border-radius:
+                16px;
+
+            background:
+                rgba(12,12,15,.96);
+
+            backdrop-filter:
+                blur(18px);
+
+            box-shadow:
+                0 20px 40px rgba(0,0,0,.35);
+
+            opacity:
+                0;
+
+            visibility:
+                hidden;
+
+            transform:
+                translateY(5px);
+
+            transition:
+                opacity .2s ease,
+                transform .2s ease,
+                visibility .2s ease;
+
+            z-index:
+                80;
+
+        }
+
+
+        .subtitle-menu.open {
+
+            opacity:
+                1;
+
+            visibility:
+                visible;
+
+            transform:
+                translateY(0);
+
+        }
+
+
+        .subtitle-menu-title {
+
+            padding:
+                6px 8px 8px;
+
+            font-size:
+                9px;
+
+            font-weight:
+                800;
+
+            text-transform:
+                uppercase;
+
+            letter-spacing:
+                .08em;
+
+            color:
+                rgba(255,255,255,.38);
+
+        }
+
+
+        .subtitle-option {
+
+            width:
+                100%;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            padding:
+                9px 10px;
+
+            border-radius:
+                10px;
+
+            background:
+                transparent;
+
+            color:
+                rgb(161,161,170);
+
+            font-size:
+                10px;
+
+            font-weight:
+                600;
+
+            text-align:
+                left;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .subtitle-option:hover {
+
+            background:
+                rgba(255,255,255,.05);
+
+            color:
+                #f4f4f5;
+
+        }
+
+
+        .subtitle-option.selected {
+
+            background:
+                rgba(245,158,11,.10);
+
+            color:
+                #fbbf24;
+
+        }
+
+
+        .subtitle-none {
+
+            padding:
+                12px 10px;
+
+            text-align:
+                center;
+
+            color:
+                rgb(113,113,122);
+
+            font-size:
+                10px;
+
+            line-height:
+                1.4;
+
+        }
+
+
+        /* =========================================================
+           BOTÓN IDIOMA INTERFAZ
+           ========================================================= */
+
+        .ui-language-switcher {
+
+            position:
+                fixed;
+
+            top:
+                14px;
+
+            right:
+                16px;
+
+            z-index:
+                90;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                3px;
+
+            padding:
+                3px;
+
+            border-radius:
+                12px;
+
+            background:
+                rgba(12,12,15,.86);
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            backdrop-filter:
+                blur(15px);
+
+        }
+
+
+        .ui-language-button {
+
+            border:
+                0;
+
+            background:
+                transparent;
+
+            color:
+                rgb(113,113,122);
+
+            padding:
+                5px 8px;
+
+            border-radius:
+                8px;
+
+            font-size:
+                9px;
+
+            font-weight:
+                800;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .ui-language-button.active {
+
+            background:
+                rgba(245,158,11,.12);
+
+            color:
+                #fbbf24;
+
+        }
+
+
+        /* =========================================================
+           MENSAJE NO HAY NASHEED
+           ========================================================= */
+
+        .no-track-message {
+
+            padding:
+                12px 16px;
+
+            border-radius:
+                14px;
+
+            background:
+                rgba(255,255,255,.03);
+
+            border:
+                1px solid
+                rgba(255,255,255,.06);
+
+            color:
+                rgb(113,113,122);
+
+            font-size:
+                10px;
+
+            font-weight:
+                600;
+
+            text-align:
+                center;
 
         }
 
 
         @media (max-width:767px) {
+
+            .ui-language-switcher {
+
+                top:
+                    10px;
+
+                right:
+                    10px;
+
+            }
+
+
+            .glass-player {
+
+                bottom:
+                    58px !important;
+
+            }
+
+
+            #subtitle-overlay {
+
+                bottom:
+                    calc(
+                        138px +
+                        env(safe-area-inset-bottom)
+                    );
+
+                width:
+                    calc(100vw - 20px);
+
+            }
+
+
+            .subtitle-glass {
+
+                padding:
+                    12px 13px 13px;
+
+                border-radius:
+                    19px;
+
+            }
+
+
+            .subtitle-arabic {
+
+                font-size:
+                    clamp(23px,7vw,31px);
+
+                line-height:
+                    1.5;
+
+            }
+
+
+            .subtitle-secondary {
+
+                font-size:
+                    clamp(10px,3.2vw,14px);
+
+            }
+
+
+            .subtitle-menu {
+
+                position:
+                    fixed;
+
+                right:
+                    10px;
+
+                bottom:
+                    calc(
+                        116px +
+                        env(safe-area-inset-bottom)
+                    );
+
+            }
+
 
             .mobile-bottom-nav {
 
@@ -589,7 +1059,8 @@
                     blur(20px);
 
                 border-top:
-                    1px solid rgba(255,255,255,.06);
+                    1px solid
+                    rgba(255,255,255,.06);
 
                 z-index:
                     40;
@@ -652,20 +1123,6 @@
             }
 
 
-            .mobile-bottom-nav svg {
-
-                width:
-                    18px;
-
-                height:
-                    18px;
-
-                flex-shrink:
-                    0;
-
-            }
-
-
             .mobile-bottom-nav span {
 
                 font-size:
@@ -682,14 +1139,11 @@
 
             .mobile-player {
 
-                bottom:
-                    calc(58px + env(safe-area-inset-bottom)) !important;
-
                 padding:
-                    9px 12px !important;
+                    8px 10px !important;
 
                 gap:
-                    7px !important;
+                    6px !important;
 
             }
 
@@ -715,63 +1169,6 @@
 
                 gap:
                     8px;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-3xl {
-
-                padding:
-                    15px !important;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-3xl h2 {
-
-                font-size:
-                    1.38rem !important;
-
-                line-height:
-                    1.1 !important;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-3xl p {
-
-                font-size:
-                    10px !important;
-
-                line-height:
-                    1.45 !important;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-3xl button {
-
-                padding:
-                    9px 13px !important;
-
-                font-size:
-                    10px !important;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-2xl {
-
-                padding:
-                    10px !important;
-
-            }
-
-
-            .mobile-main .glass-panel.rounded-2xl .aspect-square {
-
-                margin-bottom:
-                    8px !important;
 
             }
 
@@ -815,53 +1212,6 @@
                 align-items:
                     center;
 
-                flex:
-                    0 0 auto;
-
-            }
-
-
-            #subtitle-overlay {
-
-                bottom:
-                    calc(145px + env(safe-area-inset-bottom));
-
-                width:
-                    calc(100vw - 20px);
-
-            }
-
-
-            .subtitle-glass {
-
-                padding:
-                    12px 13px 13px;
-
-                border-radius:
-                    19px;
-
-            }
-
-
-            .subtitle-arabic {
-
-                font-size:
-                    clamp(23px,7vw,31px);
-
-                line-height:
-                    1.5;
-
-            }
-
-
-            .subtitle-progress {
-
-                width:
-                    45%;
-
-                margin-top:
-                    5px;
-
             }
 
         }
@@ -875,11 +1225,42 @@
     class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-zinc-950 overflow-x-hidden animations-enabled">
 
 
+<!-- =========================================================
+     IDIOMA DE LA INTERFAZ
+     ========================================================= -->
+
+<div
+    class="ui-language-switcher"
+    aria-label="Idioma">
+
+    <button
+        id="ui-lang-es"
+        class="ui-language-button active"
+        onclick="setInterfaceLanguage('es')">
+
+        ES
+
+    </button>
+
+    <button
+        id="ui-lang-en"
+        class="ui-language-button"
+        onclick="setInterfaceLanguage('en')">
+
+        EN
+
+    </button>
+
+</div>
+
+
 <div
     class="flex flex-1 overflow-hidden relative">
 
 
-    <!-- SIDEBAR -->
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <aside
         class="w-64 glass-sidebar hidden md:flex flex-col justify-between p-6 select-none shrink-0 z-20">
@@ -891,8 +1272,7 @@
 
             <div
                 class="flex items-center space-x-3 cursor-pointer group"
-                onclick="switchTab('home')"
-                title="Nushud">
+                onclick="switchTab('home')">
 
 
                 <div
@@ -907,25 +1287,12 @@
                         stroke-width="2.2"
                         stroke-linecap="round">
 
-
-                        <path
-                            d="M2 12h2"/>
-
-                        <path
-                            d="M6 8v8"/>
-
-                        <path
-                            d="M10 4v16"/>
-
-                        <path
-                            d="M14 7v10"/>
-
-                        <path
-                            d="M18 10v4"/>
-
-                        <path
-                            d="M22 12h-2"/>
-
+                        <path d="M2 12h2"/>
+                        <path d="M6 8v8"/>
+                        <path d="M10 4v16"/>
+                        <path d="M14 7v10"/>
+                        <path d="M18 10v4"/>
+                        <path d="M22 12h-2"/>
 
                     </svg>
 
@@ -951,14 +1318,17 @@
                 <button
                     onclick="switchTab('home')"
                     id="nav-home"
-                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
+                    class="nav-text w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
 
                     <span>
                         ⌂
                     </span>
 
-                    <span>
+                    <span
+                        data-i18n="home">
+
                         Inicio
+
                     </span>
 
                 </button>
@@ -973,8 +1343,11 @@
                         ▣
                     </span>
 
-                    <span>
+                    <span
+                        data-i18n="library">
+
                         Biblioteca
+
                     </span>
 
                 </button>
@@ -989,8 +1362,11 @@
                         ★
                     </span>
 
-                    <span>
+                    <span
+                        data-i18n="favorites">
+
                         Favoritos
+
                     </span>
 
                 </button>
@@ -1005,8 +1381,11 @@
                         ⚙
                     </span>
 
-                    <span>
+                    <span
+                        data-i18n="settings">
+
                         Ajustes / Rendimiento
+
                     </span>
 
                 </button>
@@ -1037,12 +1416,15 @@
                 <div
                     class="truncate">
 
+
                     <p
-                        class="font-bold text-zinc-200 leading-none">
+                        class="font-bold text-zinc-200 leading-none"
+                        data-i18n="securePlatform">
 
                         Plataforma Segura
 
                     </p>
+
 
                     <span
                         id="perf-status-label"
@@ -1051,6 +1433,7 @@
                         Animaciones activas
 
                     </span>
+
 
                 </div>
 
@@ -1064,7 +1447,9 @@
     </aside>
 
 
-    <!-- MAIN -->
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
 
     <main
         class="flex-1 overflow-y-auto pb-36 pt-8 px-6 md:px-12 max-w-7xl mx-auto relative mobile-main">
@@ -1124,7 +1509,8 @@
 
 
                     <h2
-                        class="text-2xl md:text-4xl font-extrabold text-zinc-100 tracking-tight">
+                        class="text-2xl md:text-4xl font-extrabold text-zinc-100 tracking-tight"
+                        data-i18n="heroTitle">
 
                         Explora tu espiritualidad a través del arte acústico
 
@@ -1132,7 +1518,8 @@
 
 
                     <p
-                        class="text-xs md:text-sm text-zinc-400 font-medium leading-relaxed">
+                        class="text-xs md:text-sm text-zinc-400 font-medium leading-relaxed"
+                        data-i18n="heroDescription">
 
                         Disfruta de nasheeds seleccionados con la máxima calidad de audio inmersiva.
 
@@ -1144,7 +1531,8 @@
 
                 <button
                     onclick="switchTab('library')"
-                    class="mt-6 md:mt-0 z-10 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-6 py-3.5 rounded-2xl text-xs shadow-lg cursor-pointer">
+                    class="mt-6 md:mt-0 z-10 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-6 py-3.5 rounded-2xl text-xs shadow-lg cursor-pointer"
+                    data-i18n="viewLibrary">
 
                     Ver biblioteca completa
 
@@ -1163,7 +1551,8 @@
 
 
                     <h3
-                        class="text-xs font-extrabold tracking-widest uppercase text-zinc-400">
+                        class="text-xs font-extrabold tracking-widest uppercase text-zinc-400"
+                        data-i18n="recommended">
 
                         Recomendado para ti
 
@@ -1208,8 +1597,10 @@
 
                 <div>
 
+
                     <h2
-                        class="text-xl font-extrabold tracking-wide text-zinc-100">
+                        class="text-xl font-extrabold tracking-wide text-zinc-100"
+                        data-i18n="libraryTitle">
 
                         Biblioteca de Nasheeds
 
@@ -1217,11 +1608,13 @@
 
 
                     <p
-                        class="text-xs text-zinc-500">
+                        class="text-xs text-zinc-500"
+                        data-i18n="libraryDescription">
 
-                        Almacenamiento seguro en servidor local
+                        Repertorio disponible en Nushud
 
                     </p>
+
 
                 </div>
 
@@ -1258,7 +1651,8 @@
             <div>
 
                 <h2
-                    class="text-xl font-extrabold tracking-wide text-zinc-100">
+                    class="text-xl font-extrabold tracking-wide text-zinc-100"
+                    data-i18n="favoritesTitle">
 
                     Tus Favoritos
 
@@ -1290,8 +1684,10 @@
 
                 <div>
 
+
                     <h3
-                        class="text-xs font-bold text-zinc-100 uppercase tracking-wider">
+                        class="text-xs font-bold text-zinc-100 uppercase tracking-wider"
+                        data-i18n="performanceTitle">
 
                         Ajustes de Rendimiento
 
@@ -1299,11 +1695,13 @@
 
 
                     <p
-                        class="text-[11px] text-zinc-500">
+                        class="text-[11px] text-zinc-500"
+                        data-i18n="performanceDescription">
 
                         Optimiza la interfaz para dispositivos limitados
 
                     </p>
+
 
                 </div>
 
@@ -1318,7 +1716,8 @@
                 <div>
 
                     <h4
-                        class="text-xs font-bold text-zinc-200">
+                        class="text-xs font-bold text-zinc-200"
+                        data-i18n="animationsTitle">
 
                         Efectos y Animaciones Fluidas
 
@@ -1381,6 +1780,14 @@
 
 
             <div
+                id="subtitle-secondary"
+                class="subtitle-secondary"
+                style="display:none;">
+
+            </div>
+
+
+            <div
                 class="subtitle-progress">
 
 
@@ -1403,7 +1810,9 @@
 </div>
 
 
-<!-- PLAYER -->
+<!-- =========================================================
+     PLAYER
+     ========================================================= -->
 
 <div
     class="fixed bottom-0 left-0 right-0 glass-player mobile-player px-6 py-4 z-30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
@@ -1432,7 +1841,13 @@
                 id="player-title"
                 class="text-xs font-bold text-zinc-100 truncate">
 
-                Ninguna pista seleccionada
+                <span
+                    id="player-title-text"
+                    data-i18n="noTrack">
+
+                    Ningún nasheed seleccionado
+
+                </span>
 
             </h4>
 
@@ -1456,7 +1871,7 @@
 
 
         <div
-            class="flex items-center space-x-6">
+            class="flex items-center space-x-4">
 
 
             <button
@@ -1484,6 +1899,62 @@
                 ▶
 
             </button>
+
+
+            <!-- SUBTÍTULOS -->
+
+            <div
+                class="subtitle-menu-wrapper">
+
+
+                <button
+                    id="subtitle-button"
+                    class="subtitle-button"
+                    onclick="toggleSubtitleMenu()"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+
+
+                    <span>
+                        CC
+                    </span>
+
+
+                    <span
+                        data-i18n="subtitles">
+
+                        Subtítulos
+
+                    </span>
+
+
+                </button>
+
+
+                <div
+                    id="subtitle-menu"
+                    class="subtitle-menu">
+
+
+                    <div
+                        class="subtitle-menu-title"
+                        data-i18n="subtitleLanguages">
+
+                        Idiomas
+
+                    </div>
+
+
+                    <div
+                        id="subtitle-options">
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
 
 
         </div>
@@ -1535,7 +2006,8 @@
 
 
         <span
-            class="text-[10px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-semibold border border-amber-500/20">
+            class="text-[10px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-semibold border border-amber-500/20"
+            data-i18n="lossless">
 
             Lossless Audio
 
@@ -1548,7 +2020,9 @@
 </div>
 
 
-<!-- MOBILE NAV -->
+<!-- =========================================================
+     MOBILE NAV
+     ========================================================= -->
 
 <nav
     id="mobile-bottom-nav"
@@ -1565,8 +2039,11 @@
             ⌂
         </span>
 
-        <span>
+        <span
+            data-i18n="home">
+
             Inicio
+
         </span>
 
     </button>
@@ -1580,8 +2057,11 @@
             ▣
         </span>
 
-        <span>
+        <span
+            data-i18n="library">
+
             Biblioteca
+
         </span>
 
     </button>
@@ -1595,8 +2075,11 @@
             ★
         </span>
 
-        <span>
+        <span
+            data-i18n="favorites">
+
             Favoritos
+
         </span>
 
     </button>
@@ -1610,8 +2093,11 @@
             ⚙
         </span>
 
-        <span>
+        <span
+            data-i18n="settingsMobile">
+
             Ajustes
+
         </span>
 
     </button>
@@ -1665,9 +2151,9 @@ const durationEl =
         "duration"
     );
 
-const playerTitle =
+const playerTitleText =
     document.getElementById(
-        "player-title"
+        "player-title-text"
     );
 
 const playerCover =
@@ -1690,21 +2176,569 @@ const subtitleText =
         "subtitle-text"
     );
 
+const subtitleSecondary =
+    document.getElementById(
+        "subtitle-secondary"
+    );
+
 const subtitleProgressBar =
     document.getElementById(
         "subtitle-progress-bar"
     );
 
+const subtitleButton =
+    document.getElementById(
+        "subtitle-button"
+    );
+
+const subtitleMenu =
+    document.getElementById(
+        "subtitle-menu"
+    );
+
+const subtitleOptions =
+    document.getElementById(
+        "subtitle-options"
+    );
 
 let allNasheeds = [];
 
-let currentTrackIndex = 0;
+let currentTrackIndex = -1;
 
 let favorites = [];
 
 let currentSubtitles = [];
 
 let currentSubtitleIndex = -1;
+
+let currentSecondarySubtitles = [];
+
+let currentSecondarySubtitleIndex = -1;
+
+let currentSubtitleLanguages = {};
+
+let selectedSubtitleLanguage =
+    localStorage.getItem(
+        "nushud_subtitle_language"
+    ) || "";
+
+let interfaceLanguage =
+    localStorage.getItem(
+        "nushud_interface_language"
+    ) || "es";
+
+
+/* =========================================================
+   TRADUCCIÓN DE INTERFAZ
+   ========================================================= */
+
+const translations = {
+
+    es: {
+
+        home:
+            "Inicio",
+
+        library:
+            "Biblioteca",
+
+        favorites:
+            "Favoritos",
+
+        settings:
+            "Ajustes / Rendimiento",
+
+        settingsMobile:
+            "Ajustes",
+
+        securePlatform:
+            "Plataforma Segura",
+
+        heroTitle:
+            "Explora tu espiritualidad a través del arte acústico",
+
+        heroDescription:
+            "Disfruta de nasheeds seleccionados con la máxima calidad de audio inmersiva.",
+
+        viewLibrary:
+            "Ver biblioteca completa",
+
+        recommended:
+            "Recomendado para ti",
+
+        libraryTitle:
+            "Biblioteca de Nasheeds",
+
+        libraryDescription:
+            "Repertorio disponible en Nushud",
+
+        favoritesTitle:
+            "Tus Favoritos",
+
+        performanceTitle:
+            "Ajustes de Rendimiento",
+
+        performanceDescription:
+            "Optimiza la interfaz para dispositivos limitados",
+
+        animationsTitle:
+            "Efectos y Animaciones Fluidas",
+
+        animationsOn:
+            "Activadas",
+
+        animationsOff:
+            "Desactivadas (Optimizado)",
+
+        subtitles:
+            "Subtítulos",
+
+        subtitleLanguages:
+            "Idiomas",
+
+        noTrack:
+            "Ningún nasheed seleccionado",
+
+        noNasheedPlaying:
+            "No hay ningún nasheed reproduciéndose",
+
+        noSubtitles:
+            "Este nasheed no tiene subtítulos",
+
+        noOtherLanguages:
+            "No hay otros idiomas disponibles",
+
+        lossless:
+            "Lossless Audio",
+
+        arabic:
+            "Árabe",
+
+        spanish:
+            "Español",
+
+        english:
+            "English",
+
+        french:
+            "Français",
+
+        german:
+            "Deutsch",
+
+        turkish:
+            "Türkçe",
+
+        urdu:
+            "Urdu",
+
+        indonesian:
+            "Bahasa Indonesia",
+
+        portuguese:
+            "Português",
+
+        italian:
+            "Italiano",
+
+        dutch:
+            "Nederlands",
+
+        russian:
+            "Русский",
+
+        noTracksServer:
+            "No hay nasheeds en el servidor.",
+
+        noFavorites:
+            "No tienes nasheeds favoritos guardados.",
+
+        tracksOne:
+            "pista",
+
+        tracksMany:
+            "pistas",
+
+        publishedOne:
+            "1 nasheed",
+
+        publishedMany:
+            "nasheeds"
+
+    },
+
+    en: {
+
+        home:
+            "Home",
+
+        library:
+            "Library",
+
+        favorites:
+            "Favorites",
+
+        settings:
+            "Settings / Performance",
+
+        settingsMobile:
+            "Settings",
+
+        securePlatform:
+            "Secure Platform",
+
+        heroTitle:
+            "Explore your spirituality through acoustic art",
+
+        heroDescription:
+            "Enjoy carefully selected nasheeds with immersive high-quality audio.",
+
+        viewLibrary:
+            "View full library",
+
+        recommended:
+            "Recommended for you",
+
+        libraryTitle:
+            "Nasheed Library",
+
+        libraryDescription:
+            "Available repertoire on Nushud",
+
+        favoritesTitle:
+            "Your Favorites",
+
+        performanceTitle:
+            "Performance Settings",
+
+        performanceDescription:
+            "Optimize the interface for limited devices",
+
+        animationsTitle:
+            "Smooth Effects & Animations",
+
+        animationsOn:
+            "Enabled",
+
+        animationsOff:
+            "Disabled (Optimized)",
+
+        subtitles:
+            "Subtitles",
+
+        subtitleLanguages:
+            "Languages",
+
+        noTrack:
+            "No nasheed selected",
+
+        noNasheedPlaying:
+            "No nasheed is currently playing",
+
+        noSubtitles:
+            "This nasheed has no subtitles",
+
+        noOtherLanguages:
+            "No other languages available",
+
+        lossless:
+            "Lossless Audio",
+
+        arabic:
+            "Arabic",
+
+        spanish:
+            "Spanish",
+
+        english:
+            "English",
+
+        french:
+            "French",
+
+        german:
+            "German",
+
+        turkish:
+            "Turkish",
+
+        urdu:
+            "Urdu",
+
+        indonesian:
+            "Indonesian",
+
+        portuguese:
+            "Portuguese",
+
+        italian:
+            "Italian",
+
+        dutch:
+            "Dutch",
+
+        russian:
+            "Russian",
+
+        noTracksServer:
+            "There are no nasheeds on the server.",
+
+        noFavorites:
+            "You have no saved favorite nasheeds.",
+
+        tracksOne:
+            "track",
+
+        tracksMany:
+            "tracks",
+
+        publishedOne:
+            "1 nasheed",
+
+        publishedMany:
+            "nasheeds"
+
+    }
+
+};
+
+
+function t(
+    key
+) {
+
+    return (
+        translations[
+            interfaceLanguage
+        ]?.[key] ||
+        translations.es[key] ||
+        key
+    );
+
+}
+
+
+function setInterfaceLanguage(
+    language
+) {
+
+    if (
+        language !== "es" &&
+        language !== "en"
+    ) {
+
+        language =
+            "es";
+
+    }
+
+    interfaceLanguage =
+        language;
+
+    localStorage.setItem(
+        "nushud_interface_language",
+        language
+    );
+
+    document.documentElement.lang =
+        language;
+
+    updateInterfaceTexts();
+
+    updateLanguageButtons();
+
+    renderGrids();
+
+    renderFavorites();
+
+    updateSubtitleOptions();
+
+}
+
+
+function updateInterfaceTexts() {
+
+    document
+        .querySelectorAll(
+            "[data-i18n]"
+        )
+        .forEach(
+            element => {
+
+                const key =
+                    element.dataset.i18n;
+
+                element.textContent =
+                    t(key);
+
+            }
+        );
+
+
+    if (
+        playerTitleText &&
+        currentTrackIndex === -1
+    ) {
+
+        playerTitleText.textContent =
+            t("noTrack");
+
+    }
+
+
+    const animBtn =
+        document.getElementById(
+            "anim-toggle-btn"
+        );
+
+
+    if (
+        animBtn
+    ) {
+
+        animBtn.textContent =
+            animationsActive
+                ? t("animationsOn")
+                : t("animationsOff");
+
+    }
+
+
+    updateCountTexts();
+
+}
+
+
+function updateLanguageButtons() {
+
+    const es =
+        document.getElementById(
+            "ui-lang-es"
+        );
+
+    const en =
+        document.getElementById(
+            "ui-lang-en"
+        );
+
+
+    if (
+        es
+    ) {
+
+        es.classList.toggle(
+            "active",
+            interfaceLanguage ===
+                "es"
+        );
+
+    }
+
+
+    if (
+        en
+    ) {
+
+        en.classList.toggle(
+            "active",
+            interfaceLanguage ===
+                "en"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   IDIOMAS DE SUBTÍTULOS
+   ========================================================= */
+
+const subtitleLanguageNames = {
+
+    ar: {
+        es: "Árabe",
+        en: "Arabic"
+    },
+
+    es: {
+        es: "Español",
+        en: "Spanish"
+    },
+
+    en: {
+        es: "English",
+        en: "English"
+    },
+
+    fr: {
+        es: "Français",
+        en: "French"
+    },
+
+    de: {
+        es: "Deutsch",
+        en: "German"
+    },
+
+    tr: {
+        es: "Türkçe",
+        en: "Turkish"
+    },
+
+    ur: {
+        es: "Urdu",
+        en: "Urdu"
+    },
+
+    id: {
+        es: "Bahasa Indonesia",
+        en: "Indonesian"
+    },
+
+    pt: {
+        es: "Português",
+        en: "Portuguese"
+    },
+
+    it: {
+        es: "Italiano",
+        en: "Italian"
+    },
+
+    nl: {
+        es: "Nederlands",
+        en: "Dutch"
+    },
+
+    ru: {
+        es: "Русский",
+        en: "Russian"
+    }
+
+};
+
+
+function getLanguageName(
+    code
+) {
+
+    const normalized =
+        String(
+            code ||
+            ""
+        ).toLowerCase();
+
+    return (
+        subtitleLanguageNames[
+            normalized
+        ]?.[
+            interfaceLanguage
+        ] ||
+        normalized.toUpperCase()
+    );
+
+}
 
 
 /* =========================================================
@@ -1763,6 +2797,10 @@ document.addEventListener(
 
         applyAnimationsPreference();
 
+        setInterfaceLanguage(
+            interfaceLanguage
+        );
+
         fetchNasheeds();
 
     }
@@ -1799,6 +2837,7 @@ function applyAnimationsPreference() {
             "anim-toggle-btn"
         );
 
+
     const statusLabel =
         document.getElementById(
             "perf-status-label"
@@ -1823,11 +2862,7 @@ function applyAnimationsPreference() {
         ) {
 
             btn.textContent =
-                "Activadas";
-
-
-            btn.className =
-                "px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-zinc-950 cursor-pointer";
+                t("animationsOn");
 
         }
 
@@ -1837,7 +2872,10 @@ function applyAnimationsPreference() {
         ) {
 
             statusLabel.textContent =
-                "Animaciones activas";
+                interfaceLanguage ===
+                    "en"
+                    ? "Animations active"
+                    : "Animaciones activas";
 
         }
 
@@ -1857,11 +2895,7 @@ function applyAnimationsPreference() {
         ) {
 
             btn.textContent =
-                "Desactivadas (Optimizado)";
-
-
-            btn.className =
-                "px-4 py-2 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-300 cursor-pointer";
+                t("animationsOff");
 
         }
 
@@ -1871,7 +2905,10 @@ function applyAnimationsPreference() {
         ) {
 
             statusLabel.textContent =
-                "Modo optimizado";
+                interfaceLanguage ===
+                    "en"
+                    ? "Optimized mode"
+                    : "Modo optimizado";
 
         }
 
@@ -1899,7 +2936,9 @@ function switchTab(
 
 
     if (
-        !tabs.includes(tab)
+        !tabs.includes(
+            tab
+        )
     ) {
 
         return;
@@ -1908,12 +2947,12 @@ function switchTab(
 
 
     tabs.forEach(
-        t => {
+        current => {
 
             const section =
                 document.getElementById(
                     "section-" +
-                    t
+                    current
                 );
 
 
@@ -1931,7 +2970,7 @@ function switchTab(
             const nav =
                 document.getElementById(
                     "nav-" +
-                    t
+                    current
                 );
 
 
@@ -1957,7 +2996,7 @@ function switchTab(
             const mobileNav =
                 document.getElementById(
                     "mobile-nav-" +
-                    t
+                    current
                 );
 
 
@@ -1967,7 +3006,8 @@ function switchTab(
 
                 mobileNav.classList.toggle(
                     "active",
-                    t === tab
+                    current ===
+                        tab
                 );
 
             }
@@ -2044,7 +3084,6 @@ async function fetchNasheeds() {
             await fetch(
                 "/api/nasheeds",
                 {
-
                     method:
                         "GET",
 
@@ -2055,12 +3094,9 @@ async function fetchNasheeds() {
                         "no-store",
 
                     headers: {
-
                         "Accept":
                             "application/json"
-
                     }
-
                 }
             );
 
@@ -2082,7 +3118,9 @@ async function fetchNasheeds() {
 
 
         if (
-            !Array.isArray(data)
+            !Array.isArray(
+                data
+            )
         ) {
 
             throw new Error(
@@ -2135,7 +3173,9 @@ async function fetchNasheeds() {
 
             showMessage(
                 home,
-                "No se pudieron cargar los nasheeds."
+                t(
+                    "noTracksServer"
+                )
             );
 
         }
@@ -2147,7 +3187,9 @@ async function fetchNasheeds() {
 
             showMessage(
                 library,
-                "No se pudieron cargar los nasheeds."
+                t(
+                    "noTracksServer"
+                )
             );
 
         }
@@ -2183,7 +3225,9 @@ function normalizeNasheed(
 
 
     if (
-        !Number.isSafeInteger(id)
+        !Number.isSafeInteger(
+            id
+        )
     ) {
 
         return null;
@@ -2225,33 +3269,9 @@ function normalizeNasheed(
         );
 
 
-    const subtitles =
-        getFirstString(
-            item.subtitles,
-            item.subtitle,
-            item.vtt,
-            item.vtt_url,
-            item.subtitle_url
-        );
+    let subtitleMap =
+        {};
 
-
-    let subtitleValue =
-        subtitles;
-
-
-    /*
-     * Tu nueva base de datos guarda
-     * subtitles como objeto:
-     *
-     * {
-     *   ar: "...",
-     *   es: "...",
-     *   en: "..."
-     * }
-     *
-     * No usamos getFirstString() para
-     * objetos.
-     */
 
     if (
         item.subtitles &&
@@ -2262,37 +3282,45 @@ function normalizeNasheed(
         )
     ) {
 
-        subtitleValue =
-            Object.fromEntries(
-                Object.entries(
-                    item.subtitles
-                )
-                    .filter(
-                        (
-                            [
-                                code,
-                                value
-                            ]
-                        ) =>
-                            typeof code ===
-                                "string" &&
-                            typeof value ===
-                                "string"
-                    )
-                    .map(
-                        (
-                            [
-                                code,
-                                value
-                            ]
-                        ) => [
-                            code,
-                            safeMediaUrl(
-                                value
-                            )
-                        ]
-                    )
-            );
+        Object.entries(
+            item.subtitles
+        ).forEach(
+            (
+                [
+                    language,
+                    url
+                ]
+            ) => {
+
+                if (
+                    typeof url ===
+                    "string" &&
+                    url.trim()
+                ) {
+
+                    const safeUrl =
+                        safeMediaUrl(
+                            url
+                        );
+
+
+                    if (
+                        safeUrl
+                    ) {
+
+                        subtitleMap[
+                            String(
+                                language
+                            ).toLowerCase()
+                        ] =
+                            safeUrl;
+
+                    }
+
+                }
+
+            }
+        );
 
     }
 
@@ -2316,7 +3344,7 @@ function normalizeNasheed(
             ),
 
         subtitles:
-            subtitleValue
+            subtitleMap
 
     };
 
@@ -2351,7 +3379,7 @@ function getFirstString(
 
 
 /* =========================================================
-   SEGURIDAD DE URLs
+   URLS SEGURAS
    ========================================================= */
 
 function safeMediaUrl(
@@ -2392,13 +3420,6 @@ function safeMediaUrl(
         }
 
 
-        /*
-         * Permitimos:
-         *
-         * - nuestra web Vercel
-         * - nuestro proyecto Supabase
-         */
-
         if (
             url.origin !==
                 window.location.origin &&
@@ -2424,7 +3445,7 @@ function safeMediaUrl(
 
 
 /* =========================================================
-   TARJETAS
+   GRIDS
    ========================================================= */
 
 function renderGrids() {
@@ -2439,38 +3460,6 @@ function renderGrids() {
         document.getElementById(
             "library-grid"
         );
-
-
-    const homeCount =
-        document.getElementById(
-            "home-count"
-        );
-
-
-    const libCount =
-        document.getElementById(
-            "lib-count"
-        );
-
-
-    if (
-        homeCount
-    ) {
-
-        homeCount.textContent =
-            `${allNasheeds.length} pistas`;
-
-    }
-
-
-    if (
-        libCount
-    ) {
-
-        libCount.textContent =
-            `${allNasheeds.length} pistas`;
-
-    }
 
 
     if (
@@ -2491,6 +3480,9 @@ function renderGrids() {
     }
 
 
+    updateCountTexts();
+
+
     if (
         allNasheeds.length ===
         0
@@ -2502,7 +3494,9 @@ function renderGrids() {
 
             showMessage(
                 homeGrid,
-                "No hay nasheeds en el servidor."
+                t(
+                    "noTracksServer"
+                )
             );
 
         }
@@ -2514,7 +3508,9 @@ function renderGrids() {
 
             showMessage(
                 libraryGrid,
-                "No hay nasheeds en el servidor."
+                t(
+                    "noTracksServer"
+                )
             );
 
         }
@@ -2564,8 +3560,55 @@ function renderGrids() {
 }
 
 
+function updateCountTexts() {
+
+    const homeCount =
+        document.getElementById(
+            "home-count"
+        );
+
+
+    const libCount =
+        document.getElementById(
+            "lib-count"
+        );
+
+
+    const count =
+        allNasheeds.length;
+
+
+    const label =
+        count ===
+            1
+            ? t("tracksOne")
+            : t("tracksMany");
+
+
+    if (
+        homeCount
+    ) {
+
+        homeCount.textContent =
+            `${count} ${label}`;
+
+    }
+
+
+    if (
+        libCount
+    ) {
+
+        libCount.textContent =
+            `${count} ${label}`;
+
+    }
+
+}
+
+
 /* =========================================================
-   TARJETA
+   TARJETAS
    ========================================================= */
 
 function createTrackCard(
@@ -2612,8 +3655,7 @@ function createTrackCard(
 
 
         image.alt =
-            "Portada de " +
-            item.title;
+            "Cover";
 
 
         image.loading =
@@ -2625,14 +3667,13 @@ function createTrackCard(
 
 
         image.referrerPolicy =
-            "same-origin";
+            "no-referrer";
 
 
         image.onerror =
             () => {
 
                 image.remove();
-
 
                 addMusicIcon(
                     coverContainer
@@ -2644,7 +3685,6 @@ function createTrackCard(
         coverContainer.appendChild(
             image
         );
-
 
     } else {
 
@@ -2671,8 +3711,7 @@ function createTrackCard(
 
     playButton.setAttribute(
         "aria-label",
-        "Reproducir " +
-        item.title
+        "Play"
     );
 
 
@@ -2775,16 +3814,6 @@ function createTrackCard(
 
     favoriteButton.type =
         "button";
-
-
-    favoriteButton.className =
-        "text-xs cursor-pointer";
-
-
-    favoriteButton.setAttribute(
-        "aria-label",
-        "Añadir o quitar favorito"
-    );
 
 
     updateFavoriteButton(
@@ -2935,7 +3964,6 @@ function toggleFavorite(
     ) {
 
         console.error(
-            "Error guardando favoritos:",
             error
         );
 
@@ -2945,17 +3973,15 @@ function toggleFavorite(
     renderGrids();
 
 
-    const favoritesSection =
-        document.getElementById(
-            "section-favorites"
-        );
-
-
     if (
-        favoritesSection &&
-        favoritesSection.classList.contains(
-            "active"
-        )
+        document
+            .getElementById(
+                "section-favorites"
+            )
+            .classList
+            .contains(
+                "active"
+            )
     ) {
 
         renderFavorites();
@@ -3026,7 +4052,9 @@ function renderFavorites() {
 
         showMessage(
             favGrid,
-            "No tienes nasheeds favoritos guardados."
+            t(
+                "noFavorites"
+            )
         );
 
 
@@ -3040,8 +4068,8 @@ function renderFavorites() {
 
             const originalIndex =
                 allNasheeds.findIndex(
-                    n =>
-                        n.id ===
+                    track =>
+                        track.id ===
                         item.id
                 );
 
@@ -3062,6 +4090,333 @@ function renderFavorites() {
 
         }
     );
+
+}
+
+
+/* =========================================================
+   SUBTÍTULOS - MENÚ
+   ========================================================= */
+
+function toggleSubtitleMenu() {
+
+    if (
+        !subtitleMenu
+    ) {
+
+        return;
+
+    }
+
+
+    const open =
+        subtitleMenu.classList.toggle(
+            "open"
+        );
+
+
+    subtitleButton.classList.toggle(
+        "active",
+        open
+    );
+
+
+    subtitleButton.setAttribute(
+        "aria-expanded",
+        String(
+            open
+        )
+    );
+
+}
+
+
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            !event.target.closest(
+                ".subtitle-menu-wrapper"
+            )
+        ) {
+
+            closeSubtitleMenu();
+
+        }
+
+    }
+);
+
+
+function closeSubtitleMenu() {
+
+    if (
+        subtitleMenu
+    ) {
+
+        subtitleMenu.classList.remove(
+            "open"
+        );
+
+    }
+
+
+    if (
+        subtitleButton
+    ) {
+
+        subtitleButton.classList.remove(
+            "active"
+        );
+
+
+        subtitleButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   OPCIONES DE SUBTÍTULOS
+   ========================================================= */
+
+function updateSubtitleOptions() {
+
+    if (
+        !subtitleOptions
+    ) {
+
+        return;
+
+    }
+
+
+    subtitleOptions.innerHTML =
+        "";
+
+
+    if (
+        currentTrackIndex ===
+        -1
+    ) {
+
+        const none =
+            document.createElement(
+                "div"
+            );
+
+
+        none.className =
+            "subtitle-none";
+
+
+        none.textContent =
+            t(
+                "noNasheedPlaying"
+            );
+
+
+        subtitleOptions.appendChild(
+            none
+        );
+
+
+        return;
+
+    }
+
+
+    const track =
+        allNasheeds[
+            currentTrackIndex
+        ];
+
+
+    if (
+        !track ||
+        !track.subtitles ||
+        typeof track.subtitles !==
+            "object"
+    ) {
+
+        const none =
+            document.createElement(
+                "div"
+            );
+
+
+        none.className =
+            "subtitle-none";
+
+
+        none.textContent =
+            t(
+                "noSubtitles"
+            );
+
+
+        subtitleOptions.appendChild(
+            none
+        );
+
+
+        return;
+
+    }
+
+
+    const languages =
+        Object.keys(
+            track.subtitles
+        )
+            .filter(
+                code =>
+                    code !==
+                    "ar"
+            );
+
+
+    if (
+        languages.length ===
+        0
+    ) {
+
+        const none =
+            document.createElement(
+                "div"
+            );
+
+
+        none.className =
+            "subtitle-none";
+
+
+        none.textContent =
+            t(
+                "noOtherLanguages"
+            );
+
+
+        subtitleOptions.appendChild(
+            none
+        );
+
+
+        return;
+
+    }
+
+
+    languages.forEach(
+        language => {
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.type =
+                "button";
+
+
+            button.className =
+                "subtitle-option";
+
+
+            if (
+                language ===
+                selectedSubtitleLanguage
+            ) {
+
+                button.classList.add(
+                    "selected"
+                );
+
+            }
+
+
+            const name =
+                getLanguageName(
+                    language
+                );
+
+
+            button.innerHTML = `
+                <span>
+                    ${escapeHtml(name)}
+                </span>
+                ${
+                    language ===
+                    selectedSubtitleLanguage
+                        ? "<span>✓</span>"
+                        : ""
+                }
+            `;
+
+
+            button.addEventListener(
+                "click",
+                async () => {
+
+                    selectedSubtitleLanguage =
+                        language;
+
+
+                    localStorage.setItem(
+                        "nushud_subtitle_language",
+                        selectedSubtitleLanguage
+                    );
+
+
+                    await loadSecondarySubtitles();
+
+
+                    updateSubtitle();
+
+
+                    updateSubtitleOptions();
+
+
+                    closeSubtitleMenu();
+
+                }
+            );
+
+
+            subtitleOptions.appendChild(
+                button
+            );
+
+        }
+    );
+
+}
+
+
+function escapeHtml(
+    value
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    div.textContent =
+        String(
+            value ??
+            ""
+        );
+
+
+    return div.innerHTML;
 
 }
 
@@ -3096,6 +4451,7 @@ function playTrack(
 
 
     if (
+        !track ||
         !track.file
     ) {
 
@@ -3116,23 +4472,11 @@ function playTrack(
     audio.load();
 
 
-    audio.play().catch(
-        error => {
-
-            console.error(
-                "Error al reproducir audio:",
-                error
-            );
-
-        }
-    );
-
-
     if (
-        playerTitle
+        playerTitleText
     ) {
 
-        playerTitle.textContent =
+        playerTitleText.textContent =
             track.title;
 
     }
@@ -3149,66 +4493,45 @@ function playTrack(
             track.cover
         ) {
 
-            const img =
+            const image =
                 document.createElement(
                     "img"
                 );
 
 
-            img.className =
+            image.className =
                 "cover-image";
 
 
-            img.src =
+            image.src =
                 track.cover;
 
 
-            img.alt =
+            image.alt =
                 track.title;
 
 
-            img.onerror =
+            image.onerror =
                 () => {
 
-                    img.remove();
+                    image.remove();
 
 
-                    const span =
-                        document.createElement(
-                            "span"
-                        );
-
-
-                    span.textContent =
-                        "♫";
-
-
-                    playerCover.appendChild(
-                        span
+                    addMusicIcon(
+                        playerCover
                     );
 
                 };
 
 
             playerCover.appendChild(
-                img
+                image
             );
-
 
         } else {
 
-            const span =
-                document.createElement(
-                    "span"
-                );
-
-
-            span.textContent =
-                "♫";
-
-
-            playerCover.appendChild(
-                span
+            addMusicIcon(
+                playerCover
             );
 
         }
@@ -3216,29 +4539,53 @@ function playTrack(
     }
 
 
-    if (
-        mainPlayBtn
-    ) {
-
-        mainPlayBtn.textContent =
-            "❚❚";
-
-    }
+    currentSubtitles =
+        [];
 
 
-    loadSubtitles(
-        getArabicSubtitle(track),
-        track.cover
+    currentSubtitleIndex =
+        -1;
+
+
+    currentSecondarySubtitles =
+        [];
+
+
+    currentSecondarySubtitleIndex =
+        -1;
+
+
+    currentSubtitleLanguages =
+        {};
+
+
+    setupTrackSubtitleLanguages(
+        track
     );
+
+
+    updateSubtitleOptions();
+
+
+    loadArabicAndSecondarySubtitles(
+        track
+    );
+
+
+    audio
+        .play()
+        .catch(
+            error =>
+                console.error(
+                    "Error al reproducir:",
+                    error
+                )
+        );
 
 }
 
 
-/* =========================================================
-   SUBTÍTULO ÁRABE
-   ========================================================= */
-
-function getArabicSubtitle(
+async function setupTrackSubtitleLanguages(
     track
 ) {
 
@@ -3247,57 +4594,81 @@ function getArabicSubtitle(
         !track.subtitles
     ) {
 
-        return "";
+        selectedSubtitleLanguage =
+            "";
+
+
+        return;
 
     }
 
 
-    if (
-        typeof track.subtitles ===
-            "object"
-    ) {
-
-        return safeMediaUrl(
-            track.subtitles.ar ||
-            track.subtitles.Ar ||
-            track.subtitles.AR ||
-            ""
-        );
-
-    }
-
-
-    if (
-        typeof track.subtitles ===
-            "string"
-    ) {
-
-        return safeMediaUrl(
+    const languages =
+        Object.keys(
             track.subtitles
-        );
+        )
+            .filter(
+                language =>
+                    language !==
+                    "ar"
+            );
+
+
+    if (
+        languages.length ===
+        0
+    ) {
+
+        selectedSubtitleLanguage =
+            "";
+
+        return;
 
     }
 
 
-    return "";
+    if (
+        !languages.includes(
+            selectedSubtitleLanguage
+        )
+    ) {
+
+        selectedSubtitleLanguage =
+            languages[0];
+
+
+        localStorage.setItem(
+            "nushud_subtitle_language",
+            selectedSubtitleLanguage
+        );
+
+    }
 
 }
 
 
-/* =========================================================
-   CARGAR VTT
-   ========================================================= */
-
-async function loadSubtitles(
-    subtitleUrl,
-    coverUrl
+async function loadArabicAndSecondarySubtitles(
+    track
 ) {
 
     currentSubtitles =
         [];
 
+
     currentSubtitleIndex =
         -1;
+
+
+    currentSecondarySubtitles =
+        [];
+
+
+    currentSecondarySubtitleIndex =
+        -1;
+
+
+    currentSubtitleLanguages =
+        {};
 
 
     hideSubtitleOverlay();
@@ -3308,8 +4679,8 @@ async function loadSubtitles(
     ) {
 
         subtitleBackground.style.backgroundImage =
-            coverUrl
-                ? `url("${coverUrl.replace(
+            track.cover
+                ? `url("${track.cover.replace(
                     /"/g,
                     '\\"'
                 )}")`
@@ -3319,7 +4690,112 @@ async function loadSubtitles(
 
 
     if (
-        !subtitleUrl
+        track &&
+        track.subtitles &&
+        typeof track.subtitles ===
+            "object"
+    ) {
+
+        currentSubtitleLanguages =
+            {
+                ...track.subtitles
+            };
+
+    }
+
+
+    const arabicUrl =
+        safeMediaUrl(
+            currentSubtitleLanguages.ar
+        );
+
+
+    if (
+        arabicUrl
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    arabicUrl,
+                    {
+                        cache:
+                            "no-store"
+                    }
+                );
+
+
+            if (
+                response.ok
+            ) {
+
+                const text =
+                    await response.text();
+
+
+                currentSubtitles =
+                    parseVTT(
+                        text
+                    );
+
+            }
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "Error cargando árabe:",
+                error
+            );
+
+        }
+
+    }
+
+
+    await loadSecondarySubtitles();
+
+
+    updateSubtitle();
+
+}
+
+
+/* =========================================================
+   CARGAR SECUNDARIO
+   ========================================================= */
+
+async function loadSecondarySubtitles() {
+
+    currentSecondarySubtitles =
+        [];
+
+
+    currentSecondarySubtitleIndex =
+        -1;
+
+
+    if (
+        !selectedSubtitleLanguage
+    ) {
+
+        return;
+
+    }
+
+
+    const url =
+        safeMediaUrl(
+            currentSubtitleLanguages[
+                selectedSubtitleLanguage
+            ]
+        );
+
+
+    if (
+        !url
     ) {
 
         return;
@@ -3331,18 +4807,10 @@ async function loadSubtitles(
 
         const response =
             await fetch(
-                subtitleUrl,
+                url,
                 {
-
-                    method:
-                        "GET",
-
                     cache:
-                        "no-store",
-
-                    credentials:
-                        "same-origin"
-
+                        "no-store"
                 }
             );
 
@@ -3363,28 +4831,10 @@ async function loadSubtitles(
             await response.text();
 
 
-        currentSubtitles =
+        currentSecondarySubtitles =
             parseVTT(
                 text
             );
-
-
-        if (
-            currentSubtitles.length ===
-            0
-        ) {
-
-            console.warn(
-                "El VTT no contiene subtítulos válidos."
-            );
-
-
-            return;
-
-        }
-
-
-        updateSubtitle();
 
 
     } catch (
@@ -3392,16 +4842,13 @@ async function loadSubtitles(
     ) {
 
         console.error(
-            "Error cargando subtítulos:",
+            "Error cargando traducción:",
             error
         );
 
 
-        currentSubtitles =
+        currentSecondarySubtitles =
             [];
-
-
-        hideSubtitleOverlay();
 
     }
 
@@ -3508,14 +4955,10 @@ function parseVTT(
         }
 
 
-        const timeLine =
+        const match =
             lines[
                 timeLineIndex
-            ];
-
-
-        const match =
-            timeLine.match(
+            ].match(
                 /(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})/
             );
 
@@ -3568,7 +5011,9 @@ function parseVTT(
                     timeLineIndex +
                     1
                 )
-                .join("\n")
+                .join(
+                    "\n"
+                )
                 .trim();
 
 
@@ -3660,12 +5105,12 @@ function parseVTTTime(
 
     return (
         h *
-        3600 +
+            3600 +
         m *
-        60 +
+            60 +
         s +
         ms /
-        1000
+            1000
     );
 
 }
@@ -3678,6 +5123,17 @@ function parseVTTTime(
 function cleanSubtitleText(
     text
 ) {
+
+    if (
+        /turboscribe/i.test(
+            text
+        )
+    ) {
+
+        return "";
+
+    }
+
 
     return text
 
@@ -3747,17 +5203,20 @@ function cleanSubtitleText(
 
 
 /* =========================================================
-   ACTUALIZAR SUBTÍTULOS
+   ACTUALIZAR SUBTÍTULO
    ========================================================= */
 
 function updateSubtitle() {
 
     if (
-        !currentSubtitles.length ||
+        currentTrackIndex ===
+        -1 ||
         !audio.src
     ) {
 
         hideSubtitleOverlay();
+
+        updateSubtitleOptions();
 
         return;
 
@@ -3768,85 +5227,142 @@ function updateSubtitle() {
         audio.currentTime;
 
 
-    let index =
+    let arabicIndex =
         currentSubtitleIndex;
 
 
     if (
-        index < 0 ||
-        index >=
+        arabicIndex < 0 ||
+        arabicIndex >=
             currentSubtitles.length ||
         time <
-            currentSubtitles[index].start ||
+            currentSubtitles[
+                arabicIndex
+            ].start ||
         time >=
-            currentSubtitles[index].end
+            currentSubtitles[
+                arabicIndex
+            ].end
     ) {
 
-        index =
+        arabicIndex =
             findSubtitleIndex(
+                currentSubtitles,
                 time
             );
 
     }
 
 
+    let secondaryIndex =
+        currentSecondarySubtitleIndex;
+
+
     if (
-        index ===
-        -1
+        secondaryIndex < 0 ||
+        secondaryIndex >=
+            currentSecondarySubtitles.length ||
+        time <
+            currentSecondarySubtitles[
+                secondaryIndex
+            ].start ||
+        time >=
+            currentSecondarySubtitles[
+                secondaryIndex
+            ].end
     ) {
 
-        currentSubtitleIndex =
-            -1;
+        secondaryIndex =
+            findSubtitleIndex(
+                currentSecondarySubtitles,
+                time
+            );
 
+    }
+
+
+    currentSubtitleIndex =
+        arabicIndex;
+
+
+    currentSecondarySubtitleIndex =
+        secondaryIndex;
+
+
+    if (
+        arabicIndex ===
+            -1 &&
+        secondaryIndex ===
+            -1
+    ) {
 
         hideSubtitleOverlay();
-
 
         return;
 
     }
 
 
-    const cue =
-        currentSubtitles[
-            index
-        ];
+    const arabicCue =
+        arabicIndex !==
+            -1
+            ? currentSubtitles[
+                arabicIndex
+            ]
+            : null;
 
 
-    currentSubtitleIndex =
-        index;
+    const secondaryCue =
+        secondaryIndex !==
+            -1
+            ? currentSecondarySubtitles[
+                secondaryIndex
+            ]
+            : null;
 
 
-    const progress =
-        Math.max(
-            0,
-            Math.min(
-                1,
-                (
-                    time -
-                    cue.start
-                ) /
-                (
-                    cue.end -
-                    cue.start
+    let progress =
+        0;
+
+
+    if (
+        arabicCue
+    ) {
+
+        progress =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    (
+                        time -
+                        arabicCue.start
+                    ) /
+                    (
+                        arabicCue.end -
+                        arabicCue.start
+                    )
                 )
-            )
-        );
+            );
+
+    }
 
 
     showSubtitle(
-        cue.text,
+        arabicCue
+            ? arabicCue.text
+            : "",
+        secondaryCue
+            ? secondaryCue.text
+            : "",
         progress
     );
 
 }
 
 
-/* =========================================================
-   BUSCAR SUBTÍTULO
-   ========================================================= */
-
 function findSubtitleIndex(
+    cues,
     time
 ) {
 
@@ -3855,7 +5371,7 @@ function findSubtitleIndex(
 
 
     let high =
-        currentSubtitles.length -
+        cues.length -
         1;
 
 
@@ -3875,9 +5391,7 @@ function findSubtitleIndex(
 
 
         const cue =
-            currentSubtitles[
-                mid
-            ];
+            cues[mid];
 
 
         if (
@@ -3913,11 +5427,12 @@ function findSubtitleIndex(
 
 
 /* =========================================================
-   MOSTRAR SUBTÍTULO
+   MOSTRAR SUBTÍTULOS
    ========================================================= */
 
 function showSubtitle(
-    text,
+    arabicText,
+    secondaryText,
     progress
 ) {
 
@@ -3934,59 +5449,82 @@ function showSubtitle(
         "";
 
 
-    const base =
-        document.createElement(
-            "span"
+    if (
+        arabicText
+    ) {
+
+        const base =
+            document.createElement(
+                "span"
+            );
+
+
+        base.className =
+            "subtitle-base";
+
+
+        base.textContent =
+            arabicText;
+
+
+        const highlight =
+            document.createElement(
+                "span"
+            );
+
+
+        highlight.className =
+            "subtitle-highlight";
+
+
+        highlight.textContent =
+            arabicText;
+
+
+        subtitleText.appendChild(
+            base
         );
 
 
-    base.className =
-        "subtitle-base";
-
-
-    base.textContent =
-        text;
-
-
-    const highlight =
-        document.createElement(
-            "span"
+        subtitleText.appendChild(
+            highlight
         );
 
 
-    highlight.className =
-        "subtitle-highlight";
+        const percent =
+            Math.round(
+                progress *
+                100
+            );
 
 
-    highlight.textContent =
-        text;
+        /*
+         * ÁRABE:
+         * empieza a la derecha y va
+         * avanzando hacia la izquierda.
+         */
+
+        highlight.style.clipPath =
+            `inset(0 0 0 ${100 - percent}%)`;
+
+    }
 
 
-    subtitleText.appendChild(
-        base
-    );
+    if (
+        subtitleSecondary
+    ) {
+
+        subtitleSecondary.textContent =
+            secondaryText ||
+            "";
 
 
-    subtitleText.appendChild(
-        highlight
-    );
+        subtitleSecondary.style.display =
+            secondaryText
+                ? "block"
+                : "none";
 
-
-    const percent =
-        Math.round(
-            progress *
-            100
-        );
-
-
-    /*
-     * Para RTL:
-     * el resaltado se revela desde
-     * el lado derecho hacia el izquierdo.
-     */
-
-    highlight.style.clipPath =
-        `inset(0 0 0 ${100 - percent}%)`;
+    }
 
 
     if (
@@ -3994,7 +5532,10 @@ function showSubtitle(
     ) {
 
         subtitleProgressBar.style.width =
-            percent +
+            Math.round(
+                progress *
+                100
+            ) +
             "%";
 
     }
@@ -4014,17 +5555,14 @@ function showSubtitle(
 function hideSubtitleOverlay() {
 
     if (
-        !subtitleOverlay
+        subtitleOverlay
     ) {
 
-        return;
+        subtitleOverlay.classList.remove(
+            "visible"
+        );
 
     }
-
-
-    subtitleOverlay.classList.remove(
-        "visible"
-    );
 
 
     if (
@@ -4033,6 +5571,19 @@ function hideSubtitleOverlay() {
 
         subtitleText.textContent =
             "";
+
+    }
+
+
+    if (
+        subtitleSecondary
+    ) {
+
+        subtitleSecondary.textContent =
+            "";
+
+        subtitleSecondary.style.display =
+            "none";
 
     }
 
@@ -4066,39 +5617,37 @@ if (
             ) {
 
                 if (
-                    !audio.src &&
-                    allNasheeds.length >
-                        0
+                    !audio.src
                 ) {
 
-                    playTrack(
+                    if (
+                        allNasheeds.length >
                         0
-                    );
+                    ) {
 
-                } else {
-
-                    audio
-                        .play()
-                        .catch(
-                            error =>
-                                console.error(
-                                    error
-                                )
+                        playTrack(
+                            0
                         );
 
+                    }
 
-                    mainPlayBtn.textContent =
-                        "❚❚";
+                    return;
 
                 }
+
+
+                audio
+                    .play()
+                    .catch(
+                        error =>
+                            console.error(
+                                error
+                            )
+                    );
 
             } else {
 
                 audio.pause();
-
-
-                mainPlayBtn.textContent =
-                    "▶";
 
             }
 
@@ -4109,7 +5658,7 @@ if (
 
 
 /* =========================================================
-   TIMEUPDATE
+   AUDIO TIMEUPDATE
    ========================================================= */
 
 audio.addEventListener(
@@ -4122,7 +5671,7 @@ audio.addEventListener(
             )
         ) {
 
-            const progressPercent =
+            const progress =
                 (
                     audio.currentTime /
                     audio.duration
@@ -4135,7 +5684,7 @@ audio.addEventListener(
             ) {
 
                 progressBar.style.width =
-                    progressPercent +
+                    progress +
                     "%";
 
             }
@@ -4225,7 +5774,7 @@ if (
 
 
 /* =========================================================
-   PLAY
+   AUDIO PLAY
    ========================================================= */
 
 audio.addEventListener(
@@ -4246,7 +5795,7 @@ audio.addEventListener(
 
 
 /* =========================================================
-   PAUSE
+   AUDIO PAUSE
    ========================================================= */
 
 audio.addEventListener(
@@ -4267,7 +5816,7 @@ audio.addEventListener(
 
 
 /* =========================================================
-   END
+   AUDIO ENDED
    ========================================================= */
 
 audio.addEventListener(
@@ -4369,6 +5918,17 @@ function formatTime(
     seconds
 ) {
 
+    if (
+        !Number.isFinite(
+            seconds
+        )
+    ) {
+
+        return "0:00";
+
+    }
+
+
     const mins =
         Math.floor(
             seconds /
@@ -4387,7 +5947,7 @@ function formatTime(
         `${mins}:` +
         (
             secs <
-            10
+                10
                 ? "0"
                 : ""
         ) +
@@ -4395,6 +5955,7 @@ function formatTime(
     );
 
 }
+
 
 </script>
 

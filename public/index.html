@@ -9,1280 +9,1469 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-    <title>NASHEED - Plataforma de Nasheeds</title>
+    <meta
+        name="referrer"
+        content="same-origin">
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4">
-    </script>
+    <title>NASHEED - Plataforma Espiritual</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
         rel="stylesheet">
 
 
-<style>
+    <style>
 
-body {
+        body {
 
-    font-family:
-        'Plus Jakarta Sans',
-        sans-serif;
+            font-family:
+                'Plus Jakarta Sans',
+                sans-serif;
 
-    background:
-        #060608;
+            background-color:
+                #060608;
 
-    color:
-        #f4f4f5;
+            color:
+                #f4f4f5;
 
-}
+        }
 
 
-.glass {
+        .glass-sidebar {
 
-    background:
-        rgba(18,18,23,.68);
+            background:
+                rgba(9,9,11,.75);
 
-    backdrop-filter:
-        blur(18px);
+            backdrop-filter:
+                blur(16px);
 
-    border:
-        1px solid
-        rgba(255,255,255,.06);
+            border-right:
+                1px solid
+                rgba(255,255,255,.05);
 
-}
+        }
 
 
-.glass-player {
+        .glass-panel {
 
-    background:
-        rgba(9,9,11,.92);
+            background:
+                rgba(18,18,23,.6);
 
-    backdrop-filter:
-        blur(22px);
+            backdrop-filter:
+                blur(12px);
 
-    border-top:
-        1px solid
-        rgba(255,255,255,.07);
+            border:
+                1px solid
+                rgba(255,255,255,.04);
 
-}
+        }
 
 
-/* =========================================================
-   ICONOS
-   ========================================================= */
+        .glass-player {
 
-.nav-item {
+            background:
+                rgba(9,9,11,.88);
 
-    display:
-        flex;
+            backdrop-filter:
+                blur(20px);
 
-    align-items:
-        center;
+            border-top:
+                1px solid
+                rgba(255,255,255,.06);
 
-    gap:
-        13px;
+        }
 
-    width:
-        100%;
 
-    padding:
-        11px 14px;
+        .section-tab {
 
-    border-radius:
-        13px;
+            opacity:
+                0;
 
-    font-size:
-        12px;
+            transform:
+                translateY(8px);
 
-    font-weight:
-        700;
+            transition:
+                opacity .3s ease,
+                transform .3s ease;
 
-    color:
-        rgb(161,161,170);
+            position:
+                absolute;
 
-}
+            width:
+                100%;
 
+            pointer-events:
+                none;
 
-.nav-item:hover {
+            visibility:
+                hidden;
 
-    background:
-        rgba(255,255,255,.05);
+        }
 
-    color:
-        #f4f4f5;
 
-}
+        .section-tab.active {
 
+            opacity:
+                1;
 
-.nav-item.active {
+            transform:
+                translateY(0);
 
-    background:
-        rgba(245,158,11,.10);
+            position:
+                relative;
 
-    border:
-        1px solid
-        rgba(245,158,11,.20);
+            pointer-events:
+                auto;
 
-    color:
-        #fbbf24;
+            visibility:
+                visible;
 
-}
+        }
 
 
-.nav-icon {
+        body.animations-enabled .card-hover {
 
-    width:
-        28px;
+            transition:
+                transform .35s cubic-bezier(.4,0,.2,1),
+                background-color .35s ease,
+                border-color .35s ease,
+                box-shadow .35s ease;
 
-    height:
-        28px;
+        }
 
-    flex-shrink:
-        0;
 
-    display:
-        flex;
+        body.animations-enabled .card-hover:hover {
 
-    align-items:
-        center;
+            transform:
+                translateY(-6px);
 
-    justify-content:
-        center;
+            background:
+                rgba(24,24,32,.8);
 
-    font-size:
-        22px;
+            border-color:
+                rgba(245,158,11,.3);
 
-    line-height:
-        1;
+            box-shadow:
+                0 20px 30px -10px rgba(0,0,0,.5);
 
-}
+        }
 
 
-.mobile-bottom-nav {
+        body.animations-enabled button,
+        body.animations-enabled a {
 
-    display:
-        none;
+            transition:
+                all .2s ease;
 
-}
+        }
 
 
-/* =========================================================
-   CARDS
-   ========================================================= */
+        body.animations-disabled * {
 
-.card {
+            transition:
+                none !important;
 
-    background:
-        rgba(18,18,23,.58);
+            transform:
+                none !important;
 
-    border:
-        1px solid
-        rgba(255,255,255,.05);
+        }
 
-    border-radius:
-        18px;
 
-    padding:
-        12px;
+        ::-webkit-scrollbar {
 
-    transition:
-        transform .25s ease,
-        border-color .25s ease;
+            width:
+                6px;
 
-}
+            height:
+                6px;
 
+        }
 
-.card:hover {
 
-    transform:
-        translateY(-4px);
+        ::-webkit-scrollbar-track {
 
-    border-color:
-        rgba(245,158,11,.24);
+            background:
+                transparent;
 
-}
+        }
 
 
-.cover {
+        ::-webkit-scrollbar-thumb {
 
-    width:
-        100%;
+            background:
+                rgba(255,255,255,.1);
 
-    aspect-ratio:
-        1;
+            border-radius:
+                4px;
 
-    object-fit:
-        cover;
+        }
 
-    border-radius:
-        13px;
 
-}
+        .mobile-bottom-nav {
 
+            display:
+                none;
 
-/* =========================================================
-   SUBTÍTULOS
-   ========================================================= */
+        }
 
-#subtitle-overlay {
 
-    position:
-        fixed;
+        .mobile-logo {
 
-    left:
-        50%;
+            display:
+                none;
 
-    bottom:
-        112px;
+        }
 
-    width:
-        min(760px, calc(100vw - 28px));
 
-    transform:
-        translateX(-50%) translateY(10px);
+        .cover-image {
 
-    opacity:
-        0;
+            width:
+                100%;
 
-    visibility:
-        hidden;
+            height:
+                100%;
 
-    z-index:
-        50;
+            object-fit:
+                cover;
 
-    transition:
-        opacity .25s ease,
-        transform .25s ease,
-        visibility .25s ease;
+            display:
+                block;
 
-    pointer-events:
-        none;
+        }
 
-}
 
+        /* =========================================================
+           SUBTÍTULOS
+           ========================================================= */
 
-#subtitle-overlay.visible {
+        #subtitle-overlay {
 
-    opacity:
-        1;
+            position:
+                fixed;
 
-    visibility:
-        visible;
+            left:
+                50%;
 
-    transform:
-        translateX(-50%) translateY(0);
+            bottom:
+                108px;
 
-}
+            transform:
+                translateX(-50%) translateY(12px);
 
+            width:
+                min(760px, calc(100vw - 32px));
 
-.subtitle-box {
+            z-index:
+                29;
 
-    position:
-        relative;
+            pointer-events:
+                none;
 
-    overflow:
-        hidden;
+            opacity:
+                0;
 
-    border:
-        1px solid
-        rgba(255,255,255,.10);
+            visibility:
+                hidden;
 
-    border-radius:
-        24px;
+            transition:
+                opacity .25s ease,
+                transform .25s ease,
+                visibility .25s ease;
 
-    padding:
-        18px 22px;
+        }
 
-    background:
-        rgba(6,6,8,.55);
 
-    backdrop-filter:
-        blur(20px);
+        #subtitle-overlay.visible {
 
-    box-shadow:
-        0 20px 50px
-        rgba(0,0,0,.48);
+            opacity:
+                1;
 
-}
+            visibility:
+                visible;
 
+            transform:
+                translateX(-50%) translateY(0);
 
-.subtitle-arabic {
+        }
 
-    position:
-        relative;
 
-    display:
-        inline-block;
+        .subtitle-glass {
 
-    max-width:
-        100%;
+            position:
+                relative;
 
-    font-family:
-        'Amiri',
-        serif;
+            overflow:
+                hidden;
 
-    font-size:
-        clamp(25px,3vw,38px);
+            border-radius:
+                24px;
 
-    line-height:
-        1.55;
+            padding:
+                18px 24px 20px;
 
-    font-weight:
-        700;
+            background:
+                rgba(8,8,11,.58);
 
-    direction:
-        rtl;
+            border:
+                1px solid
+                rgba(255,255,255,.10);
 
-    text-align:
-        right;
+            box-shadow:
+                0 20px 50px rgba(0,0,0,.45),
+                inset 0 1px 0 rgba(255,255,255,.06);
 
-}
+            backdrop-filter:
+                blur(18px);
 
+            -webkit-backdrop-filter:
+                blur(18px);
 
-.subtitle-base {
+        }
 
-    color:
-        rgba(255,255,255,.90);
 
-}
+        .subtitle-background {
 
+            position:
+                absolute;
 
-.subtitle-highlight {
+            inset:
+                -25px;
 
-    position:
-        absolute;
+            background-position:
+                center;
 
-    inset:
-        0;
+            background-size:
+                cover;
 
-    color:
-        #fbbf24;
+            filter:
+                blur(22px);
 
-    direction:
-        rtl;
+            transform:
+                scale(1.15);
 
-    text-align:
-        right;
+            opacity:
+                .42;
 
-    overflow:
-        hidden;
+            z-index:
+                0;
 
-    white-space:
-        nowrap;
+        }
 
-    clip-path:
-        inset(0 0 0 100%);
 
-}
+        .subtitle-background::after {
 
+            content:
+                "";
 
-.subtitle-secondary {
+            position:
+                absolute;
 
-    margin-top:
-        4px;
+            inset:
+                0;
 
-    color:
-        rgba(255,255,255,.68);
+            background:
+                rgba(5,5,8,.60);
 
-    font-size:
-        clamp(10px,1.5vw,15px);
+        }
 
-    line-height:
-        1.45;
 
-    text-align:
-        center;
+        .subtitle-content {
 
-}
+            position:
+                relative;
 
+            z-index:
+                2;
 
-.subtitle-progress {
+            text-align:
+                center;
 
-    width:
-        min(270px,60%);
+        }
 
-    height:
-        2px;
 
-    background:
-        rgba(255,255,255,.08);
+        .subtitle-arabic {
 
-    margin:
-        8px auto 0;
+            position:
+                relative;
 
-    overflow:
-        hidden;
+            display:
+                inline-block;
 
-    border-radius:
-        99px;
+            max-width:
+                100%;
 
-}
+            font-family:
+                'Amiri',
+                serif;
 
+            font-size:
+                clamp(25px,3vw,38px);
 
-.subtitle-progress-bar {
+            line-height:
+                1.55;
 
-    width:
-        0;
+            font-weight:
+                700;
 
-    height:
-        100%;
+            direction:
+                rtl;
 
-    background:
-        #fbbf24;
+            text-align:
+                right;
 
-}
+            unicode-bidi:
+                plaintext;
 
+            color:
+                rgba(255,255,255,.92);
 
-/* =========================================================
-   SUBTITLE MENU
-   ========================================================= */
+            text-shadow:
+                0 2px 8px rgba(0,0,0,.75),
+                0 0 24px rgba(0,0,0,.35);
 
-.subtitle-wrapper {
+        }
 
-    position:
-        relative;
 
-}
+        .subtitle-base {
 
+            position:
+                relative;
 
-.subtitle-button {
+            z-index:
+                1;
 
-    border:
-        1px solid
-        rgba(255,255,255,.09);
+            color:
+                rgba(255,255,255,.88);
 
-    background:
-        rgba(255,255,255,.04);
+        }
 
-    color:
-        rgb(161,161,170);
 
-    padding:
-        7px 10px;
+        .subtitle-highlight {
 
-    border-radius:
-        10px;
+            position:
+                absolute;
 
-    font-size:
-        10px;
+            inset:
+                0;
 
-    font-weight:
-        800;
+            z-index:
+                2;
 
-    cursor:
-        pointer;
+            color:
+                #fbbf24;
 
-}
+            overflow:
+                hidden;
 
+            white-space:
+                nowrap;
 
-.subtitle-button.active,
-.subtitle-button:hover {
+            direction:
+                rtl;
 
-    color:
-        #fbbf24;
+            text-align:
+                right;
 
-    border-color:
-        rgba(245,158,11,.22);
+            unicode-bidi:
+                plaintext;
 
-    background:
-        rgba(245,158,11,.08);
+            text-shadow:
+                0 2px 10px rgba(0,0,0,.75),
+                0 0 18px rgba(245,158,11,.20);
 
-}
+            clip-path:
+                inset(0 0 0 100%);
 
+            transition:
+                clip-path .08s linear;
 
-.subtitle-menu {
+        }
 
-    position:
-        absolute;
 
-    bottom:
-        calc(100% + 9px);
+        .subtitle-secondary {
 
-    right:
-        0;
+            position:
+                relative;
 
-    width:
-        185px;
+            z-index:
+                3;
 
-    padding:
-        8px;
+            margin-top:
+                4px;
 
-    border:
-        1px solid
-        rgba(255,255,255,.08);
+            font-family:
+                'Plus Jakarta Sans',
+                sans-serif;
 
-    border-radius:
-        16px;
+            font-size:
+                clamp(11px,1.5vw,16px);
 
-    background:
-        rgba(12,12,15,.97);
+            line-height:
+                1.4;
 
-    backdrop-filter:
-        blur(18px);
+            font-weight:
+                500;
 
-    box-shadow:
-        0 20px 40px
-        rgba(0,0,0,.4);
+            color:
+                rgba(255,255,255,.68);
 
-    opacity:
-        0;
+            direction:
+                ltr;
 
-    visibility:
-        hidden;
+            text-align:
+                center;
 
-    transform:
-        translateY(5px);
+            min-height:
+                0;
 
-    transition:
-        all .2s ease;
+        }
 
-    z-index:
-        80;
 
-}
+        .subtitle-progress {
 
+            position:
+                relative;
 
-.subtitle-menu.open {
+            z-index:
+                3;
 
-    opacity:
-        1;
+            height:
+                2px;
 
-    visibility:
-        visible;
+            width:
+                min(280px,60%);
 
-    transform:
-        translateY(0);
+            margin:
+                8px auto 0;
 
-}
+            border-radius:
+                999px;
 
+            background:
+                rgba(255,255,255,.08);
 
-.subtitle-option {
+            overflow:
+                hidden;
 
-    width:
-        100%;
+        }
 
-    padding:
-        9px 10px;
 
-    border:
-        0;
+        .subtitle-progress-bar {
 
-    border-radius:
-        10px;
+            width:
+                0%;
 
-    background:
-        transparent;
+            height:
+                100%;
 
-    color:
-        rgb(161,161,170);
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(245,158,11,.35),
+                    rgba(251,191,36,.95)
+                );
 
-    text-align:
-        left;
+            border-radius:
+                inherit;
 
-    font-size:
-        10px;
+        }
 
-    cursor:
-        pointer;
 
-}
+        /* =========================================================
+           SUBTITLE BUTTON
+           ========================================================= */
 
+        .subtitle-menu-wrapper {
 
-.subtitle-option:hover,
-.subtitle-option.selected {
+            position:
+                relative;
 
-    color:
-        #fbbf24;
+        }
 
-    background:
-        rgba(245,158,11,.08);
 
-}
+        .subtitle-button {
 
+            display:
+                inline-flex;
 
-.subtitle-none {
+            align-items:
+                center;
 
-    padding:
-        12px 9px;
+            justify-content:
+                center;
 
-    color:
-        rgb(113,113,122);
+            gap:
+                6px;
 
-    font-size:
-        10px;
+            padding:
+                7px 10px;
 
-    text-align:
-        center;
+            border-radius:
+                10px;
 
-    line-height:
-        1.4;
+            border:
+                1px solid
+                rgba(255,255,255,.08);
 
-}
+            background:
+                rgba(255,255,255,.04);
 
+            color:
+                rgb(161,161,170);
 
-/* =========================================================
-   LANGUAGE UI
-   ========================================================= */
+            font-size:
+                10px;
 
-.ui-language {
+            font-weight:
+                700;
 
-    position:
-        fixed;
+            cursor:
+                pointer;
 
-    top:
-        12px;
+        }
 
-    right:
-        14px;
 
-    z-index:
-        90;
+        .subtitle-button:hover,
+        .subtitle-button.active {
 
-    display:
-        flex;
+            color:
+                #fbbf24;
 
-    gap:
-        3px;
+            background:
+                rgba(245,158,11,.10);
 
-    padding:
-        3px;
+            border-color:
+                rgba(245,158,11,.25);
 
-    border-radius:
-        11px;
+        }
 
-    border:
-        1px solid
-        rgba(255,255,255,.08);
 
-    background:
-        rgba(12,12,15,.90);
+        .subtitle-menu {
 
-    backdrop-filter:
-        blur(15px);
+            position:
+                absolute;
 
-}
+            right:
+                0;
 
+            bottom:
+                calc(100% + 9px);
 
-.ui-language button {
+            width:
+                190px;
 
-    border:
-        0;
+            padding:
+                8px;
 
-    background:
-        transparent;
+            border:
+                1px solid
+                rgba(255,255,255,.08);
 
-    color:
-        rgb(113,113,122);
+            border-radius:
+                16px;
 
-    padding:
-        5px 8px;
+            background:
+                rgba(12,12,15,.96);
 
-    border-radius:
-        8px;
+            backdrop-filter:
+                blur(18px);
 
-    font-size:
-        9px;
+            box-shadow:
+                0 20px 40px rgba(0,0,0,.35);
 
-    font-weight:
-        800;
+            opacity:
+                0;
 
-    cursor:
-        pointer;
+            visibility:
+                hidden;
 
-}
+            transform:
+                translateY(5px);
 
+            transition:
+                opacity .2s ease,
+                transform .2s ease,
+                visibility .2s ease;
 
-.ui-language button.active {
+            z-index:
+                80;
 
-    color:
-        #fbbf24;
+        }
 
-    background:
-        rgba(245,158,11,.10);
 
-}
+        .subtitle-menu.open {
 
+            opacity:
+                1;
 
-/* =========================================================
-   WARNING MODAL
-   ========================================================= */
+            visibility:
+                visible;
 
-.warning-backdrop {
+            transform:
+                translateY(0);
 
-    position:
-        fixed;
+        }
 
-    inset:
-        0;
 
-    z-index:
-        100;
+        .subtitle-menu-title {
 
-    display:
-        flex;
+            padding:
+                6px 8px 8px;
 
-    align-items:
-        center;
+            font-size:
+                9px;
 
-    justify-content:
-        center;
+            font-weight:
+                800;
 
-    padding:
-        22px;
+            text-transform:
+                uppercase;
 
-    background:
-        rgba(0,0,0,.48);
+            letter-spacing:
+                .08em;
 
-    backdrop-filter:
-        blur(9px);
+            color:
+                rgba(255,255,255,.38);
 
-    opacity:
-        0;
+        }
 
-    visibility:
-        hidden;
 
-    pointer-events:
-        none;
+        .subtitle-option {
 
-    transition:
-        opacity .25s ease,
-        visibility .25s ease;
+            width:
+                100%;
 
-}
+            display:
+                flex;
 
+            align-items:
+                center;
 
-.warning-backdrop.open {
+            justify-content:
+                space-between;
 
-    opacity:
-        1;
+            padding:
+                9px 10px;
 
-    visibility:
-        visible;
+            border-radius:
+                10px;
 
-    pointer-events:
-        auto;
+            background:
+                transparent;
 
-}
+            color:
+                rgb(161,161,170);
 
+            font-size:
+                10px;
 
-.warning-modal {
+            font-weight:
+                600;
 
-    width:
-        min(500px, 100%);
+            text-align:
+                left;
 
-    border:
-        1px solid
-        rgba(245,158,11,.28);
+            cursor:
+                pointer;
 
-    border-radius:
-        26px;
+        }
 
-    padding:
-        25px;
 
-    background:
-        rgba(16,16,20,.72);
+        .subtitle-option:hover {
 
-    backdrop-filter:
-        blur(24px);
+            background:
+                rgba(255,255,255,.05);
 
-    -webkit-backdrop-filter:
-        blur(24px);
+            color:
+                #f4f4f5;
 
-    box-shadow:
-        0 30px 80px
-        rgba(0,0,0,.58),
-        inset 0 1px 0
-        rgba(255,255,255,.06);
+        }
 
-    transform:
-        translateY(10px) scale(.98);
 
-    transition:
-        transform .25s ease;
+        .subtitle-option.selected {
 
-}
+            background:
+                rgba(245,158,11,.10);
 
+            color:
+                #fbbf24;
 
-.warning-backdrop.open
-.warning-modal {
+        }
 
-    transform:
-        translateY(0) scale(1);
 
-}
+        .subtitle-none {
 
+            padding:
+                12px 10px;
 
-.warning-badge {
+            text-align:
+                center;
 
-    width:
-        48px;
+            color:
+                rgb(113,113,122);
 
-    height:
-        48px;
+            font-size:
+                10px;
 
-    border-radius:
-        16px;
+            line-height:
+                1.4;
 
-    display:
-        flex;
+        }
 
-    align-items:
-        center;
 
-    justify-content:
-        center;
+        /* =========================================================
+           UI LANGUAGE
+           ========================================================= */
 
-    background:
-        rgba(245,158,11,.12);
+        .ui-language-switcher {
 
-    border:
-        1px solid
-        rgba(245,158,11,.24);
+            position:
+                fixed;
 
-    color:
-        #fbbf24;
+            top:
+                14px;
 
-    font-size:
-        23px;
+            right:
+                16px;
 
-}
+            z-index:
+                90;
 
+            display:
+                flex;
 
-.warning-title {
+            align-items:
+                center;
 
-    font-size:
-        15px;
+            gap:
+                3px;
 
-    font-weight:
-        800;
+            padding:
+                3px;
 
-    color:
-        #f4f4f5;
+            border-radius:
+                12px;
 
-}
+            background:
+                rgba(12,12,15,.86);
 
+            border:
+                1px solid
+                rgba(255,255,255,.08);
 
-.warning-text {
+            backdrop-filter:
+                blur(15px);
 
-    margin-top:
-        13px;
+        }
 
-    font-size:
-        12px;
 
-    line-height:
-        1.7;
+        .ui-language-button {
 
-    color:
-        rgba(255,255,255,.72);
+            border:
+                0;
 
-}
+            background:
+                transparent;
 
+            color:
+                rgb(113,113,122);
 
-.warning-actions {
+            padding:
+                5px 8px;
 
-    display:
-        flex;
+            border-radius:
+                8px;
 
-    gap:
-        9px;
+            font-size:
+                9px;
 
-    margin-top:
-        20px;
+            font-weight:
+                800;
 
-}
+            cursor:
+                pointer;
 
+        }
 
-.warning-cancel {
 
-    flex:
-        1;
+        .ui-language-button.active {
 
-    padding:
-        11px;
+            background:
+                rgba(245,158,11,.12);
 
-    border:
-        1px solid
-        rgba(255,255,255,.08);
+            color:
+                #fbbf24;
 
-    border-radius:
-        12px;
+        }
 
-    background:
-        rgba(255,255,255,.04);
 
-    color:
-        rgb(161,161,170);
+        /* =========================================================
+           WARNING MODAL
+           ========================================================= */
 
-    font-size:
-        11px;
+        .warning-modal-backdrop {
 
-    font-weight:
-        700;
+            position:
+                fixed;
 
-    cursor:
-        pointer;
+            inset:
+                0;
 
-}
+            z-index:
+                100;
 
+            display:
+                none;
 
-.warning-continue {
+            align-items:
+                center;
 
-    flex:
-        1;
+            justify-content:
+                center;
 
-    padding:
-        11px;
+            padding:
+                20px;
 
-    border:
-        0;
+            background:
+                rgba(0,0,0,.48);
 
-    border-radius:
-        12px;
+            backdrop-filter:
+                blur(10px);
 
-    background:
-        #f59e0b;
+        }
 
-    color:
-        #18181b;
 
-    font-size:
-        11px;
+        .warning-modal-backdrop.open {
 
-    font-weight:
-        800;
+            display:
+                flex;
 
-    cursor:
-        pointer;
+        }
 
-}
 
+        .warning-modal {
 
-.warning-continue:hover {
+            width:
+                min(500px,100%);
 
-    background:
-        #fbbf24;
+            padding:
+                25px;
 
-}
+            border-radius:
+                27px;
 
+            background:
+                rgba(17,17,21,.68);
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
+            backdrop-filter:
+                blur(25px);
 
-@media (max-width:767px) {
+            -webkit-backdrop-filter:
+                blur(25px);
 
-    .mobile-bottom-nav {
+            border:
+                1px solid
+                rgba(245,158,11,.25);
 
-        display:
-            grid;
+            box-shadow:
+                0 30px 80px
+                rgba(0,0,0,.60),
+                inset 0 1px 0
+                rgba(255,255,255,.06);
 
-        grid-template-columns:
-            repeat(4,1fr);
+        }
 
-        position:
-            fixed;
 
-        left:
-            0;
+        .warning-icon {
 
-        right:
-            0;
+            width:
+                50px;
 
-        bottom:
-            0;
+            height:
+                50px;
 
-        height:
-            58px;
+            border-radius:
+                16px;
 
-        padding:
-            6px 8px;
+            display:
+                flex;
 
-        background:
-            rgba(9,9,11,.97);
+            align-items:
+                center;
 
-        backdrop-filter:
-            blur(20px);
+            justify-content:
+                center;
 
-        border-top:
-            1px solid
-            rgba(255,255,255,.06);
+            background:
+                rgba(245,158,11,.10);
 
-        z-index:
-            40;
+            border:
+                1px solid
+                rgba(245,158,11,.20);
 
-    }
+            color:
+                #fbbf24;
 
+            font-size:
+                22px;
 
-    .mobile-bottom-nav button {
+        }
 
-        border:
-            1px solid
-            transparent;
 
-        border-radius:
-            12px;
+        .warning-actions {
 
-        background:
-            transparent;
+            display:
+                flex;
 
-        color:
-            rgb(161,161,170);
+            gap:
+                10px;
 
-        display:
-            flex;
+            margin-top:
+                22px;
 
-        flex-direction:
-            column;
+        }
 
-        align-items:
-            center;
 
-        justify-content:
-            center;
+        .warning-cancel,
+        .warning-continue {
 
-        gap:
-            2px;
+            flex:
+                1;
 
-        cursor:
-            pointer;
+            padding:
+                11px 14px;
 
-    }
+            border-radius:
+                12px;
 
+            font-size:
+                11px;
 
-    .mobile-bottom-nav button.active {
+            font-weight:
+                800;
 
-        color:
-            #fbbf24;
+            cursor:
+                pointer;
 
-        background:
-            rgba(245,158,11,.10);
+        }
 
-    }
 
+        .warning-cancel {
 
-    .mobile-nav-icon {
+            background:
+                rgba(255,255,255,.04);
 
-        font-size:
-            23px;
+            color:
+                #a1a1aa;
 
-        line-height:
-            1;
+            border:
+                1px solid
+                rgba(255,255,255,.08);
 
-    }
+        }
 
 
-    .mobile-bottom-nav span:last-child {
+        .warning-continue {
 
-        font-size:
-            9px;
+            background:
+                #f59e0b;
 
-        font-weight:
-            700;
+            color:
+                #18181b;
 
-    }
+            border:
+                1px solid
+                transparent;
 
+        }
 
-    .glass-player {
 
-        bottom:
-            58px;
+        .warning-continue:hover {
 
-        padding:
-            8px 10px !important;
+            background:
+                #fbbf24;
 
-    }
+        }
 
 
-    #subtitle-overlay {
+        /* =========================================================
+           MOBILE
+           ========================================================= */
 
-        bottom:
-            143px;
+        @media (max-width:767px) {
 
-        width:
-            calc(100vw - 18px);
+            .ui-language-switcher {
 
-    }
+                top:
+                    10px;
 
+                right:
+                    10px;
 
-    .subtitle-box {
+            }
 
-        border-radius:
-            20px;
 
-        padding:
-            12px 14px;
+            .glass-player {
 
-    }
+                bottom:
+                    58px !important;
 
+            }
 
-    .subtitle-arabic {
 
-        font-size:
-            clamp(23px,7vw,31px);
+            #subtitle-overlay {
 
-    }
+                bottom:
+                    calc(
+                        138px +
+                        env(safe-area-inset-bottom)
+                    );
 
+                width:
+                    calc(100vw - 20px);
 
-    .subtitle-secondary {
+            }
 
-        font-size:
-            clamp(10px,3.2vw,14px);
 
-    }
+            .subtitle-glass {
 
+                padding:
+                    12px 13px 13px;
 
-    .subtitle-menu {
+                border-radius:
+                    19px;
 
-        position:
-            fixed;
+            }
 
-        right:
-            9px;
 
-        bottom:
-            118px;
+            .subtitle-arabic {
 
-    }
+                font-size:
+                    clamp(23px,7vw,31px);
 
-}
+                line-height:
+                    1.5;
 
+            }
 
-/* =========================================================
-   PLAYER
-   ========================================================= */
 
-.mobile-player-info {
+            .subtitle-secondary {
 
-    width:
-        25%;
+                font-size:
+                    clamp(10px,3.2vw,14px);
 
-}
+            }
 
 
-.player-cover {
+            .subtitle-menu {
 
-    width:
-        48px;
+                position:
+                    fixed;
 
-    height:
-        48px;
+                right:
+                    10px;
 
-    flex-shrink:
-        0;
+                bottom:
+                    calc(
+                        116px +
+                        env(safe-area-inset-bottom)
+                    );
 
-    border-radius:
-        12px;
+            }
 
-    overflow:
-        hidden;
 
-}
+            .mobile-bottom-nav {
 
+                display:
+                    grid;
 
-@media (max-width:767px) {
+                grid-template-columns:
+                    repeat(4,1fr);
 
-    .mobile-player-info {
+                position:
+                    fixed;
 
-        width:
-            100%;
+                left:
+                    0;
 
-    }
+                right:
+                    0;
 
-}
+                bottom:
+                    0;
 
-</style>
+                height:
+                    58px;
+
+                padding:
+                    7px 8px calc(7px + env(safe-area-inset-bottom));
+
+                background:
+                    rgba(9,9,11,.96);
+
+                backdrop-filter:
+                    blur(20px);
+
+                -webkit-backdrop-filter:
+                    blur(20px);
+
+                border-top:
+                    1px solid
+                    rgba(255,255,255,.06);
+
+                z-index:
+                    40;
+
+            }
+
+
+            .mobile-bottom-nav button {
+
+                min-width:
+                    0;
+
+                display:
+                    flex;
+
+                flex-direction:
+                    column;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
+
+                gap:
+                    3px;
+
+                border:
+                    1px solid transparent;
+
+                border-radius:
+                    12px;
+
+                color:
+                    rgb(161 161 170);
+
+                background:
+                    transparent;
+
+                cursor:
+                    pointer;
+
+            }
+
+
+            .mobile-bottom-nav button.active {
+
+                color:
+                    rgb(251 191 36);
+
+                background:
+                    rgba(245,158,11,.10);
+
+                border-color:
+                    rgba(245,158,11,.20);
+
+            }
+
+
+            .mobile-bottom-nav span {
+
+                font-size:
+                    9px;
+
+                line-height:
+                    1;
+
+                font-weight:
+                    700;
+
+            }
+
+
+            .mobile-player {
+
+                padding:
+                    8px 10px !important;
+
+            }
+
+
+            .mobile-main {
+
+                padding-bottom:
+                    11rem !important;
+
+                padding-left:
+                    14px !important;
+
+                padding-right:
+                    14px !important;
+
+                padding-top:
+                    12px !important;
+
+            }
+
+
+            .mobile-player-info,
+            .mobile-player-controls {
+
+                width:
+                    100% !important;
+
+            }
+
+
+            .mobile-player-quality {
+
+                display:
+                    none !important;
+
+            }
+
+
+            .mobile-progress {
+
+                width:
+                    100%;
+
+            }
+
+
+            .mobile-logo {
+
+                display:
+                    flex;
+
+                margin:
+                    0 0 10px;
+
+                height:
+                    34px;
+
+                align-items:
+                    center;
+
+            }
+
+        }
+
+    </style>
 
 </head>
 
 
-<body class="min-h-screen overflow-x-hidden">
+<body
+    class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-zinc-950 overflow-x-hidden animations-enabled">
 
 
-<!-- LANGUAGE -->
+<!-- =========================================================
+     UI LANGUAGE
+     ========================================================= -->
 
 <div
-    class="ui-language">
+    class="ui-language-switcher">
+
 
     <button
         id="ui-lang-es"
-        onclick="setInterfaceLanguage('es')"
-        class="active">
+        class="ui-language-button active"
+        onclick="setInterfaceLanguage('es')">
 
         ES
 
     </button>
 
+
     <button
         id="ui-lang-en"
+        class="ui-language-button"
         onclick="setInterfaceLanguage('en')">
 
         EN
 
     </button>
 
+
 </div>
 
 
 <div
-    class="flex min-h-screen">
+    class="flex flex-1 overflow-hidden relative">
 
 
-    <!-- =====================================================
-         DESKTOP SIDEBAR
-         ===================================================== -->
+    <!-- SIDEBAR -->
 
     <aside
-        class="hidden md:flex w-64 shrink-0 glass flex-col justify-between p-5">
+        class="w-64 glass-sidebar hidden md:flex flex-col justify-between p-6 select-none shrink-0 z-20">
 
 
-        <div>
+        <div
+            class="space-y-8">
 
 
             <div
-                class="flex items-center gap-3 mb-9 cursor-pointer"
+                class="flex items-center space-x-3 cursor-pointer group"
                 onclick="switchTab('home')">
 
 
                 <div
-                    class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-950 font-black text-xl">
+                    class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/15 group-hover:scale-105">
 
-                    N
+
+                    <svg
+                        class="w-5 h-5 text-zinc-950"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.2"
+                        stroke-linecap="round">
+
+                        <path d="M2 12h2"/>
+                        <path d="M6 8v8"/>
+                        <path d="M10 4v16"/>
+                        <path d="M14 7v10"/>
+                        <path d="M18 10v4"/>
+                        <path d="M22 12h-2"/>
+
+                    </svg>
+
 
                 </div>
 
 
-                <div>
+                <h1
+                    class="font-extrabold text-sm tracking-widest text-amber-500">
 
-                    <div
-                        class="font-black text-sm tracking-[.20em] text-amber-400">
+                    NASHEED
 
-                        NASHEED
+                </h1>
 
-                    </div>
-
-                </div>
 
             </div>
 
 
             <nav
-                class="space-y-2">
+                class="space-y-1.5">
 
 
                 <button
-                    id="nav-home"
                     onclick="switchTab('home')"
-                    class="nav-item active">
+                    id="nav-home"
+                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
 
                     <span
-                        class="nav-icon">
+                        class="text-xl">
 
                         ⌂
 
                     </span>
+
 
                     <span
                         data-i18n="home">
@@ -1295,16 +1484,17 @@ body {
 
 
                 <button
-                    id="nav-library"
                     onclick="switchTab('library')"
-                    class="nav-item">
+                    id="nav-library"
+                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
                     <span
-                        class="nav-icon">
+                        class="text-xl">
 
                         ▣
 
                     </span>
+
 
                     <span
                         data-i18n="library">
@@ -1317,16 +1507,17 @@ body {
 
 
                 <button
-                    id="nav-favorites"
                     onclick="switchTab('favorites')"
-                    class="nav-item">
+                    id="nav-favorites"
+                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
                     <span
-                        class="nav-icon">
+                        class="text-xl">
 
                         ★
 
                     </span>
+
 
                     <span
                         data-i18n="favorites">
@@ -1339,16 +1530,17 @@ body {
 
 
                 <button
-                    id="nav-settings"
                     onclick="switchTab('settings')"
-                    class="nav-item">
+                    id="nav-settings"
+                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
                     <span
-                        class="nav-icon">
+                        class="text-xl">
 
                         ⚙
 
                     </span>
+
 
                     <span
                         data-i18n="settings">
@@ -1367,73 +1559,41 @@ body {
 
 
         <div
-            class="text-[10px] text-zinc-600">
-
-            NASHEED
-
-        </div>
-
-
-    </aside>
-
-
-    <!-- =====================================================
-         MAIN
-         ===================================================== -->
-
-    <main
-        class="flex-1 overflow-y-auto pb-40 px-5 md:px-10 pt-8 max-w-7xl mx-auto w-full">
-
-
-        <!-- HOME -->
-
-        <section
-            id="section-home"
-            class="space-y-8">
+            class="pt-4 border-t border-white/5">
 
 
             <div
-                class="glass rounded-3xl p-6 md:p-10">
+                class="flex items-center space-x-3 px-2 py-2 text-zinc-400 text-xs">
 
 
                 <div
-                    class="max-w-2xl">
+                    class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
+
+                    ◉
+
+                </div>
 
 
-                    <span
-                        class="inline-flex bg-amber-500/10 border border-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest">
-
-                        NASHEED AUDIO
-
-                    </span>
-
-
-                    <h1
-                        class="mt-4 text-3xl md:text-5xl font-extrabold tracking-tight"
-                        data-i18n="heroTitle">
-
-                        Explora tu espiritualidad a través del arte acústico
-
-                    </h1>
+                <div
+                    class="truncate">
 
 
                     <p
-                        class="mt-4 text-sm text-zinc-400 leading-relaxed"
-                        data-i18n="heroDescription">
+                        class="font-bold text-zinc-200 leading-none"
+                        data-i18n="securePlatform">
 
-                        Disfruta de nasheeds seleccionados con la máxima calidad de audio inmersiva.
+                        Plataforma Segura
 
                     </p>
 
 
-                    <button
-                        onclick="switchTab('library')"
-                        class="mt-6 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-6 py-3 rounded-xl text-xs"
-                        data-i18n="viewLibrary">
+                    <span
+                        id="perf-status-label"
+                        class="text-[10px] text-zinc-500">
 
-                        Ver biblioteca completa
+                        Animaciones activas
 
-                    </button>
+                    </span>
 
 
                 </div>
@@ -1442,20 +1602,120 @@ body {
             </div>
 
 
-            <div>
+        </div>
+
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main
+        class="flex-1 overflow-y-auto pb-36 pt-8 px-6 md:px-12 max-w-7xl mx-auto relative mobile-main">
+
+
+        <div
+            class="mobile-logo items-center space-x-2.5 select-none">
+
+
+            <div
+                class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center">
+
+                <span
+                    class="text-zinc-950 font-bold">
+
+                    ≋
+
+                </span>
+
+            </div>
+
+
+            <span
+                class="font-extrabold text-xs tracking-widest text-amber-500">
+
+                NASHEED
+
+            </span>
+
+
+        </div>
+
+
+        <!-- HOME -->
+
+        <div
+            id="section-home"
+            class="section-tab active space-y-8">
+
+
+            <div
+                class="glass-panel rounded-3xl p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl border border-amber-500/15">
 
 
                 <div
-                    class="flex justify-between items-center mb-4">
+                    class="space-y-3 max-w-xl z-10">
+
+
+                    <div
+                        class="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-widest">
+
+                        <span>
+                            NASHEED AUDIO PRO
+                        </span>
+
+                    </div>
 
 
                     <h2
-                        class="text-xs uppercase tracking-widest font-extrabold text-zinc-400"
+                        class="text-2xl md:text-4xl font-extrabold text-zinc-100 tracking-tight"
+                        data-i18n="heroTitle">
+
+                        Explora tu espiritualidad a través del arte acústico
+
+                    </h2>
+
+
+                    <p
+                        class="text-xs md:text-sm text-zinc-400 font-medium leading-relaxed"
+                        data-i18n="heroDescription">
+
+                        Disfruta de nasheeds seleccionados con la máxima calidad de audio inmersiva.
+
+                    </p>
+
+
+                </div>
+
+
+                <button
+                    onclick="switchTab('library')"
+                    class="mt-6 md:mt-0 z-10 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-6 py-3.5 rounded-2xl text-xs shadow-lg cursor-pointer"
+                    data-i18n="viewLibrary">
+
+                    Ver biblioteca completa
+
+                </button>
+
+
+            </div>
+
+
+            <div
+                class="space-y-4">
+
+
+                <div
+                    class="flex justify-between items-center">
+
+
+                    <h3
+                        class="text-xs font-extrabold tracking-widest uppercase text-zinc-400"
                         data-i18n="recommended">
 
                         Recomendado para ti
 
-                    </h2>
+                    </h3>
 
 
                     <span
@@ -1472,7 +1732,7 @@ body {
 
                 <div
                     id="home-grid"
-                    class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 
                 </div>
 
@@ -1480,14 +1740,14 @@ body {
             </div>
 
 
-        </section>
+        </div>
 
 
         <!-- LIBRARY -->
 
-        <section
+        <div
             id="section-library"
-            class="hidden space-y-5">
+            class="section-tab space-y-6">
 
 
             <div
@@ -1498,7 +1758,7 @@ body {
 
 
                     <h2
-                        class="text-xl font-extrabold"
+                        class="text-xl font-extrabold tracking-wide text-zinc-100"
                         data-i18n="libraryTitle">
 
                         Biblioteca de Nasheeds
@@ -1520,7 +1780,7 @@ body {
 
                 <span
                     id="lib-count"
-                    class="text-xs text-amber-400">
+                    class="text-xs glass-panel px-3.5 py-1.5 rounded-xl text-amber-400 font-bold border border-amber-500/20">
 
                     0 pistas
 
@@ -1532,90 +1792,74 @@ body {
 
             <div
                 id="library-grid"
-                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 
             </div>
 
 
-        </section>
+        </div>
 
 
         <!-- FAVORITES -->
 
-        <section
+        <div
             id="section-favorites"
-            class="hidden space-y-5">
+            class="section-tab space-y-6">
 
 
-            <h2
-                class="text-xl font-extrabold"
-                data-i18n="favoritesTitle">
+            <div>
 
-                Tus Favoritos
+                <h2
+                    class="text-xl font-extrabold tracking-wide text-zinc-100"
+                    data-i18n="favoritesTitle">
 
-            </h2>
+                    Tus Favoritos
 
-
-            <div
-                id="favorites-grid"
-                class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                </h2>
 
             </div>
 
 
-        </section>
+            <div
+                id="favorites-grid"
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+
+            </div>
+
+
+        </div>
 
 
         <!-- SETTINGS -->
 
-        <section
+        <div
             id="section-settings"
-            class="hidden max-w-xl mx-auto">
+            class="section-tab max-w-xl mx-auto space-y-6 glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl">
 
 
             <div
-                class="glass rounded-3xl p-7">
+                class="flex items-center space-x-3 pb-4 border-b border-white/5">
 
 
-                <h2
-                    class="text-lg font-bold"
-                    data-i18n="performanceTitle">
-
-                    Ajustes de Rendimiento
-
-                </h2>
+                <div>
 
 
-                <p
-                    class="text-xs text-zinc-500 mt-1"
-                    data-i18n="performanceDescription">
+                    <h3
+                        class="text-xs font-bold text-zinc-100 uppercase tracking-wider"
+                        data-i18n="performanceTitle">
 
-                    Optimiza la interfaz para dispositivos limitados
+                        Ajustes de Rendimiento
 
-                </p>
-
-
-                <div
-                    class="mt-6 flex items-center justify-between gap-4 bg-white/[.02] border border-white/5 rounded-2xl p-4">
+                    </h3>
 
 
-                    <span
-                        class="text-xs font-bold"
-                        data-i18n="animationsTitle">
+                    <p
+                        class="text-[11px] text-zinc-500"
+                        data-i18n="performanceDescription">
 
-                        Efectos y Animaciones Fluidas
+                        Optimiza la interfaz para dispositivos limitados
 
-                    </span>
-
-
-                    <button
-                        id="anim-toggle"
-                        onclick="toggleAnimations()"
-                        class="px-4 py-2 rounded-xl bg-amber-500 text-zinc-950 text-xs font-bold">
-
-                        Activadas
-
-                    </button>
+                    </p>
 
 
                 </div>
@@ -1624,7 +1868,37 @@ body {
             </div>
 
 
-        </section>
+            <div
+                class="flex items-center justify-between p-4 glass-panel rounded-2xl border border-white/5">
+
+
+                <div>
+
+                    <h4
+                        class="text-xs font-bold text-zinc-200"
+                        data-i18n="animationsTitle">
+
+                        Efectos y Animaciones Fluidas
+
+                    </h4>
+
+                </div>
+
+
+                <button
+                    onclick="toggleAnimations()"
+                    id="anim-toggle-btn"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-zinc-950 cursor-pointer">
+
+                    Activadas
+
+                </button>
+
+
+            </div>
+
+
+        </div>
 
 
     </main>
@@ -1634,12 +1908,12 @@ body {
 
 
 <!-- =========================================================
-     WARNING MODAL
+     WARNING POPUP
      ========================================================= -->
 
 <div
-    id="warning-backdrop"
-    class="warning-backdrop">
+    id="warning-modal"
+    class="warning-modal-backdrop">
 
 
     <div
@@ -1651,7 +1925,7 @@ body {
 
 
             <div
-                class="warning-badge">
+                class="warning-icon">
 
                 ⚠
 
@@ -1659,36 +1933,25 @@ body {
 
 
             <div
-                class="flex-1">
+                class="min-w-0 flex-1">
 
 
                 <h2
                     id="warning-title"
-                    class="warning-title">
-
-                    Aviso de contenido
+                    class="text-sm md:text-base font-extrabold text-zinc-100">
 
                 </h2>
 
 
+                <p
+                    id="warning-text"
+                    class="mt-2 text-xs md:text-sm text-zinc-400 leading-relaxed">
+
+                </p>
+
+
             </div>
 
-
-            <button
-                onclick="cancelWarning()"
-                class="text-zinc-500 hover:text-zinc-200 text-lg">
-
-                ×
-
-            </button>
-
-
-        </div>
-
-
-        <div
-            id="warning-text"
-            class="warning-text">
 
         </div>
 
@@ -1699,20 +1962,14 @@ body {
 
             <button
                 id="warning-cancel"
-                onclick="cancelWarning()"
                 class="warning-cancel">
-
-                Cancelar
 
             </button>
 
 
             <button
                 id="warning-continue"
-                onclick="continueWarning()"
                 class="warning-continue">
-
-                Continuar
 
             </button>
 
@@ -1731,22 +1988,23 @@ body {
      ========================================================= -->
 
 <div
-    id="subtitle-overlay">
+    id="subtitle-overlay"
+    aria-live="polite">
 
 
     <div
-        class="subtitle-box">
+        class="subtitle-glass">
 
 
         <div
             id="subtitle-background"
-            class="absolute inset-0 opacity-40 bg-cover bg-center blur-2xl scale-110">
+            class="subtitle-background">
 
         </div>
 
 
         <div
-            class="relative z-10">
+            class="subtitle-content">
 
 
             <div
@@ -1758,7 +2016,8 @@ body {
 
             <div
                 id="subtitle-secondary"
-                class="subtitle-secondary">
+                class="subtitle-secondary"
+                style="display:none;">
 
             </div>
 
@@ -1766,11 +2025,13 @@ body {
             <div
                 class="subtitle-progress">
 
+
                 <div
                     id="subtitle-progress-bar"
                     class="subtitle-progress-bar">
 
                 </div>
+
 
             </div>
 
@@ -1789,126 +2050,140 @@ body {
      ========================================================= -->
 
 <div
-    class="fixed bottom-0 left-0 right-0 glass-player z-30 px-4 md:px-6 py-3">
+    class="fixed bottom-0 left-0 right-0 glass-player mobile-player px-6 py-4 z-30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
 
 
     <div
-        class="max-w-7xl mx-auto">
+        class="flex items-center space-x-3.5 w-full md:w-1/4 mobile-player-info">
 
 
         <div
-            class="flex items-center gap-3">
+            id="player-cover"
+            class="w-12 h-12 glass-panel rounded-xl flex items-center justify-center text-amber-400 shrink-0 border border-white/10 overflow-hidden">
 
-
-            <div
-                id="player-cover"
-                class="player-cover bg-white/5 flex items-center justify-center text-amber-400">
-
+            <span>
                 ♫
+            </span>
 
-            </div>
+        </div>
 
+
+        <div
+            class="overflow-hidden">
+
+
+            <h4
+                id="player-title"
+                class="text-xs font-bold text-zinc-100 truncate">
+
+
+                <span
+                    id="player-title-text"
+                    data-i18n="noTrack">
+
+                    Ningún nasheed seleccionado
+
+                </span>
+
+
+            </h4>
+
+
+            <p
+                class="text-[10px] text-zinc-500 truncate">
+
+                NASHEED Audio Engine
+
+            </p>
+
+
+        </div>
+
+
+    </div>
+
+
+    <div
+        class="flex flex-col items-center w-full md:w-2/4 space-y-1.5 mobile-player-controls">
+
+
+        <div
+            class="flex items-center space-x-4">
+
+
+            <button
+                onclick="prevTrack()"
+                class="text-zinc-400 hover:text-white cursor-pointer">
+
+                ◀
+
+            </button>
+
+
+            <button
+                id="main-play-btn"
+                class="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 flex items-center justify-center shadow-lg cursor-pointer">
+
+                ▶
+
+            </button>
+
+
+            <button
+                onclick="nextTrack()"
+                class="text-zinc-400 hover:text-white cursor-pointer">
+
+                ▶
+
+            </button>
+
+
+            <!-- SUBTÍTULOS -->
 
             <div
-                class="min-w-0 flex-1">
+                class="subtitle-menu-wrapper">
 
 
-                <div
-                    id="player-title"
-                    class="text-xs font-bold truncate">
+                <button
+                    id="subtitle-button"
+                    class="subtitle-button"
+                    onclick="toggleSubtitleMenu()"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+
+
+                    <span>
+                        CC
+                    </span>
+
 
                     <span
-                        id="player-title-text"
-                        data-i18n="noTrack">
+                        data-i18n="subtitles">
 
-                        Ningún nasheed seleccionado
+                        Subtítulos
 
                     </span>
 
-                </div>
-
-
-                <div
-                    class="text-[10px] text-zinc-500">
-
-                    NASHEED AUDIO
-
-                </div>
-
-
-            </div>
-
-
-            <div
-                class="flex items-center gap-2">
-
-
-                <button
-                    onclick="prevTrack()"
-                    class="w-8 h-8 text-zinc-400">
-
-                    ◀
-
-                </button>
-
-
-                <button
-                    id="play-button"
-                    class="w-10 h-10 rounded-full bg-amber-500 text-zinc-950 font-bold">
-
-                    ▶
-
-                </button>
-
-
-                <button
-                    onclick="nextTrack()"
-                    class="w-8 h-8 text-zinc-400">
-
-                    ▶
 
                 </button>
 
 
                 <div
-                    class="subtitle-wrapper">
-
-
-                    <button
-                        id="subtitle-button"
-                        onclick="toggleSubtitleMenu()"
-                        class="subtitle-button">
-
-                        CC
-                        <span
-                            data-i18n="subtitles">
-
-                            Subtítulos
-
-                        </span>
-
-                    </button>
+                    id="subtitle-menu"
+                    class="subtitle-menu">
 
 
                     <div
-                        id="subtitle-menu"
-                        class="subtitle-menu">
+                        class="subtitle-menu-title"
+                        data-i18n="subtitleLanguages">
+
+                        Idiomas
+
+                    </div>
 
 
-                        <div
-                            class="text-[9px] text-zinc-600 px-2 py-2 uppercase tracking-widest font-bold"
-                            data-i18n="subtitleLanguages">
-
-                            Idiomas
-
-                        </div>
-
-
-                        <div
-                            id="subtitle-options">
-
-                        </div>
-
+                    <div
+                        id="subtitle-options">
 
                     </div>
 
@@ -1923,12 +2198,11 @@ body {
 
 
         <div
-            class="flex items-center gap-3 mt-2">
+            class="w-full flex items-center space-x-3 text-[10px] text-zinc-500 mobile-progress">
 
 
             <span
-                id="current-time"
-                class="text-[9px] text-zinc-600">
+                id="current-time">
 
                 0:00
 
@@ -1937,12 +2211,12 @@ body {
 
             <div
                 id="progress-container"
-                class="flex-1 h-1 rounded-full bg-white/5 overflow-hidden cursor-pointer">
+                class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden cursor-pointer border border-white/5">
 
 
                 <div
                     id="progress-bar"
-                    class="h-full bg-amber-500 w-0">
+                    class="bg-amber-500 w-0 h-full">
 
                 </div>
 
@@ -1951,8 +2225,7 @@ body {
 
 
             <span
-                id="duration"
-                class="text-[9px] text-zinc-600">
+                id="duration">
 
                 0:00
 
@@ -1965,28 +2238,44 @@ body {
     </div>
 
 
+    <div
+        class="hidden md:flex items-center justify-end space-x-3 w-1/4 mobile-player-quality">
+
+
+        <span
+            class="text-[10px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-semibold border border-amber-500/20"
+            data-i18n="lossless">
+
+            Lossless Audio
+
+        </span>
+
+
+    </div>
+
+
 </div>
 
 
-<!-- =========================================================
-     MOBILE NAV
-     ========================================================= -->
+<!-- MOBILE NAV -->
 
 <nav
+    id="mobile-bottom-nav"
     class="mobile-bottom-nav">
 
 
     <button
-        id="mobile-home"
         onclick="switchTab('home')"
+        id="mobile-nav-home"
         class="active">
 
-        <span
-            class="mobile-nav-icon">
+
+        <span>
 
             ⌂
 
         </span>
+
 
         <span
             data-i18n="home">
@@ -1995,19 +2284,21 @@ body {
 
         </span>
 
+
     </button>
 
 
     <button
-        id="mobile-library"
-        onclick="switchTab('library')">
+        onclick="switchTab('library')"
+        id="mobile-nav-library">
 
-        <span
-            class="mobile-nav-icon">
+
+        <span>
 
             ▣
 
         </span>
+
 
         <span
             data-i18n="library">
@@ -2016,19 +2307,21 @@ body {
 
         </span>
 
+
     </button>
 
 
     <button
-        id="mobile-favorites"
-        onclick="switchTab('favorites')">
+        onclick="switchTab('favorites')"
+        id="mobile-nav-favorites">
 
-        <span
-            class="mobile-nav-icon">
+
+        <span>
 
             ★
 
         </span>
+
 
         <span
             data-i18n="favorites">
@@ -2037,19 +2330,21 @@ body {
 
         </span>
 
+
     </button>
 
 
     <button
-        id="mobile-settings"
-        onclick="switchTab('settings')">
+        onclick="switchTab('settings')"
+        id="mobile-nav-settings">
 
-        <span
-            class="mobile-nav-icon">
+
+        <span>
 
             ⚙
 
         </span>
+
 
         <span
             data-i18n="settingsMobile">
@@ -2058,6 +2353,7 @@ body {
 
         </span>
 
+
     </button>
 
 
@@ -2065,7 +2361,7 @@ body {
 
 
 <audio
-    id="audio"
+    id="audio-player"
     preload="metadata">
 </audio>
 
@@ -2081,12 +2377,12 @@ body {
 
 const audio =
     document.getElementById(
-        "audio"
+        "audio-player"
     );
 
-const playButton =
+const mainPlayBtn =
     document.getElementById(
-        "play-button"
+        "main-play-btn"
     );
 
 const progressBar =
@@ -2099,12 +2395,12 @@ const progressContainer =
         "progress-container"
     );
 
-const currentTime =
+const currentTimeEl =
     document.getElementById(
         "current-time"
     );
 
-const duration =
+const durationEl =
     document.getElementById(
         "duration"
     );
@@ -2124,6 +2420,11 @@ const subtitleOverlay =
         "subtitle-overlay"
     );
 
+const subtitleBackground =
+    document.getElementById(
+        "subtitle-background"
+    );
+
 const subtitleText =
     document.getElementById(
         "subtitle-text"
@@ -2139,9 +2440,9 @@ const subtitleProgressBar =
         "subtitle-progress-bar"
     );
 
-const subtitleBackground =
+const subtitleButton =
     document.getElementById(
-        "subtitle-background"
+        "subtitle-button"
     );
 
 const subtitleMenu =
@@ -2154,14 +2455,9 @@ const subtitleOptions =
         "subtitle-options"
     );
 
-const subtitleButton =
+const warningModal =
     document.getElementById(
-        "subtitle-button"
-    );
-
-const warningBackdrop =
-    document.getElementById(
-        "warning-backdrop"
+        "warning-modal"
     );
 
 const warningTitle =
@@ -2174,48 +2470,56 @@ const warningText =
         "warning-text"
     );
 
-const warningCancelButton =
+const warningCancel =
     document.getElementById(
         "warning-cancel"
     );
 
-const warningContinueButton =
+const warningContinue =
     document.getElementById(
         "warning-continue"
     );
 
 
-/* =========================================================
-   STATE
-   ========================================================= */
-
-let tracks =
+let allNasheeds =
     [];
 
 let currentTrackIndex =
     -1;
 
-let arabicCues =
+let favorites =
     [];
 
-let secondaryCues =
+let currentSubtitles =
     [];
 
-let arabicIndex =
+let currentSubtitleIndex =
     -1;
 
-let secondaryIndex =
+let currentSecondarySubtitles =
+    [];
+
+let currentSecondarySubtitleIndex =
     -1;
+
+let currentSubtitleLanguages =
+    {};
 
 let selectedSubtitleLanguage =
     localStorage.getItem(
         "nasheed_subtitle_language"
+    ) ||
+    localStorage.getItem(
+        "nushud_subtitle_language"
     ) ||
     "";
 
 let interfaceLanguage =
     localStorage.getItem(
         "nasheed_interface_language"
+    ) ||
+    localStorage.getItem(
+        "nushud_interface_language"
     ) ||
     "es";
 
@@ -2228,9 +2532,10 @@ let animationsActive =
     ) !==
     "false";
 
-let favorites =
-    [];
 
+/* =========================================================
+   FAVORITES
+   ========================================================= */
 
 try {
 
@@ -2239,8 +2544,23 @@ try {
             localStorage.getItem(
                 "nasheed_favorites"
             ) ||
+            localStorage.getItem(
+                "nushud_favorites"
+            ) ||
             "[]"
         );
+
+
+    if (
+        !Array.isArray(
+            favorites
+        )
+    ) {
+
+        favorites =
+            [];
+
+    }
 
 } catch {
 
@@ -2254,7 +2574,7 @@ try {
    TRANSLATIONS
    ========================================================= */
 
-const I18N = {
+const translations = {
 
     es: {
 
@@ -2272,6 +2592,9 @@ const I18N = {
 
         settingsMobile:
             "Ajustes",
+
+        securePlatform:
+            "Plataforma Segura",
 
         heroTitle:
             "Explora tu espiritualidad a través del arte acústico",
@@ -2307,7 +2630,7 @@ const I18N = {
             "Activadas",
 
         animationsOff:
-            "Desactivadas",
+            "Desactivadas (Optimizado)",
 
         subtitles:
             "Subtítulos",
@@ -2318,7 +2641,7 @@ const I18N = {
         noTrack:
             "Ningún nasheed seleccionado",
 
-        noPlaying:
+        noNasheedPlaying:
             "No hay ningún nasheed reproduciéndose",
 
         noSubtitles:
@@ -2327,11 +2650,20 @@ const I18N = {
         noOtherLanguages:
             "No hay otros idiomas disponibles",
 
-        noTracks:
-            "No hay nasheeds disponibles.",
+        lossless:
+            "Lossless Audio",
+
+        noTracksServer:
+            "No hay nasheeds en el servidor.",
 
         noFavorites:
-            "No tienes nasheeds favoritos.",
+            "No tienes nasheeds favoritos guardados.",
+
+        tracksOne:
+            "pista",
+
+        tracksMany:
+            "pistas",
 
         warningTitle:
             "Aviso de contenido",
@@ -2339,16 +2671,14 @@ const I18N = {
         warningText:
             "Este nasheed trata sobre el concepto de jihad (yihad) y puede contener referencias a conflicto o lucha religiosa.",
 
-        cancel:
+        warningCancel:
             "Cancelar",
 
-        continue:
-            "Continuar",
-
-        warningIcon:
-            "Advertencia"
+        warningContinue:
+            "Continuar"
 
     },
+
 
     en: {
 
@@ -2366,6 +2696,9 @@ const I18N = {
 
         settingsMobile:
             "Settings",
+
+        securePlatform:
+            "Secure Platform",
 
         heroTitle:
             "Explore your spirituality through acoustic art",
@@ -2401,7 +2734,7 @@ const I18N = {
             "Enabled",
 
         animationsOff:
-            "Disabled",
+            "Disabled (Optimized)",
 
         subtitles:
             "Subtitles",
@@ -2412,7 +2745,7 @@ const I18N = {
         noTrack:
             "No nasheed selected",
 
-        noPlaying:
+        noNasheedPlaying:
             "No nasheed is currently playing",
 
         noSubtitles:
@@ -2421,11 +2754,20 @@ const I18N = {
         noOtherLanguages:
             "No other languages available",
 
-        noTracks:
-            "There are no nasheeds available.",
+        lossless:
+            "Lossless Audio",
+
+        noTracksServer:
+            "There are no nasheeds on the server.",
 
         noFavorites:
-            "You have no favorite nasheeds.",
+            "You have no saved favorite nasheeds.",
+
+        tracksOne:
+            "track",
+
+        tracksMany:
+            "tracks",
 
         warningTitle:
             "Content warning",
@@ -2433,14 +2775,11 @@ const I18N = {
         warningText:
             "This nasheed discusses jihad and may contain references to conflict or religious struggle.",
 
-        cancel:
+        warningCancel:
             "Cancel",
 
-        continue:
-            "Continue",
-
-        warningIcon:
-            "Warning"
+        warningContinue:
+            "Continue"
 
     }
 
@@ -2452,12 +2791,14 @@ function t(
 ) {
 
     return (
-        I18N[
+        translations[
             interfaceLanguage
         ]?.[
             key
         ] ||
-        I18N.es[key] ||
+        translations.es[
+            key
+        ] ||
         key
     );
 
@@ -2492,11 +2833,10 @@ function setInterfaceLanguage(
         .forEach(
             element => {
 
-                const key =
-                    element.dataset.i18n;
-
                 element.textContent =
-                    t(key);
+                    t(
+                        element.dataset.i18n
+                    );
 
             }
         );
@@ -2530,14 +2870,18 @@ function setInterfaceLanguage(
     ) {
 
         playerTitleText.textContent =
-            t("noTrack");
+            t(
+                "noTrack"
+            );
 
     }
 
 
     renderSubtitleOptions();
 
-    updateCounts();
+    updateCountTexts();
+
+    applyAnimationsPreference();
 
 }
 
@@ -2560,39 +2904,79 @@ function toggleAnimations() {
     );
 
 
-    updateAnimationButton();
+    applyAnimationsPreference();
 
 }
 
 
-function updateAnimationButton() {
+function applyAnimationsPreference() {
 
-    const button =
+    const btn =
         document.getElementById(
-            "anim-toggle"
+            "anim-toggle-btn"
         );
 
 
+    const status =
+        document.getElementById(
+            "perf-status-label"
+        );
+
+
+    document.body.classList.toggle(
+        "animations-enabled",
+        animationsActive
+    );
+
+
+    document.body.classList.toggle(
+        "animations-disabled",
+        !animationsActive
+    );
+
+
     if (
-        !button
+        btn
     ) {
 
-        return;
+        btn.textContent =
+            animationsActive
+                ? t(
+                    "animationsOn"
+                )
+                : t(
+                    "animationsOff"
+                );
 
     }
 
 
-    button.textContent =
-        animationsActive
-            ? t("animationsOn")
-            : t("animationsOff");
+    if (
+        status
+    ) {
 
+        status.textContent =
+            animationsActive
+                ? (
+                    interfaceLanguage ===
+                    "en"
+                        ? "Animations active"
+                        : "Animaciones activas"
+                )
+                : (
+                    interfaceLanguage ===
+                    "en"
+                        ? "Optimized mode"
+                        : "Modo optimizado"
+                );
+
+    }
 
 }
 
 
 /* =========================================================
-   TABS
+   NAVIGATION
    ========================================================= */
 
 function switchTab(
@@ -2624,26 +3008,6 @@ function switchTab(
             ) {
 
                 section.classList.toggle(
-                    "hidden",
-                    current !==
-                        tab
-                );
-
-            }
-
-
-            const desktopNav =
-                document.getElementById(
-                    "nav-" +
-                    current
-                );
-
-
-            if (
-                desktopNav
-            ) {
-
-                desktopNav.classList.toggle(
                     "active",
                     current ===
                         tab
@@ -2652,18 +3016,50 @@ function switchTab(
             }
 
 
-            const mobileNav =
+            const desktop =
                 document.getElementById(
-                    "mobile-" +
+                    "nav-" +
                     current
                 );
 
 
             if (
-                mobileNav
+                desktop
             ) {
 
-                mobileNav.classList.toggle(
+                desktop.classList.toggle(
+                    "bg-amber-500/10",
+                    current ===
+                        tab
+                );
+
+                desktop.classList.toggle(
+                    "text-amber-400",
+                    current ===
+                        tab
+                );
+
+                desktop.classList.toggle(
+                    "border-amber-500/20",
+                    current ===
+                        tab
+                );
+
+            }
+
+
+            const mobile =
+                document.getElementById(
+                    "mobile-nav-" +
+                    current
+                );
+
+
+            if (
+                mobile
+            ) {
+
+                mobile.classList.toggle(
                     "active",
                     current ===
                         tab
@@ -2688,10 +3084,10 @@ function switchTab(
 
 
 /* =========================================================
-   FETCH
+   API
    ========================================================= */
 
-async function fetchTracks() {
+async function fetchNasheeds() {
 
     try {
 
@@ -2700,7 +3096,9 @@ async function fetchTracks() {
                 "/api/nasheeds",
                 {
                     cache:
-                        "no-store"
+                        "no-store",
+                    credentials:
+                        "same-origin"
                 }
             );
 
@@ -2717,23 +3115,26 @@ async function fetchTracks() {
         }
 
 
-        tracks =
+        const data =
             await response.json();
 
 
-        if (
-            !Array.isArray(
-                tracks
+        allNasheeds =
+            Array.isArray(
+                data
             )
-        ) {
+                ? data
+                    .map(
+                        normalizeNasheed
+                    )
+                    .filter(
+                        Boolean
+                    )
+                : [];
 
-            tracks =
-                [];
 
-        }
+        renderGrids();
 
-
-        renderAll();
 
     } catch (
         error
@@ -2744,10 +3145,28 @@ async function fetchTracks() {
         );
 
 
-        tracks =
+        allNasheeds =
             [];
 
-        renderAll();
+
+        showMessage(
+            document.getElementById(
+                "home-grid"
+            ),
+            t(
+                "noTracksServer"
+            )
+        );
+
+
+        showMessage(
+            document.getElementById(
+                "library-grid"
+            ),
+            t(
+                "noTracksServer"
+            )
+        );
 
     }
 
@@ -2755,75 +3174,237 @@ async function fetchTracks() {
 
 
 /* =========================================================
-   RENDER
+   NORMALIZE
    ========================================================= */
 
-function renderAll() {
-
-    renderGrid(
-        document.getElementById(
-            "home-grid"
-        ),
-        tracks.slice(
-            0,
-            10
-        )
-    );
-
-
-    renderGrid(
-        document.getElementById(
-            "library-grid"
-        ),
-        tracks
-    );
-
-
-    renderFavorites();
-
-    updateCounts();
-
-}
-
-
-function renderGrid(
-    container,
-    list
+function normalizeNasheed(
+    item
 ) {
 
     if (
-        !container
+        !item
     ) {
 
-        return;
+        return null;
 
     }
 
 
-    container.innerHTML =
-        "";
+    const id =
+        Number(
+            item.id
+        );
 
 
     if (
-        !list.length
+        !Number.isSafeInteger(
+            id
+        )
     ) {
 
-        const message =
-            document.createElement(
-                "div"
+        return null;
+
+    }
+
+
+    const subtitles =
+        {};
+
+
+    if (
+        item.subtitles &&
+        typeof item.subtitles ===
+            "object"
+    ) {
+
+        Object.entries(
+            item.subtitles
+        ).forEach(
+            (
+                [
+                    language,
+                    value
+                ]
+            ) => {
+
+                if (
+                    typeof value ===
+                        "string" &&
+                    value.trim()
+                ) {
+
+                    const safe =
+                        safeMediaUrl(
+                            value
+                        );
+
+
+                    if (
+                        safe
+                    ) {
+
+                        subtitles[
+                            String(
+                                language
+                            ).toLowerCase()
+                        ] =
+                            safe;
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    return {
+
+        id,
+
+        title:
+            String(
+                item.title ||
+                "Nasheed"
+            ).trim(),
+
+        file:
+            safeMediaUrl(
+                item.file ||
+                item.audio_url ||
+                item.audio ||
+                ""
+            ),
+
+        cover:
+            safeMediaUrl(
+                item.cover ||
+                item.cover_url ||
+                ""
+            ),
+
+        subtitles,
+
+        warning:
+            Boolean(
+                item.warning
+            )
+
+    };
+
+}
+
+
+/* =========================================================
+   SAFE URL
+   ========================================================= */
+
+function safeMediaUrl(
+    value
+) {
+
+    if (
+        !value
+    ) {
+
+        return "";
+
+    }
+
+
+    try {
+
+        const url =
+            new URL(
+                value,
+                window.location.origin
             );
 
 
-        message.className =
-            "col-span-full no-track-message";
+        const allowed =
+            "https://cqvpjmnziorbqbtsmcvy.supabase.co";
 
 
-        message.textContent =
-            t("noTracks");
+        if (
+            url.protocol !==
+                "http:" &&
+            url.protocol !==
+                "https:"
+        ) {
+
+            return "";
+
+        }
 
 
-        container.appendChild(
-            message
+        if (
+            url.origin !==
+                window.location.origin &&
+            url.origin !==
+                allowed
+        ) {
+
+            return "";
+
+        }
+
+
+        return url.href;
+
+    } catch {
+
+        return "";
+
+    }
+
+}
+
+
+/* =========================================================
+   GRIDS
+   ========================================================= */
+
+function renderGrids() {
+
+    const home =
+        document.getElementById(
+            "home-grid"
+        );
+
+
+    const library =
+        document.getElementById(
+            "library-grid"
+        );
+
+
+    home.replaceChildren();
+
+    library.replaceChildren();
+
+
+    updateCountTexts();
+
+
+    if (
+        !allNasheeds.length
+    ) {
+
+        showMessage(
+            home,
+            t(
+                "noTracksServer"
+            )
+        );
+
+
+        showMessage(
+            library,
+            t(
+                "noTracksServer"
+            )
         );
 
 
@@ -2832,25 +3413,24 @@ function renderGrid(
     }
 
 
-    list.forEach(
-        track => {
+    allNasheeds.forEach(
+        (
+            track,
+            index
+        ) => {
 
-            const originalIndex =
-                tracks.findIndex(
-                    item =>
-                        Number(
-                            item.id
-                        ) ===
-                        Number(
-                            track.id
-                        )
-                );
-
-
-            container.appendChild(
-                createCard(
+            home.appendChild(
+                createTrackCard(
                     track,
-                    originalIndex
+                    index
+                )
+            );
+
+
+            library.appendChild(
+                createTrackCard(
+                    track,
+                    index
                 )
             );
 
@@ -2860,7 +3440,38 @@ function renderGrid(
 }
 
 
-function createCard(
+function updateCountTexts() {
+
+    const count =
+        allNasheeds.length;
+
+
+    const label =
+        count ===
+            1
+            ? t("tracksOne")
+            : t("tracksMany");
+
+
+    document.getElementById(
+        "home-count"
+    ).textContent =
+        `${count} ${label}`;
+
+
+    document.getElementById(
+        "lib-count"
+    ).textContent =
+        `${count} ${label}`;
+
+}
+
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+function createTrackCard(
     track,
     index
 ) {
@@ -2872,17 +3483,17 @@ function createCard(
 
 
     card.className =
-        "card";
+        "glass-panel rounded-2xl p-3.5 card-hover flex flex-col justify-between group border border-white/5";
 
 
-    const coverWrap =
+    const coverContainer =
         document.createElement(
             "div"
         );
 
 
-    coverWrap.className =
-        "relative aspect-square mb-3 overflow-hidden rounded-[13px] bg-zinc-950 flex items-center justify-center";
+    coverContainer.className =
+        "relative aspect-square rounded-xl bg-zinc-950/80 overflow-hidden flex items-center justify-center mb-3 border border-white/5";
 
 
     if (
@@ -2898,83 +3509,141 @@ function createCard(
         image.src =
             track.cover;
 
+
         image.alt =
             track.title;
 
+
         image.className =
-            "cover";
+            "cover-image";
+
+
+        image.loading =
+            "lazy";
+
+
+        image.referrerPolicy =
+            "no-referrer";
+
 
         image.onerror =
             () => {
 
                 image.remove();
 
-                coverWrap.textContent =
-                    "♫";
-
-                coverWrap.classList.add(
-                    "text-amber-500"
+                addMusicIcon(
+                    coverContainer
                 );
 
             };
 
 
-        coverWrap.appendChild(
+        coverContainer.appendChild(
             image
         );
 
     } else {
 
-        coverWrap.textContent =
-            "♫";
-
-        coverWrap.classList.add(
-            "text-amber-500"
+        addMusicIcon(
+            coverContainer
         );
 
     }
 
 
-    const play =
+    const playButton =
         document.createElement(
             "button"
         );
 
 
-    play.className =
-        "absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition";
+    playButton.type =
+        "button";
 
 
-    play.textContent =
-        "▶";
+    playButton.className =
+        "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer";
 
 
-    play.addEventListener(
+    playButton.addEventListener(
         "click",
         () =>
-            requestPlay(
+            requestPlayTrack(
                 index
             )
     );
 
 
-    coverWrap.appendChild(
-        play
+    const circle =
+        document.createElement(
+            "span"
+        );
+
+
+    circle.className =
+        "w-10 h-10 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold";
+
+
+    circle.textContent =
+        "▶";
+
+
+    playButton.appendChild(
+        circle
     );
 
 
-    const title =
+    coverContainer.appendChild(
+        playButton
+    );
+
+
+    const info =
         document.createElement(
             "div"
         );
 
 
+    info.className =
+        "space-y-1 mb-3";
+
+
+    const title =
+        document.createElement(
+            "h4"
+        );
+
+
     title.className =
-        "text-xs font-bold truncate";
+        "text-xs font-bold text-zinc-100 truncate";
 
 
     title.textContent =
         track.title;
+
+
+    const artist =
+        document.createElement(
+            "p"
+        );
+
+
+    artist.className =
+        "text-[10px] text-zinc-500";
+
+
+    artist.textContent =
+        "NASHEED Audio";
+
+
+    info.appendChild(
+        title
+    );
+
+
+    info.appendChild(
+        artist
+    );
 
 
     const footer =
@@ -2984,7 +3653,7 @@ function createCard(
 
 
     footer.className =
-        "flex items-center justify-between mt-3 pt-3 border-t border-white/5";
+        "flex items-center justify-between pt-2.5 border-t border-white/5";
 
 
     const favorite =
@@ -2993,36 +3662,23 @@ function createCard(
         );
 
 
-    favorite.textContent =
-        favorites.includes(
-            Number(
-                track.id
-            )
-        )
-            ? "★"
-            : "☆";
+    favorite.type =
+        "button";
 
 
-    favorite.className =
-        favorites.includes(
-            Number(
-                track.id
-            )
-        )
-            ? "text-amber-400"
-            : "text-zinc-500";
+    updateFavoriteButton(
+        favorite,
+        track.id
+    );
 
 
-    favorite.onclick =
-        () => {
-
+    favorite.addEventListener(
+        "click",
+        () =>
             toggleFavorite(
-                Number(
-                    track.id
-                )
-            );
-
-        };
+                track.id
+            )
+    );
 
 
     footer.appendChild(
@@ -3031,12 +3687,14 @@ function createCard(
 
 
     card.appendChild(
-        coverWrap
+        coverContainer
     );
 
+
     card.appendChild(
-        title
+        info
     );
+
 
     card.appendChild(
         footer
@@ -3048,30 +3706,69 @@ function createCard(
 }
 
 
+function addMusicIcon(
+    element
+) {
+
+    const icon =
+        document.createElement(
+            "div"
+        );
+
+
+    icon.className =
+        "text-amber-500/40 text-4xl";
+
+
+    icon.textContent =
+        "♫";
+
+
+    element.appendChild(
+        icon
+    );
+
+}
+
+
 /* =========================================================
-   COUNTS
+   MESSAGE
    ========================================================= */
 
-function updateCounts() {
+function showMessage(
+    container,
+    message
+) {
 
-    document.getElementById(
-        "home-count"
-    ).textContent =
-        `${tracks.length} ${
-            tracks.length === 1
-                ? "pista"
-                : "pistas"
-        }`;
+    if (
+        !container
+    ) {
+
+        return;
+
+    }
 
 
-    document.getElementById(
-        "lib-count"
-    ).textContent =
-        `${tracks.length} ${
-            tracks.length === 1
-                ? "pista"
-                : "pistas"
-        }`;
+    container.replaceChildren();
+
+
+    const box =
+        document.createElement(
+            "div"
+        );
+
+
+    box.className =
+        "col-span-full py-10 text-center text-xs text-zinc-500 glass-panel rounded-2xl";
+
+
+    box.textContent =
+        message;
+
+
+    container.appendChild(
+        box
+    );
 
 }
 
@@ -3091,7 +3788,8 @@ function toggleFavorite(
 
 
     if (
-        index >= 0
+        index >=
+        0
     ) {
 
         favorites.splice(
@@ -3116,44 +3814,111 @@ function toggleFavorite(
     );
 
 
-    renderAll();
+    renderGrids();
+
+
+    renderFavorites();
+
+}
+
+
+function updateFavoriteButton(
+    button,
+    id
+) {
+
+    const active =
+        favorites.includes(
+            id
+        );
+
+
+    button.textContent =
+        active
+            ? "★"
+            : "☆";
+
+
+    button.className =
+        active
+            ? "text-xs cursor-pointer text-amber-400"
+            : "text-xs cursor-pointer text-zinc-500 hover:text-zinc-300";
 
 }
 
 
 function renderFavorites() {
 
-    const list =
-        tracks.filter(
+    const container =
+        document.getElementById(
+            "favorites-grid"
+        );
+
+
+    const favoriteTracks =
+        allNasheeds.filter(
             track =>
                 favorites.includes(
-                    Number(
-                        track.id
-                    )
+                    track.id
                 )
         );
 
 
-    renderGrid(
-        document.getElementById(
-            "favorites-grid"
-        ),
-        list
+    container.replaceChildren();
+
+
+    if (
+        !favoriteTracks.length
+    ) {
+
+        showMessage(
+            container,
+            t(
+                "noFavorites"
+            )
+        );
+
+        return;
+
+    }
+
+
+    favoriteTracks.forEach(
+        track => {
+
+            const index =
+                allNasheeds.findIndex(
+                    item =>
+                        item.id ===
+                        track.id
+                );
+
+
+            container.appendChild(
+                createTrackCard(
+                    track,
+                    index
+                )
+            );
+
+        }
     );
 
 }
 
 
 /* =========================================================
-   REQUEST PLAY
+   WARNING
    ========================================================= */
 
-function requestPlay(
+function requestPlayTrack(
     index
 ) {
 
     const track =
-        tracks[index];
+        allNasheeds[
+            index
+        ];
 
 
     if (
@@ -3166,30 +3931,27 @@ function requestPlay(
 
 
     if (
-        track.warning
+        !track.warning
     ) {
 
-        pendingTrackIndex =
-            index;
+        playTrack(
+            index
+        );
 
-
-        showWarning();
 
         return;
 
     }
 
 
-    startTrack(
-        index
-    );
+    pendingTrackIndex =
+        index;
+
+
+    showWarning();
 
 }
 
-
-/* =========================================================
-   WARNING
-   ========================================================= */
 
 function showWarning() {
 
@@ -3205,82 +3967,130 @@ function showWarning() {
         );
 
 
-    warningCancelButton.textContent =
+    warningCancel.textContent =
         t(
-            "cancel"
+            "warningCancel"
         );
 
 
-    warningContinueButton.textContent =
+    warningContinue.textContent =
         t(
-            "continue"
+            "warningContinue"
         );
 
 
-    warningBackdrop.classList.add(
+    warningModal.classList.add(
         "open"
     );
 
 }
 
 
-function cancelWarning() {
+function closeWarning() {
 
-    warningBackdrop.classList.remove(
+    warningModal.classList.remove(
         "open"
     );
-
-
-    pendingTrackIndex =
-        -1;
 
 }
 
 
-function continueWarning() {
+warningCancel.addEventListener(
+    "click",
+    () => {
 
-    const index =
-        pendingTrackIndex;
+        pendingTrackIndex =
+            -1;
 
-
-    warningBackdrop.classList.remove(
-        "open"
-    );
-
-
-    pendingTrackIndex =
-        -1;
-
-
-    if (
-        index >= 0
-    ) {
-
-        startTrack(
-            index
-        );
+        closeWarning();
 
     }
+);
 
-}
+
+warningContinue.addEventListener(
+    "click",
+    () => {
+
+        const index =
+            pendingTrackIndex;
+
+
+        pendingTrackIndex =
+            -1;
+
+
+        closeWarning();
+
+
+        if (
+            index >=
+            0
+        ) {
+
+            playTrack(
+                index
+            );
+
+        }
+
+    }
+);
+
+
+warningModal.addEventListener(
+    "click",
+    event => {
+
+        if (
+            event.target ===
+            warningModal
+        ) {
+
+            pendingTrackIndex =
+                -1;
+
+            closeWarning();
+
+        }
+
+    }
+);
 
 
 /* =========================================================
-   START TRACK
+   PLAY TRACK
    ========================================================= */
 
-async function startTrack(
+function playTrack(
     index
 ) {
 
+    if (
+        index < 0 ||
+        index >=
+            allNasheeds.length
+    ) {
+
+        return;
+
+    }
+
+
     const track =
-        tracks[index];
+        allNasheeds[
+            index
+        ];
 
 
     if (
         !track ||
         !track.file
     ) {
+
+        console.error(
+            "Audio inválido."
+        );
 
         return;
 
@@ -3295,8 +4105,7 @@ async function startTrack(
         track.title;
 
 
-    playerCover.innerHTML =
-        "";
+    playerCover.replaceChildren();
 
 
     if (
@@ -3312,18 +4121,23 @@ async function startTrack(
         image.src =
             track.cover;
 
-        image.className =
-            "cover";
 
         image.alt =
             track.title;
 
 
+        image.className =
+            "cover-image";
+
+
         image.onerror =
             () => {
 
-                playerCover.textContent =
-                    "♫";
+                image.remove();
+
+                addMusicIcon(
+                    playerCover
+                );
 
             };
 
@@ -3334,8 +4148,9 @@ async function startTrack(
 
     } else {
 
-        playerCover.textContent =
-            "♫";
+        addMusicIcon(
+            playerCover
+        );
 
     }
 
@@ -3347,65 +4162,73 @@ async function startTrack(
     audio.load();
 
 
-    setupSubtitleLanguages(
+    currentSubtitleLanguages =
+        {
+            ...(track.subtitles || {})
+        };
+
+
+    setupTrackSubtitleLanguage(
         track
     );
 
 
-    await loadSubtitles(
+    renderSubtitleOptions();
+
+
+    loadSubtitles(
         track
     );
 
 
-    try {
-
-        await audio.play();
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            error
+    audio
+        .play()
+        .catch(
+            error =>
+                console.error(
+                    "Error al reproducir:",
+                    error
+                )
         );
-
-    }
 
 }
 
 
-/* =========================================================
-   SUBTITLE LANGUAGE
-   ========================================================= */
-
-function setupSubtitleLanguages(
+function setupTrackSubtitleLanguage(
     track
 ) {
 
-    currentSubtitleLanguages =
-        track?.subtitles || {};
-
-
-    const available =
+    const languages =
         Object.keys(
-            currentSubtitleLanguages
+            track.subtitles || {}
         )
             .filter(
-                language =>
-                    language !==
+                code =>
+                    code !==
                     "ar"
             );
 
 
     if (
-        available.length &&
-        !available.includes(
+        !languages.length
+    ) {
+
+        selectedSubtitleLanguage =
+            "";
+
+        return;
+
+    }
+
+
+    if (
+        !languages.includes(
             selectedSubtitleLanguage
         )
     ) {
 
         selectedSubtitleLanguage =
-            available[0];
+            languages[0];
 
 
         localStorage.setItem(
@@ -3415,24 +4238,57 @@ function setupSubtitleLanguages(
 
     }
 
-
-    if (
-        !available.length
-    ) {
-
-        selectedSubtitleLanguage =
-            "";
-
-    }
+}
 
 
-    renderSubtitleOptions();
+/* =========================================================
+   SUBTITLE MENU
+   ========================================================= */
+
+function toggleSubtitleMenu() {
+
+    subtitleMenu.classList.toggle(
+        "open"
+    );
+
+
+    subtitleButton.classList.toggle(
+        "active"
+    );
 
 }
 
 
-let currentSubtitleLanguages =
-    {};
+function closeSubtitleMenu() {
+
+    subtitleMenu.classList.remove(
+        "open"
+    );
+
+
+    subtitleButton.classList.remove(
+        "active"
+    );
+
+}
+
+
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            !event.target.closest(
+                ".subtitle-menu-wrapper"
+            )
+        ) {
+
+            closeSubtitleMenu();
+
+        }
+
+    }
+);
 
 
 function renderSubtitleOptions() {
@@ -3442,28 +4298,28 @@ function renderSubtitleOptions() {
 
 
     if (
-        currentTrackIndex <
-            0
+        currentTrackIndex ===
+        -1
     ) {
 
-        const none =
+        const empty =
             document.createElement(
                 "div"
             );
 
 
-        none.className =
+        empty.className =
             "subtitle-none";
 
 
-        none.textContent =
+        empty.textContent =
             t(
-                "noPlaying"
+                "noNasheedPlaying"
             );
 
 
         subtitleOptions.appendChild(
-            none
+            empty
         );
 
 
@@ -3477,8 +4333,8 @@ function renderSubtitleOptions() {
             currentSubtitleLanguages
         )
             .filter(
-                code =>
-                    code !==
+                language =>
+                    language !==
                     "ar"
             );
 
@@ -3487,20 +4343,18 @@ function renderSubtitleOptions() {
         !languages.length
     ) {
 
-        const none =
+        const empty =
             document.createElement(
                 "div"
             );
 
 
-        none.className =
+        empty.className =
             "subtitle-none";
 
 
-        none.textContent =
-            Object.keys(
-                currentSubtitleLanguages
-            ).length
+        empty.textContent =
+            currentSubtitleLanguages.ar
                 ? t(
                     "noOtherLanguages"
                 )
@@ -3510,7 +4364,7 @@ function renderSubtitleOptions() {
 
 
         subtitleOptions.appendChild(
-            none
+            empty
         );
 
 
@@ -3526,6 +4380,10 @@ function renderSubtitleOptions() {
                 document.createElement(
                     "button"
                 );
+
+
+            button.type =
+                "button";
 
 
             button.className =
@@ -3544,13 +4402,27 @@ function renderSubtitleOptions() {
             }
 
 
-            button.textContent =
-                getLanguageName(
-                    language
-                );
+            button.innerHTML =
+                `
+                    <span>
+                        ${escapeHtml(
+                            getLanguageName(
+                                language
+                            )
+                        )}
+                    </span>
+
+                    ${
+                        language ===
+                        selectedSubtitleLanguage
+                            ? "<span>✓</span>"
+                            : ""
+                    }
+                `;
 
 
-            button.onclick =
+            button.addEventListener(
+                "click",
                 async () => {
 
                     selectedSubtitleLanguage =
@@ -3563,16 +4435,19 @@ function renderSubtitleOptions() {
                     );
 
 
-                    await loadSecondarySubtitle();
+                    await loadSecondarySubtitles();
 
 
                     renderSubtitleOptions();
 
-                    closeSubtitleMenu();
 
                     updateSubtitle();
 
-                };
+
+                    closeSubtitleMenu();
+
+                }
+            );
 
 
             subtitleOptions.appendChild(
@@ -3637,7 +4512,19 @@ function getLanguageName(
             interfaceLanguage ===
                 "en"
                 ? "Italian"
-                : "Italiano"
+                : "Italiano",
+
+        nl:
+            interfaceLanguage ===
+                "en"
+                ? "Dutch"
+                : "Nederlands",
+
+        ru:
+            interfaceLanguage ===
+                "en"
+                ? "Russian"
+                : "Русский"
 
     };
 
@@ -3646,70 +4533,12 @@ function getLanguageName(
         names[
             code
         ] ||
-        code.toUpperCase()
+        String(
+            code
+        ).toUpperCase()
     );
 
 }
-
-
-/* =========================================================
-   SUBTITLE MENU
-   ========================================================= */
-
-function toggleSubtitleMenu() {
-
-    if (
-        currentTrackIndex <
-            0
-    ) {
-
-        renderSubtitleOptions();
-
-    }
-
-
-    subtitleMenu.classList.toggle(
-        "open"
-    );
-
-
-    subtitleButton.classList.toggle(
-        "active"
-    );
-
-}
-
-
-function closeSubtitleMenu() {
-
-    subtitleMenu.classList.remove(
-        "open"
-    );
-
-
-    subtitleButton.classList.remove(
-        "active"
-    );
-
-}
-
-
-document.addEventListener(
-    "click",
-    event => {
-
-        if (
-            !event.target.closest(
-                ".subtitle-wrapper"
-            )
-        ) {
-
-            closeSubtitleMenu();
-
-        }
-
-    }
-);
 
 
 /* =========================================================
@@ -3720,23 +4549,23 @@ async function loadSubtitles(
     track
 ) {
 
-    arabicCues =
+    currentSubtitles =
         [];
 
 
-    secondaryCues =
+    currentSecondarySubtitles =
         [];
 
 
-    arabicIndex =
+    currentSubtitleIndex =
         -1;
 
 
-    secondaryIndex =
+    currentSecondarySubtitleIndex =
         -1;
 
 
-    hideSubtitle();
+    hideSubtitleOverlay();
 
 
     if (
@@ -3745,16 +4574,21 @@ async function loadSubtitles(
 
         subtitleBackground.style.backgroundImage =
             track.cover
-                ? `url("${track.cover}")`
+                ? `url("${track.cover.replace(
+                    /"/g,
+                    '\\"'
+                )}")`
                 : "none";
 
     }
 
 
     const arabicUrl =
-        track
-            ?.subtitles
-            ?.ar;
+        safeMediaUrl(
+            track
+                ?.subtitles
+                ?.ar
+        );
 
 
     if (
@@ -3777,7 +4611,7 @@ async function loadSubtitles(
                 response.ok
             ) {
 
-                arabicCues =
+                currentSubtitles =
                     parseVTT(
                         await response.text()
                     );
@@ -3789,6 +4623,7 @@ async function loadSubtitles(
         ) {
 
             console.error(
+                "Error cargando árabe:",
                 error
             );
 
@@ -3797,27 +4632,39 @@ async function loadSubtitles(
     }
 
 
-    await loadSecondarySubtitle();
+    await loadSecondarySubtitles();
+
 
     updateSubtitle();
 
 }
 
 
-async function loadSecondarySubtitle() {
+async function loadSecondarySubtitles() {
 
-    secondaryCues =
+    currentSecondarySubtitles =
         [];
 
 
-    secondaryIndex =
+    currentSecondarySubtitleIndex =
         -1;
 
 
+    if (
+        !selectedSubtitleLanguage
+    ) {
+
+        return;
+
+    }
+
+
     const url =
-        currentSubtitleLanguages[
-            selectedSubtitleLanguage
-        ];
+        safeMediaUrl(
+            currentSubtitleLanguages[
+                selectedSubtitleLanguage
+            ]
+        );
 
 
     if (
@@ -3845,7 +4692,7 @@ async function loadSecondarySubtitle() {
             response.ok
         ) {
 
-            secondaryCues =
+            currentSecondarySubtitles =
                 parseVTT(
                     await response.text()
                 );
@@ -3857,6 +4704,7 @@ async function loadSecondarySubtitle() {
     ) {
 
         console.error(
+            "Error cargando traducción:",
             error
         );
 
@@ -3870,11 +4718,21 @@ async function loadSecondarySubtitle() {
    ========================================================= */
 
 function parseVTT(
-    text
+    value
 ) {
 
-    const clean =
-        text
+    if (
+        typeof value !==
+        "string"
+    ) {
+
+        return [];
+
+    }
+
+
+    const normalized =
+        value
             .replace(
                 /^\uFEFF/,
                 ""
@@ -3890,12 +4748,12 @@ function parseVTT(
 
 
     const blocks =
-        clean.split(
+        normalized.split(
             /\n{2,}/
         );
 
 
-    const result =
+    const cues =
         [];
 
 
@@ -3947,7 +4805,7 @@ function parseVTT(
 
 
         const start =
-            vttTime(
+            parseVTTTime(
                 match[1],
                 match[2],
                 match[3],
@@ -3956,7 +4814,7 @@ function parseVTT(
 
 
         const end =
-            vttTime(
+            parseVTTTime(
                 match[5],
                 match[6],
                 match[7],
@@ -3964,10 +4822,11 @@ function parseVTT(
             );
 
 
-        const rawText =
+        const text =
             lines
                 .slice(
-                    timeIndex + 1
+                    timeIndex +
+                    1
                 )
                 .join(
                     "\n"
@@ -3975,14 +4834,14 @@ function parseVTT(
                 .trim();
 
 
-        const cueText =
+        const cleanText =
             cleanSubtitleText(
-                rawText
+                text
             );
 
 
         if (
-            !cueText
+            !cleanText
         ) {
 
             continue;
@@ -3990,19 +4849,31 @@ function parseVTT(
         }
 
 
-        result.push({
+        if (
+            end <=
+            start
+        ) {
+
+            continue;
+
+        }
+
+
+        cues.push({
 
             start,
+
             end,
+
             text:
-                cueText
+                cleanText
 
         });
 
     }
 
 
-    return result.sort(
+    return cues.sort(
         (
             a,
             b
@@ -4014,48 +4885,56 @@ function parseVTT(
 }
 
 
-function vttTime(
+function parseVTTTime(
     hours,
     minutes,
     seconds,
-    ms
+    milliseconds
 ) {
 
     return (
-        (
-            Number(
-                hours ||
-                0
-            ) *
-            3600
-        ) +
-        (
-            Number(
-                minutes
-            ) *
-            60
-        ) +
+        Number(
+            hours ||
+            0
+        ) *
+        3600 +
+        Number(
+            minutes
+        ) *
+        60 +
         Number(
             seconds
         ) +
-        (
-            Number(
-                ms
-            ) /
-            1000
-        )
+        Number(
+            milliseconds
+        ) /
+        1000
     );
 
 }
 
 
+/* =========================================================
+   IMPORTANT:
+   ELIMINA SOLO TURBOSCRIBE
+   ========================================================= */
+
 function cleanSubtitleText(
     text
 ) {
 
+    if (
+        typeof text !==
+        "string"
+    ) {
+
+        return "";
+
+    }
+
+
     return text
 
-        /* TurboScribe: SOLO se elimina la frase */
         .replace(
             /Transcrito por TurboScribe\.\s*Actualizar a Ilimitado para eliminar este mensaje\./gi,
             ""
@@ -4063,6 +4942,36 @@ function cleanSubtitleText(
 
         .replace(
             /Transcribed by TurboScribe\.\s*Upgrade to Unlimited to remove this message\./gi,
+            ""
+        )
+
+        .replace(
+            /<v[^>]*>/gi,
+            ""
+        )
+
+        .replace(
+            /<\/v>/gi,
+            ""
+        )
+
+        .replace(
+            /<c[^>]*>/gi,
+            ""
+        )
+
+        .replace(
+            /<\/c>/gi,
+            ""
+        )
+
+        .replace(
+            /<lang[^>]*>/gi,
+            ""
+        )
+
+        .replace(
+            /<\/lang>/gi,
             ""
         )
 
@@ -4108,12 +5017,12 @@ function cleanSubtitleText(
 function updateSubtitle() {
 
     if (
-        currentTrackIndex <
-        0 ||
+        currentTrackIndex ===
+        -1 ||
         !audio.src
     ) {
 
-        hideSubtitle();
+        hideSubtitleOverlay();
 
         return;
 
@@ -4124,32 +5033,34 @@ function updateSubtitle() {
         audio.currentTime;
 
 
-    arabicIndex =
-        findCue(
-            arabicCues,
+    currentSubtitleIndex =
+        findSubtitleIndex(
+            currentSubtitles,
             time
         );
 
 
-    secondaryIndex =
-        findCue(
-            secondaryCues,
+    currentSecondarySubtitleIndex =
+        findSubtitleIndex(
+            currentSecondarySubtitles,
             time
         );
 
 
     const arabic =
-        arabicIndex >= 0
-            ? arabicCues[
-                arabicIndex
+        currentSubtitleIndex >=
+            0
+            ? currentSubtitles[
+                currentSubtitleIndex
             ]
             : null;
 
 
     const secondary =
-        secondaryIndex >= 0
-            ? secondaryCues[
-                secondaryIndex
+        currentSecondarySubtitleIndex >=
+            0
+            ? currentSecondarySubtitles[
+                currentSecondarySubtitleIndex
             ]
             : null;
 
@@ -4159,7 +5070,7 @@ function updateSubtitle() {
         !secondary
     ) {
 
-        hideSubtitle();
+        hideSubtitleOverlay();
 
         return;
 
@@ -4193,80 +5104,20 @@ function updateSubtitle() {
     }
 
 
-    subtitleText.innerHTML =
-        "";
-
-
-    if (
+    showSubtitle(
         arabic
-    ) {
-
-        const base =
-            document.createElement(
-                "span"
-            );
-
-
-        base.className =
-            "subtitle-base";
-
-
-        base.textContent =
-            arabic.text;
-
-
-        const highlight =
-            document.createElement(
-                "span"
-            );
-
-
-        highlight.className =
-            "subtitle-highlight";
-
-
-        highlight.textContent =
-            arabic.text;
-
-
-        highlight.style.clipPath =
-            `inset(0 0 0 ${100 - Math.round(progress * 100)}%)`;
-
-
-        subtitleText.appendChild(
-            base
-        );
-
-
-        subtitleText.appendChild(
-            highlight
-        );
-
-    }
-
-
-    subtitleSecondary.textContent =
+            ? arabic.text
+            : "",
         secondary
             ? secondary.text
-            : "";
-
-
-    subtitleProgressBar.style.width =
-        Math.round(
-            progress *
-            100
-        ) +
-        "%";
-
-
-    subtitleOverlay.classList.add(
-        "visible"
+            : "",
+        progress
     );
 
 }
 
 
-function findCue(
+function findSubtitleIndex(
     cues,
     time
 ) {
@@ -4331,17 +5182,122 @@ function findCue(
 }
 
 
-function hideSubtitle() {
+/* =========================================================
+   SHOW SUBTITLE
+   ========================================================= */
+
+function showSubtitle(
+    arabicText,
+    secondaryText,
+    progress
+) {
+
+    subtitleText.innerHTML =
+        "";
+
+
+    if (
+        arabicText
+    ) {
+
+        const base =
+            document.createElement(
+                "span"
+            );
+
+
+        base.className =
+            "subtitle-base";
+
+
+        base.textContent =
+            arabicText;
+
+
+        const highlight =
+            document.createElement(
+                "span"
+            );
+
+
+        highlight.className =
+            "subtitle-highlight";
+
+
+        highlight.textContent =
+            arabicText;
+
+
+        highlight.style.clipPath =
+            `inset(0 0 0 ${
+                100 -
+                Math.round(
+                    progress *
+                    100
+                )
+            }%)`;
+
+
+        subtitleText.appendChild(
+            base
+        );
+
+
+        subtitleText.appendChild(
+            highlight
+        );
+
+    }
+
+
+    subtitleSecondary.textContent =
+        secondaryText ||
+        "";
+
+
+    subtitleSecondary.style.display =
+        secondaryText
+            ? "block"
+            : "none";
+
+
+    subtitleProgressBar.style.width =
+        Math.round(
+            progress *
+            100
+        ) +
+        "%";
+
+
+    subtitleOverlay.classList.add(
+        "visible"
+    );
+
+}
+
+
+/* =========================================================
+   HIDE SUBTITLE
+   ========================================================= */
+
+function hideSubtitleOverlay() {
 
     subtitleOverlay.classList.remove(
         "visible"
     );
 
+
     subtitleText.textContent =
         "";
 
+
     subtitleSecondary.textContent =
         "";
+
+
+    subtitleSecondary.style.display =
+        "none";
+
 
     subtitleProgressBar.style.width =
         "0%";
@@ -4350,23 +5306,23 @@ function hideSubtitle() {
 
 
 /* =========================================================
-   PLAYBACK
+   PLAY
    ========================================================= */
 
-playButton.addEventListener(
+mainPlayBtn.addEventListener(
     "click",
     () => {
 
         if (
-            currentTrackIndex <
-            0
+            currentTrackIndex ===
+            -1
         ) {
 
             if (
-                tracks.length
+                allNasheeds.length
             ) {
 
-                requestPlay(
+                requestPlayTrack(
                     0
                 );
 
@@ -4393,11 +5349,15 @@ playButton.addEventListener(
 );
 
 
+/* =========================================================
+   AUDIO
+   ========================================================= */
+
 audio.addEventListener(
     "play",
     () => {
 
-        playButton.textContent =
+        mainPlayBtn.textContent =
             "❚❚";
 
     }
@@ -4408,7 +5368,7 @@ audio.addEventListener(
     "pause",
     () => {
 
-        playButton.textContent =
+        mainPlayBtn.textContent =
             "▶";
 
     }
@@ -4419,7 +5379,7 @@ audio.addEventListener(
     "loadedmetadata",
     () => {
 
-        duration.textContent =
+        durationEl.textContent =
             formatTime(
                 audio.duration
             );
@@ -4440,10 +5400,8 @@ audio.addEventListener(
 
             progressBar.style.width =
                 (
-                    (
-                        audio.currentTime /
-                        audio.duration
-                    ) *
+                    audio.currentTime /
+                    audio.duration *
                     100
                 ) +
                 "%";
@@ -4451,7 +5409,7 @@ audio.addEventListener(
         }
 
 
-        currentTime.textContent =
+        currentTimeEl.textContent =
             formatTime(
                 audio.currentTime
             );
@@ -4467,13 +5425,17 @@ audio.addEventListener(
     "ended",
     () => {
 
-        hideSubtitle();
+        hideSubtitleOverlay();
 
         nextTrack();
 
     }
 );
 
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
 
 progressContainer.addEventListener(
     "click",
@@ -4494,7 +5456,7 @@ progressContainer.addEventListener(
             progressContainer.getBoundingClientRect();
 
 
-        const percent =
+        const ratio =
             (
                 event.clientX -
                 rect.left
@@ -4503,7 +5465,13 @@ progressContainer.addEventListener(
 
 
         audio.currentTime =
-            percent *
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    ratio
+                )
+            ) *
             audio.duration;
 
     }
@@ -4511,13 +5479,13 @@ progressContainer.addEventListener(
 
 
 /* =========================================================
-   NEXT / PREVIOUS
+   NEXT
    ========================================================= */
 
 function nextTrack() {
 
     if (
-        !tracks.length
+        !allNasheeds.length
     ) {
 
         return;
@@ -4526,27 +5494,28 @@ function nextTrack() {
 
 
     const next =
-        currentTrackIndex <
-            0
-            ? 0
-            : (
-                currentTrackIndex +
-                1
-            ) %
-            tracks.length;
+        (
+            currentTrackIndex +
+            1
+        ) %
+        allNasheeds.length;
 
 
-    requestPlay(
+    requestPlayTrack(
         next
     );
 
 }
 
 
+/* =========================================================
+   PREVIOUS
+   ========================================================= */
+
 function prevTrack() {
 
     if (
-        !tracks.length
+        !allNasheeds.length
     ) {
 
         return;
@@ -4557,13 +5526,13 @@ function prevTrack() {
     const previous =
         currentTrackIndex <=
             0
-            ? tracks.length -
-              1
+            ? allNasheeds.length -
+                1
             : currentTrackIndex -
-              1;
+                1;
 
 
-    requestPlay(
+    requestPlayTrack(
         previous
     );
 
@@ -4571,7 +5540,7 @@ function prevTrack() {
 
 
 /* =========================================================
-   FORMAT
+   TIME
    ========================================================= */
 
 function formatTime(
@@ -4589,7 +5558,7 @@ function formatTime(
     }
 
 
-    const minutes =
+    const mins =
         Math.floor(
             seconds /
             60
@@ -4604,8 +5573,7 @@ function formatTime(
 
 
     return (
-        minutes +
-        ":" +
+        `${mins}:` +
         (
             secs <
             10
@@ -4619,6 +5587,32 @@ function formatTime(
 
 
 /* =========================================================
+   ESCAPE
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    div.textContent =
+        String(
+            value ??
+            ""
+        );
+
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================================
    START
    ========================================================= */
 
@@ -4626,20 +5620,21 @@ document.addEventListener(
     "DOMContentLoaded",
     () => {
 
+        applyAnimationsPreference();
+
         setInterfaceLanguage(
             interfaceLanguage
         );
 
-        updateAnimationButton();
-
         renderSubtitleOptions();
 
-        fetchTracks();
+        fetchNasheeds();
 
     }
 );
 
 </script>
+
 
 </body>
 

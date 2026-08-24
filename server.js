@@ -12,10 +12,12 @@ const PORT =
     3000;
 
 const SUPABASE_URL =
-    process.env.SUPABASE_URL;
+    process.env.SUPABASE_URL ||
+    "";
 
 const SUPABASE_SECRET_KEY =
-    process.env.SUPABASE_SECRET_KEY;
+    process.env.SUPABASE_SECRET_KEY ||
+    "";
 
 const SUPABASE_PUBLISHABLE_KEY =
     process.env.SUPABASE_PUBLISHABLE_KEY ||
@@ -26,7 +28,7 @@ const STORAGE_BUCKET =
 
 const ADMIN_PIN =
     process.env.ADMIN_PIN ||
-    "7777";
+    "";
 
 const ADMIN_PATH =
     process.env.ADMIN_PATH ||
@@ -34,20 +36,18 @@ const ADMIN_PATH =
 
 const SESSION_SECRET =
     process.env.SESSION_SECRET ||
-    "change-this-secret";
+    "nasheed-change-this-secret";
 
-
-/* =========================================================
-   SUPABASE
-   ========================================================= */
 
 if (
     !SUPABASE_URL ||
     !SUPABASE_SECRET_KEY
 ) {
+
     console.error(
-        "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY."
+        "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY en las variables de entorno."
     );
+
 }
 
 
@@ -57,8 +57,11 @@ const supabase =
         SUPABASE_SECRET_KEY,
         {
             auth: {
-                persistSession: false,
-                autoRefreshToken: false
+                persistSession:
+                    false,
+
+                autoRefreshToken:
+                    false
             }
         }
     );
@@ -79,6 +82,7 @@ app.use(
     express.urlencoded({
         extended:
             true,
+
         limit:
             "1mb"
     })
@@ -86,60 +90,106 @@ app.use(
 
 
 /* =========================================================
-   ADMIN COOKIE
+   ADMIN SESSION
    ========================================================= */
 
 const ADMIN_COOKIE =
     "nasheed_admin";
 
 
-function base64UrlEncode(value) {
+function base64UrlEncode(
+    value
+) {
 
     return Buffer
-        .from(value)
-        .toString("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/g, "");
+        .from(
+            value
+        )
+        .toString(
+            "base64"
+        )
+        .replace(
+            /\+/g,
+            "-"
+        )
+        .replace(
+            /\//g,
+            "_"
+        )
+        .replace(
+            /=+$/,
+            ""
+        );
 
 }
 
 
-function base64UrlDecode(value) {
+function base64UrlDecode(
+    value
+) {
 
-    value =
-        value
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
+    let normalized =
+        String(
+            value
+        )
+            .replace(
+                /-/g,
+                "+"
+            )
+            .replace(
+                /_/g,
+                "/"
+            );
 
     while (
-        value.length % 4
+        normalized.length %
+        4
     ) {
-        value += "=";
+
+        normalized +=
+            "=";
+
     }
 
     return Buffer
         .from(
-            value,
+            normalized,
             "base64"
         )
-        .toString("utf8");
+        .toString(
+            "utf8"
+        );
 
 }
 
 
-function signValue(value) {
+function signValue(
+    value
+) {
 
     return crypto
         .createHmac(
             "sha256",
             SESSION_SECRET
         )
-        .update(value)
-        .digest("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/g, "");
+        .update(
+            value
+        )
+        .digest(
+            "base64"
+        )
+        .replace(
+            /\+/g,
+            "-"
+        )
+        .replace(
+            /\//g,
+            "_"
+        )
+        .replace(
+            /=+$/,
+            ""
+        );
 
 }
 
@@ -154,11 +204,11 @@ function createAdminToken() {
         exp:
             Date.now() +
             (
-                1000 *
-                60 *
-                60 *
+                7 *
                 24 *
-                7
+                60 *
+                60 *
+                1000
             )
 
     };
@@ -170,36 +220,43 @@ function createAdminToken() {
             )
         );
 
-    const signature =
-        signValue(
-            encoded
-        );
-
     return (
         encoded +
         "." +
-        signature
+        signValue(
+            encoded
+        )
     );
 
 }
 
 
-function verifyAdminToken(token) {
+function verifyAdminToken(
+    token
+) {
 
     if (
-        typeof token !==
-        "string"
+        !token
     ) {
+
         return false;
+
     }
 
     const parts =
-        token.split(".");
+        String(
+            token
+        ).split(
+            "."
+        );
 
     if (
-        parts.length !== 2
+        parts.length !==
+        2
     ) {
+
         return false;
+
     }
 
     const encoded =
@@ -227,7 +284,9 @@ function verifyAdminToken(token) {
         a.length !==
         b.length
     ) {
+
         return false;
+
     }
 
     if (
@@ -236,7 +295,9 @@ function verifyAdminToken(token) {
             b
         )
     ) {
+
         return false;
+
     }
 
     try {
@@ -248,29 +309,15 @@ function verifyAdminToken(token) {
                 )
             );
 
-        if (
-            payload.admin !==
-            true
-        ) {
-            return false;
-        }
-
-        if (
-            !Number.isFinite(
+        return (
+            payload.admin ===
+                true &&
+            Number.isFinite(
                 payload.exp
-            )
-        ) {
-            return false;
-        }
-
-        if (
-            Date.now() >=
-            payload.exp
-        ) {
-            return false;
-        }
-
-        return true;
+            ) &&
+            Date.now() <
+                payload.exp
+        );
 
     } catch {
 
@@ -281,33 +328,48 @@ function verifyAdminToken(token) {
 }
 
 
-function getCookie(req, name) {
+function getCookie(
+    req,
+    name
+) {
 
-    const header =
+    const cookieHeader =
         req.headers.cookie;
 
     if (
-        !header
+        !cookieHeader
     ) {
+
         return "";
+
     }
 
+    const cookies =
+        cookieHeader.split(
+            ";"
+        );
+
     for (
-        const part of
-        header.split(";")
+        const cookie of
+        cookies
     ) {
 
         const index =
-            part.indexOf("=");
+            cookie.indexOf(
+                "="
+            );
 
         if (
-            index === -1
+            index ===
+            -1
         ) {
+
             continue;
+
         }
 
         const key =
-            part
+            cookie
                 .slice(
                     0,
                     index
@@ -318,11 +380,13 @@ function getCookie(req, name) {
             key !==
             name
         ) {
+
             continue;
+
         }
 
         return decodeURIComponent(
-            part
+            cookie
                 .slice(
                     index + 1
                 )
@@ -336,7 +400,9 @@ function getCookie(req, name) {
 }
 
 
-function isAdmin(req) {
+function isAdmin(
+    req
+) {
 
     return verifyAdminToken(
         getCookie(
@@ -348,9 +414,11 @@ function isAdmin(req) {
 }
 
 
-function setAdminCookie(res) {
+function setAdminCookie(
+    res
+) {
 
-    const secure =
+    const isProduction =
         process.env.NODE_ENV ===
         "production";
 
@@ -362,7 +430,7 @@ function setAdminCookie(res) {
             "HttpOnly",
             "SameSite=Lax",
             "Max-Age=604800",
-            secure
+            isProduction
                 ? "Secure"
                 : ""
         ]
@@ -373,9 +441,11 @@ function setAdminCookie(res) {
 }
 
 
-function clearAdminCookie(res) {
+function clearAdminCookie(
+    res
+) {
 
-    const secure =
+    const isProduction =
         process.env.NODE_ENV ===
         "production";
 
@@ -387,7 +457,7 @@ function clearAdminCookie(res) {
             "HttpOnly",
             "SameSite=Lax",
             "Max-Age=0",
-            secure
+            isProduction
                 ? "Secure"
                 : ""
         ]
@@ -399,12 +469,14 @@ function clearAdminCookie(res) {
 
 
 /* =========================================================
-   ADMIN LOGIN
+   ADMIN LOGIN PAGE
    ========================================================= */
 
-function sendAdminLoginPage(res) {
+function sendLoginPage(
+    res
+) {
 
-    res.send(`
+    return res.send(`
 <!DOCTYPE html>
 <html lang="es" class="dark">
 
@@ -416,108 +488,103 @@ function sendAdminLoginPage(res) {
         name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-    <title>NASHEED - Acceso privado</title>
+    <title>NASHEED - Admin</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4">
+    </script>
 
 </head>
 
 <body
-    class="min-h-screen flex items-center justify-center p-6 bg-[#060608] text-zinc-100">
+    class="min-h-screen bg-[#060608] text-zinc-100 flex items-center justify-center p-6">
+
+<div
+    class="w-full max-w-sm rounded-3xl p-8 bg-zinc-900/80 backdrop-blur-2xl border border-amber-500/20 shadow-2xl">
 
     <div
-        class="w-full max-w-sm bg-zinc-900/80 backdrop-blur-2xl border border-amber-500/20 rounded-3xl p-8 shadow-2xl">
+        class="text-center mb-7">
 
         <div
-            class="text-center mb-7">
+            class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-950 font-black text-xl">
 
-            <div
-                class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-950 text-2xl font-black">
-
-                N
-
-            </div>
-
-            <h1
-                class="font-extrabold tracking-[.2em] text-amber-400 text-sm">
-
-                NASHEED
-
-            </h1>
-
-            <p
-                class="text-zinc-500 text-xs mt-2">
-
-                Acceso privado
-
-            </p>
+            N
 
         </div>
 
-        <input
-            id="pin-input"
-            type="password"
-            inputmode="numeric"
-            autocomplete="current-password"
-            placeholder="Introduce tu PIN"
-            class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-center tracking-[.35em] outline-none focus:border-amber-500">
+        <h1
+            class="text-sm font-extrabold tracking-[.22em] text-amber-400">
 
-        <button
-            id="login-button"
-            onclick="loginAdmin()"
-            class="w-full mt-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs">
+            NASHEED
 
-            Acceder
-
-        </button>
+        </h1>
 
         <p
-            id="error-msg"
-            class="text-red-400 text-xs text-center min-h-4 mt-3">
+            class="text-xs text-zinc-500 mt-2">
+
+            Acceso privado
 
         </p>
 
     </div>
 
+
+    <input
+        id="pin"
+        type="password"
+        inputmode="numeric"
+        placeholder="PIN"
+        class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-center tracking-[.35em] outline-none focus:border-amber-500">
+
+
+    <button
+        id="loginButton"
+        onclick="login()"
+        class="w-full mt-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs">
+
+        Entrar
+
+    </button>
+
+
+    <div
+        id="error"
+        class="text-center text-xs text-red-400 min-h-4 mt-3">
+
+    </div>
+
+</div>
+
+
 <script>
 
-const pinInput =
+const pin =
     document.getElementById(
-        "pin-input"
+        "pin"
     );
 
-const loginButton =
+const button =
     document.getElementById(
-        "login-button"
+        "loginButton"
     );
 
-const errorMsg =
+const error =
     document.getElementById(
-        "error-msg"
+        "error"
     );
 
 
-async function loginAdmin() {
+async function login() {
 
-    const pin =
-        pinInput.value;
-
-    if (
-        !pin
-    ) {
-
-        errorMsg.textContent =
-            "Introduce el PIN.";
-
-        return;
-
-    }
-
-    loginButton.disabled =
+    button.disabled =
         true;
 
-    loginButton.textContent =
+    button.textContent =
         "Comprobando...";
+
+    error.textContent =
+        "";
+
 
     try {
 
@@ -525,6 +592,7 @@ async function loginAdmin() {
             await fetch(
                 "/api/login",
                 {
+
                     method:
                         "POST",
 
@@ -532,19 +600,27 @@ async function loginAdmin() {
                         "same-origin",
 
                     headers: {
+
                         "Content-Type":
                             "application/json"
+
                     },
 
                     body:
                         JSON.stringify({
-                            pin
+
+                            pin:
+                                pin.value
+
                         })
+
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (
             response.ok &&
@@ -558,27 +634,29 @@ async function loginAdmin() {
 
         }
 
-        errorMsg.textContent =
+
+        error.textContent =
             data.error ||
             "PIN incorrecto.";
 
     } catch {
 
-        errorMsg.textContent =
+        error.textContent =
             "Error de conexión.";
 
     }
 
-    loginButton.disabled =
+
+    button.disabled =
         false;
 
-    loginButton.textContent =
-        "Acceder";
+    button.textContent =
+        "Entrar";
 
 }
 
 
-pinInput.addEventListener(
+pin.addEventListener(
     "keydown",
     event => {
 
@@ -587,7 +665,7 @@ pinInput.addEventListener(
             "Enter"
         ) {
 
-            loginAdmin();
+            login();
 
         }
 
@@ -597,21 +675,29 @@ pinInput.addEventListener(
 </script>
 
 </body>
+
 </html>
     `);
 
 }
 
 
+/* =========================================================
+   STATIC / ADMIN
+   ========================================================= */
+
 app.get(
     ADMIN_PATH,
-    (req, res) => {
+    (
+        req,
+        res
+    ) => {
 
         if (
             !isAdmin(req)
         ) {
 
-            return sendAdminLoginPage(
+            return sendLoginPage(
                 res
             );
 
@@ -629,10 +715,6 @@ app.get(
 );
 
 
-/* =========================================================
-   STATIC
-   ========================================================= */
-
 app.use(
     express.static(
         path.join(
@@ -644,142 +726,15 @@ app.use(
 
 
 /* =========================================================
-   CONFIG PÚBLICA
-   ========================================================= */
-
-app.get(
-    "/api/public-config",
-    (req, res) => {
-
-        return res.json({
-
-            supabaseUrl:
-                SUPABASE_URL,
-
-            supabasePublishableKey:
-                SUPABASE_PUBLISHABLE_KEY,
-
-            bucket:
-                STORAGE_BUCKET
-
-        });
-
-    }
-);
-
-
-/* =========================================================
-   PUBLIC NASHEEDS
-   ========================================================= */
-
-app.get(
-    "/api/nasheeds",
-    async (
-        req,
-        res
-    ) => {
-
-        try {
-
-            const {
-                data,
-                error
-            } =
-                await supabase
-                    .from(
-                        "nasheeds"
-                    )
-                    .select(
-                        "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
-                    )
-                    .order(
-                        "created_at",
-                        {
-                            ascending:
-                                false
-                        }
-                    );
-
-            if (
-                error
-            ) {
-
-                console.error(
-                    error
-                );
-
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            "No se pudieron cargar los nasheeds."
-                    });
-
-            }
-
-            return res.json(
-
-                (data || [])
-                    .map(
-                        item => ({
-
-                            id:
-                                Number(
-                                    item.id
-                                ),
-
-                            title:
-                                item.title,
-
-                            file:
-                                item.audio_url,
-
-                            cover:
-                                item.cover_url ||
-                                "",
-
-                            subtitles:
-                                item.subtitles ||
-                                {},
-
-                            warning:
-                                Boolean(
-                                    item.warning_enabled
-                                )
-
-                        })
-                    )
-
-            );
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                error
-            );
-
-            return res
-                .status(500)
-                .json({
-                    error:
-                        "Error interno."
-                });
-
-        }
-
-    }
-);
-
-
-/* =========================================================
    LOGIN
    ========================================================= */
 
 app.post(
     "/api/login",
-    (req, res) => {
+    (
+        req,
+        res
+    ) => {
 
         const pin =
             String(
@@ -788,8 +743,9 @@ app.post(
             );
 
         if (
+            !ADMIN_PIN ||
             pin !==
-            ADMIN_PIN
+                ADMIN_PIN
         ) {
 
             return res
@@ -799,7 +755,7 @@ app.post(
                         false,
 
                     error:
-                        "PIN incorrecto"
+                        "PIN incorrecto."
                 });
 
         }
@@ -823,18 +779,23 @@ app.post(
 
 
 /* =========================================================
-   SESSION
+   LOGOUT
    ========================================================= */
 
-app.get(
-    "/api/check-session",
-    (req, res) => {
+app.post(
+    "/api/logout",
+    (
+        req,
+        res
+    ) => {
+
+        clearAdminCookie(
+            res
+        );
 
         return res.json({
-
-            isAdmin:
-                isAdmin(req)
-
+            success:
+                true
         });
 
     }
@@ -842,21 +803,26 @@ app.get(
 
 
 /* =========================================================
-   LOGOUT
+   PUBLIC CONFIG
    ========================================================= */
 
-app.post(
-    "/api/logout",
-    (req, res) => {
-
-        clearAdminCookie(
-            res
-        );
+app.get(
+    "/api/public-config",
+    (
+        req,
+        res
+    ) => {
 
         return res.json({
 
-            success:
-                true
+            supabaseUrl:
+                SUPABASE_URL,
+
+            supabasePublishableKey:
+                SUPABASE_PUBLISHABLE_KEY,
+
+            bucket:
+                STORAGE_BUCKET
 
         });
 
@@ -893,6 +859,114 @@ function requireAdmin(
 
 
 /* =========================================================
+   PUBLIC NASHEEDS
+   ========================================================= */
+
+app.get(
+    "/api/nasheeds",
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from(
+                        "nasheeds"
+                    )
+                    .select(
+                        "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
+                    )
+                    .order(
+                        "created_at",
+                        {
+                            ascending:
+                                false
+                        }
+                    );
+
+
+            if (
+                error
+            ) {
+
+                console.error(
+                    error
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudieron cargar los nasheeds."
+                    });
+
+            }
+
+
+            return res.json(
+                (
+                    data ||
+                    []
+                ).map(
+                    item => ({
+
+                        id:
+                            Number(
+                                item.id
+                            ),
+
+                        title:
+                            item.title,
+
+                        file:
+                            item.audio_url,
+
+                        cover:
+                            item.cover_url ||
+                            "",
+
+                        subtitles:
+                            item.subtitles ||
+                            {},
+
+                        warning:
+                            Boolean(
+                                item.warning_enabled
+                            )
+
+                    })
+                )
+            );
+
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error interno."
+                });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
    ADMIN LIST
    ========================================================= */
 
@@ -925,6 +999,7 @@ app.get(
                         }
                     );
 
+
             if (
                 error
             ) {
@@ -942,43 +1017,45 @@ app.get(
 
             }
 
+
             return res.json(
+                (
+                    data ||
+                    []
+                ).map(
+                    item => ({
 
-                (data || [])
-                    .map(
-                        item => ({
+                        id:
+                            Number(
+                                item.id
+                            ),
 
-                            id:
-                                Number(
-                                    item.id
-                                ),
+                        title:
+                            item.title,
 
-                            title:
-                                item.title,
+                        file:
+                            item.audio_url,
 
-                            file:
-                                item.audio_url,
+                        cover:
+                            item.cover_url ||
+                            "",
 
-                            cover:
-                                item.cover_url ||
-                                "",
+                        subtitles:
+                            item.subtitles ||
+                            {},
 
-                            subtitles:
-                                item.subtitles ||
-                                {},
+                        warning:
+                            Boolean(
+                                item.warning_enabled
+                            ),
 
-                            warning:
-                                Boolean(
-                                    item.warning_enabled
-                                ),
+                        created_at:
+                            item.created_at
 
-                            created_at:
-                                item.created_at
-
-                        })
-                    )
-
+                    })
+                )
             );
+
 
         } catch (
             error
@@ -1002,7 +1079,7 @@ app.get(
 
 
 /* =========================================================
-   PREPARAR SUBIDA
+   PREPARE UPLOAD
    ========================================================= */
 
 app.post(
@@ -1021,12 +1098,14 @@ app.post(
                     ""
                 ).trim();
 
+
             const files =
                 Array.isArray(
                     req.body?.files
                 )
                     ? req.body.files
                     : [];
+
 
             if (
                 !title
@@ -1041,6 +1120,7 @@ app.post(
 
             }
 
+
             if (
                 !files.length
             ) {
@@ -1054,14 +1134,18 @@ app.post(
 
             }
 
-            const seenLanguages =
-                new Set();
 
             let hasArabic =
                 false;
 
+
+            const languages =
+                new Set();
+
+
             const prepared =
                 [];
+
 
             for (
                 const file of
@@ -1074,6 +1158,7 @@ app.post(
                         ""
                     ).trim();
 
+
                 const language =
                     String(
                         file?.language ||
@@ -1082,22 +1167,26 @@ app.post(
                         .trim()
                         .toLowerCase();
 
+
                 const originalName =
                     String(
                         file?.name ||
                         ""
                     ).trim();
 
+
                 const contentType =
                     String(
                         file?.type ||
                         "application/octet-stream"
-                    ).trim();
+                    );
+
 
                 const size =
                     Number(
                         file?.size
                     );
+
 
                 if (
                     !field ||
@@ -1116,18 +1205,6 @@ app.post(
 
                 }
 
-                if (
-                    size <= 0
-                ) {
-
-                    return res
-                        .status(400)
-                        .json({
-                            error:
-                                `Archivo vacío: ${originalName}`
-                        });
-
-                }
 
                 if (
                     size >
@@ -1140,10 +1217,11 @@ app.post(
                         .status(400)
                         .json({
                             error:
-                                `El archivo ${originalName} supera los 50 MB.`
+                                `El archivo "${originalName}" supera los 50 MB.`
                         });
 
                 }
+
 
                 if (
                     field ===
@@ -1165,8 +1243,9 @@ app.post(
 
                     }
 
+
                     if (
-                        seenLanguages.has(
+                        languages.has(
                             language
                         )
                     ) {
@@ -1180,9 +1259,11 @@ app.post(
 
                     }
 
-                    seenLanguages.add(
+
+                    languages.add(
                         language
                     );
+
 
                     if (
                         language ===
@@ -1193,6 +1274,7 @@ app.post(
                             true;
 
                     }
+
 
                     if (
                         !originalName
@@ -1206,69 +1288,17 @@ app.post(
                             .status(400)
                             .json({
                                 error:
-                                    `${originalName} debe ser .vtt`
+                                    `${originalName} debe ser un VTT.`
                             });
 
                     }
 
                 }
 
-                if (
-                    field ===
-                    "audio"
-                ) {
-
-                    if (
-                        !(
-                            contentType.startsWith(
-                                "audio/"
-                            ) ||
-                            /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(
-                                originalName
-                            )
-                        )
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                error:
-                                    "El archivo de audio no parece válido."
-                            });
-
-                    }
-
-                }
-
-                if (
-                    field ===
-                    "cover"
-                ) {
-
-                    if (
-                        !(
-                            contentType.startsWith(
-                                "image/"
-                            ) ||
-                            /\.(png|jpe?g|webp|gif)$/i.test(
-                                originalName
-                            )
-                        )
-                    ) {
-
-                        return res
-                            .status(400)
-                            .json({
-                                error:
-                                    "La carátula no parece válida."
-                            });
-
-                    }
-
-                }
 
                 let folder =
                     "other";
+
 
                 if (
                     field ===
@@ -1280,6 +1310,7 @@ app.post(
 
                 }
 
+
                 if (
                     field ===
                     "cover"
@@ -1289,6 +1320,7 @@ app.post(
                         "covers";
 
                 }
+
 
                 if (
                     field ===
@@ -1300,13 +1332,13 @@ app.post(
 
                 }
 
+
                 const extension =
-                    path
-                        .extname(
-                            originalName
-                        )
-                        .toLowerCase() ||
+                    path.extname(
+                        originalName
+                    ) ||
                     ".bin";
+
 
                 const random =
                     crypto
@@ -1317,8 +1349,10 @@ app.post(
                             "hex"
                         );
 
+
                 const storagePath =
                     `${folder}/${Date.now()}-${random}${extension}`;
+
 
                 const {
                     data,
@@ -1337,6 +1371,7 @@ app.post(
                             }
                         );
 
+
                 if (
                     error
                 ) {
@@ -1354,8 +1389,10 @@ app.post(
 
                 }
 
+
                 const publicUrl =
                     `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
+
 
                 prepared.push({
 
@@ -1385,6 +1422,7 @@ app.post(
 
             }
 
+
             if (
                 !hasArabic
             ) {
@@ -1393,10 +1431,11 @@ app.post(
                     .status(400)
                     .json({
                         error:
-                            "El VTT árabe es obligatorio."
+                            "Debes añadir el subtítulo árabe."
                     });
 
             }
+
 
             return res.json({
 
@@ -1407,6 +1446,7 @@ app.post(
                     prepared
 
             });
+
 
         } catch (
             error
@@ -1430,7 +1470,7 @@ app.post(
 
 
 /* =========================================================
-   COMPLETAR SUBIDA
+   COMPLETE UPLOAD
    ========================================================= */
 
 app.post(
@@ -1449,6 +1489,7 @@ app.post(
                     ""
                 ).trim();
 
+
             const files =
                 Array.isArray(
                     req.body?.files
@@ -1456,10 +1497,36 @@ app.post(
                     ? req.body.files
                     : [];
 
+
             const warningEnabled =
                 Boolean(
                     req.body?.warningEnabled
                 );
+
+
+            const audio =
+                files.find(
+                    file =>
+                        file.field ===
+                        "audio"
+                );
+
+
+            const cover =
+                files.find(
+                    file =>
+                        file.field ===
+                        "cover"
+                );
+
+
+            const subtitles =
+                files.filter(
+                    file =>
+                        file.field ===
+                        "subtitles"
+                );
+
 
             if (
                 !title
@@ -1474,26 +1541,6 @@ app.post(
 
             }
 
-            const audio =
-                files.find(
-                    file =>
-                        file.field ===
-                        "audio"
-                );
-
-            const cover =
-                files.find(
-                    file =>
-                        file.field ===
-                        "cover"
-                );
-
-            const subtitles =
-                files.filter(
-                    file =>
-                        file.field ===
-                        "subtitles"
-                );
 
             if (
                 !audio
@@ -1508,28 +1555,28 @@ app.post(
 
             }
 
-            const arabic =
-                subtitles.find(
+
+            if (
+                !subtitles.some(
                     file =>
                         file.language ===
                         "ar"
-                );
-
-            if (
-                !arabic
+                )
             ) {
 
                 return res
                     .status(400)
                     .json({
                         error:
-                            "Falta el VTT árabe."
+                            "Falta el subtítulo árabe."
                     });
 
             }
 
+
             const subtitleMap =
                 {};
+
 
             subtitles.forEach(
                 file => {
@@ -1542,7 +1589,8 @@ app.post(
                 }
             );
 
-            const record = {
+
+            const insertData = {
 
                 id:
                     Date.now(),
@@ -1565,6 +1613,7 @@ app.post(
 
             };
 
+
             const {
                 data,
                 error
@@ -1574,10 +1623,11 @@ app.post(
                         "nasheeds"
                     )
                     .insert(
-                        record
+                        insertData
                     )
                     .select()
                     .single();
+
 
             if (
                 error
@@ -1595,6 +1645,7 @@ app.post(
                     });
 
             }
+
 
             return res.json({
 
@@ -1631,6 +1682,7 @@ app.post(
 
             });
 
+
         } catch (
             error
         ) {
@@ -1643,7 +1695,7 @@ app.post(
                 .status(500)
                 .json({
                     error:
-                        "Error completando la publicación."
+                        "Error guardando el nasheed."
                 });
 
         }
@@ -1653,11 +1705,11 @@ app.post(
 
 
 /* =========================================================
-   ELIMINAR
+   CAMBIAR ADVERTENCIA
    ========================================================= */
 
-app.delete(
-    "/api/nasheeds/:id",
+app.patch(
+    "/api/admin/nasheeds/:id/warning",
     requireAdmin,
     async (
         req,
@@ -1670,6 +1722,7 @@ app.delete(
                 Number(
                     req.params.id
                 );
+
 
             if (
                 !Number.isSafeInteger(
@@ -1686,154 +1739,72 @@ app.delete(
 
             }
 
+
+            const enabled =
+                Boolean(
+                    req.body?.enabled
+                );
+
+
             const {
-                data: track,
-                error:
-                    fetchError
+                data,
+                error
             } =
                 await supabase
                     .from(
                         "nasheeds"
+                    )
+                    .update({
+
+                        warning_enabled:
+                            enabled
+
+                    })
+                    .eq(
+                        "id",
+                        id
                     )
                     .select(
-                        "id,title,audio_url,cover_url,subtitles"
+                        "id,warning_enabled"
                     )
-                    .eq(
-                        "id",
-                        id
-                    )
-                    .maybeSingle();
+                    .single();
+
 
             if (
-                fetchError
+                error
             ) {
 
                 console.error(
-                    fetchError
+                    error
                 );
 
                 return res
                     .status(500)
                     .json({
                         error:
-                            "No se pudo obtener el nasheed."
+                            "No se pudo actualizar la advertencia."
                     });
 
             }
 
-            if (
-                !track
-            ) {
-
-                return res
-                    .status(404)
-                    .json({
-                        error:
-                            "Nasheed no encontrado."
-                    });
-
-            }
-
-            const paths =
-                [];
-
-            addStoragePathFromPublicUrl(
-                track.audio_url,
-                paths
-            );
-
-            addStoragePathFromPublicUrl(
-                track.cover_url,
-                paths
-            );
-
-            if (
-                track.subtitles &&
-                typeof track.subtitles ===
-                    "object"
-            ) {
-
-                Object.values(
-                    track.subtitles
-                ).forEach(
-                    url => {
-
-                        addStoragePathFromPublicUrl(
-                            url,
-                            paths
-                        );
-
-                    }
-                );
-
-            }
-
-            if (
-                paths.length
-            ) {
-
-                const {
-                    error:
-                        storageError
-                } =
-                    await supabase
-                        .storage
-                        .from(
-                            STORAGE_BUCKET
-                        )
-                        .remove(
-                            paths
-                        );
-
-                if (
-                    storageError
-                ) {
-
-                    console.error(
-                        storageError
-                    );
-
-                }
-
-            }
-
-            const {
-                error:
-                    deleteError
-            } =
-                await supabase
-                    .from(
-                        "nasheeds"
-                    )
-                    .delete()
-                    .eq(
-                        "id",
-                        id
-                    );
-
-            if (
-                deleteError
-            ) {
-
-                console.error(
-                    deleteError
-                );
-
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            "No se pudo eliminar el registro."
-                    });
-
-            }
 
             return res.json({
 
                 success:
-                    true
+                    true,
+
+                id:
+                    Number(
+                        data.id
+                    ),
+
+                warning:
+                    Boolean(
+                        data.warning_enabled
+                    )
 
             });
+
 
         } catch (
             error
@@ -1857,10 +1828,228 @@ app.delete(
 
 
 /* =========================================================
-   PATH STORAGE
+   DELETE
    ========================================================= */
 
-function addStoragePathFromPublicUrl(
+app.delete(
+    "/api/nasheeds/:id",
+    requireAdmin,
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const id =
+                Number(
+                    req.params.id
+                );
+
+
+            if (
+                !Number.isSafeInteger(
+                    id
+                )
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "ID no válido."
+                    });
+
+            }
+
+
+            const {
+                data: track,
+                error:
+                    findError
+            } =
+                await supabase
+                    .from(
+                        "nasheeds"
+                    )
+                    .select(
+                        "id,audio_url,cover_url,subtitles"
+                    )
+                    .eq(
+                        "id",
+                        id
+                    )
+                    .maybeSingle();
+
+
+            if (
+                findError
+            ) {
+
+                console.error(
+                    findError
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudo obtener el nasheed."
+                    });
+
+            }
+
+
+            if (
+                !track
+            ) {
+
+                return res
+                    .status(404)
+                    .json({
+                        error:
+                            "Nasheed no encontrado."
+                    });
+
+            }
+
+
+            const paths =
+                [];
+
+
+            addStoragePath(
+                track.audio_url,
+                paths
+            );
+
+
+            addStoragePath(
+                track.cover_url,
+                paths
+            );
+
+
+            if (
+                track.subtitles &&
+                typeof track.subtitles ===
+                    "object"
+            ) {
+
+                Object.values(
+                    track.subtitles
+                ).forEach(
+                    url => {
+
+                        addStoragePath(
+                            url,
+                            paths
+                        );
+
+                    }
+                );
+
+            }
+
+
+            if (
+                paths.length
+            ) {
+
+                const {
+                    error:
+                        storageError
+                } =
+                    await supabase
+                        .storage
+                        .from(
+                            STORAGE_BUCKET
+                        )
+                        .remove(
+                            paths
+                        );
+
+
+                if (
+                    storageError
+                ) {
+
+                    console.error(
+                        storageError
+                    );
+
+                }
+
+            }
+
+
+            const {
+                error:
+                    deleteError
+            } =
+                await supabase
+                    .from(
+                        "nasheeds"
+                    )
+                    .delete()
+                    .eq(
+                        "id",
+                        id
+                    );
+
+
+            if (
+                deleteError
+            ) {
+
+                console.error(
+                    deleteError
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudo eliminar el registro."
+                    });
+
+            }
+
+
+            return res.json({
+
+                success:
+                    true
+
+            });
+
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error interno."
+                });
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   STORAGE URL -> PATH
+   ========================================================= */
+
+function addStoragePath(
     url,
     output
 ) {
@@ -1875,13 +2064,16 @@ function addStoragePathFromPublicUrl(
 
     }
 
+
     const marker =
         `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
 
     const index =
         url.indexOf(
             marker
         );
+
 
     if (
         index ===
@@ -1892,11 +2084,13 @@ function addStoragePathFromPublicUrl(
 
     }
 
+
     const storagePath =
         url.slice(
             index +
             marker.length
         );
+
 
     if (
         storagePath
@@ -1914,31 +2108,32 @@ function addStoragePathFromPublicUrl(
 
 
 /* =========================================================
-   ERRORES
+   ERROR HANDLER
    ========================================================= */
 
 app.use(
     (
-        err,
+        error,
         req,
         res,
         next
     ) => {
 
         console.error(
-            "Error interno:",
-            err
+            error
         );
+
 
         if (
             res.headersSent
         ) {
 
             return next(
-                err
+                error
             );
 
         }
+
 
         return res
             .status(500)

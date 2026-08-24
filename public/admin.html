@@ -39,14 +39,14 @@
         .glass-panel {
 
             background:
-                rgba(18, 18, 23, 0.8);
+                rgba(18,18,23,0.8);
 
             backdrop-filter:
                 blur(12px);
 
             border:
                 1px solid
-                rgba(255, 255, 255, 0.08);
+                rgba(255,255,255,0.08);
 
         }
 
@@ -74,7 +74,7 @@
                 translateY(-2px);
 
             border-color:
-                rgba(245, 158, 11, 0.35);
+                rgba(245,158,11,0.35);
 
         }
 
@@ -136,7 +136,7 @@
 
             grid-template-columns:
                 145px
-                minmax(0, 1fr)
+                minmax(0,1fr)
                 auto;
 
             gap:
@@ -306,11 +306,12 @@
 
 
     <!-- ================================================= -->
-    <!-- PUBLICAR NUEVO NASHEED -->
+    <!-- PUBLICAR -->
     <!-- ================================================= -->
 
     <div
         class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl space-y-6">
+
 
         <div>
 
@@ -405,6 +406,7 @@
                     class="w-16 h-16 rounded-xl object-cover border border-white/10"
                     alt="Vista previa de la carátula">
 
+
                 <div
                     class="text-[11px] text-zinc-500">
 
@@ -488,6 +490,7 @@
 
             </div>
 
+
             <div
                 class="progress-track">
 
@@ -526,6 +529,7 @@
 
     <div
         class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl">
+
 
         <div
             class="flex items-center justify-between mb-5">
@@ -603,54 +607,45 @@ const coverInput =
         "cover-file-input"
     );
 
-
 const coverPreview =
     document.getElementById(
         "cover-preview"
     );
-
 
 const coverPreviewImage =
     document.getElementById(
         "cover-preview-image"
     );
 
-
 const subtitleRows =
     document.getElementById(
         "subtitle-rows"
     );
-
 
 const nasheedsList =
     document.getElementById(
         "nasheeds-list"
     );
 
-
 const nasheedCount =
     document.getElementById(
         "nasheed-count"
     );
-
 
 const uploadBtn =
     document.getElementById(
         "upload-btn"
     );
 
-
 const uploadStatus =
     document.getElementById(
         "upload-status"
     );
 
-
 const uploadStatusText =
     document.getElementById(
         "upload-status-text"
     );
-
 
 const uploadProgress =
     document.getElementById(
@@ -849,7 +844,7 @@ coverInput.addEventListener(
 
 
 /* =========================================================
-   CREAR FILA DE SUBTÍTULOS
+   FILA DE SUBTÍTULOS
    ========================================================= */
 
 function createSubtitleRow() {
@@ -1004,16 +999,13 @@ function createSubtitleRow() {
         languageSelect
     );
 
-
     row.appendChild(
         fileInput
     );
 
-
     row.appendChild(
         customInput
     );
-
 
     row.appendChild(
         removeButton
@@ -1064,7 +1056,7 @@ function escapeHtml(
 
 
 /* =========================================================
-   ESTADO DE SUBIDA
+   ESTADO
    ========================================================= */
 
 function setUploadStatus(
@@ -1094,7 +1086,7 @@ function setUploadStatus(
 
 
 /* =========================================================
-   CARGAR NASHEEDS
+   LISTAR NASHEEDS
    ========================================================= */
 
 async function loadNasheeds() {
@@ -1199,7 +1191,7 @@ async function loadNasheeds() {
 
 
 /* =========================================================
-   MOSTRAR NASHEEDS
+   RENDER
    ========================================================= */
 
 function renderNasheeds(
@@ -1207,14 +1199,16 @@ function renderNasheeds(
 ) {
 
     nasheedCount.textContent =
-        nasheeds.length === 1
+        nasheeds.length ===
+            1
             ? "1 nasheed publicado"
             : `${nasheeds.length} nasheeds publicados`;
 
 
     if (
         !nasheeds ||
-        nasheeds.length === 0
+        nasheeds.length ===
+            0
     ) {
 
         nasheedsList.innerHTML = `
@@ -1370,7 +1364,6 @@ function createNasheedCard(
 
             </div>
 
-
             <div
                 class="min-w-0 flex-1">
 
@@ -1381,7 +1374,6 @@ function createNasheedCard(
 
                 </p>
 
-
                 <p
                     class="text-[10px] text-zinc-600 mt-1">
 
@@ -1389,16 +1381,16 @@ function createNasheedCard(
 
                 </p>
 
-
                 <p
                     class="text-[10px] text-amber-400 mt-1 truncate">
 
-                    ${escapeHtml(languages)}
+                    ${escapeHtml(
+                        languages
+                    )}
 
                 </p>
 
             </div>
-
 
             <audio
                 controls
@@ -1407,7 +1399,6 @@ function createNasheedCard(
                 src="${encodeURI(track.file)}">
 
             </audio>
-
 
             <button
                 onclick="deleteNasheed(${id})"
@@ -1425,7 +1416,7 @@ function createNasheedCard(
 
 
 /* =========================================================
-   OBTENER LISTA ACTUAL
+   OBTENER NASHEEDS
    ========================================================= */
 
 async function getCurrentNasheeds() {
@@ -1463,7 +1454,7 @@ async function getCurrentNasheeds() {
 
 
 /* =========================================================
-   ELIMINAR NASHEED
+   ELIMINAR
    ========================================================= */
 
 async function deleteNasheed(
@@ -1620,7 +1611,7 @@ async function deleteNasheed(
 
 
 /* =========================================================
-   SUBIR NASHEED
+   SUBIDA
    ========================================================= */
 
 async function uploadToServer() {
@@ -1656,7 +1647,8 @@ async function uploadToServer() {
 
     if (
         !audioInput.files ||
-        audioInput.files.length === 0
+        audioInput.files.length ===
+            0
     ) {
 
         alert(
@@ -1697,9 +1689,9 @@ async function uploadToServer() {
         new Set();
 
 
-    /*
-     * SUBTÍTULOS
-     */
+    /* =====================================================
+       SUBTÍTULOS
+       ===================================================== */
 
     for (
         const row of rows
@@ -1735,7 +1727,8 @@ async function uploadToServer() {
 
         if (
             !fileInput.files ||
-            fileInput.files.length === 0
+            fileInput.files.length ===
+                0
         ) {
 
             continue;
@@ -1838,9 +1831,9 @@ async function uploadToServer() {
     }
 
 
-    /*
-     * ÁRABE OBLIGATORIO
-     */
+    /* =====================================================
+       ÁRABE OBLIGATORIO
+       ===================================================== */
 
     if (
         !usedLanguages.has(
@@ -1858,9 +1851,9 @@ async function uploadToServer() {
     }
 
 
-    /*
-     * AUDIO
-     */
+    /* =====================================================
+       AUDIO
+       ===================================================== */
 
     selectedFiles.unshift({
 
@@ -1876,13 +1869,14 @@ async function uploadToServer() {
     });
 
 
-    /*
-     * CARÁTULA
-     */
+    /* =====================================================
+       CARÁTULA
+       ===================================================== */
 
     if (
         coverInput.files &&
-        coverInput.files.length > 0
+        coverInput.files.length >
+            0
     ) {
 
         selectedFiles.splice(
@@ -1905,9 +1899,9 @@ async function uploadToServer() {
     }
 
 
-    /*
-     * LIMITAR CADA ARCHIVO
-     */
+    /* =====================================================
+       LÍMITE DE ARCHIVOS
+       ===================================================== */
 
     for (
         const item of
@@ -1951,11 +1945,9 @@ async function uploadToServer() {
 
     try {
 
-        /*
-         * =====================================================
-         * 1. PEDIR URLS FIRMADAS
-         * =====================================================
-         */
+        /* =================================================
+           1. PREPARAR URLS FIRMADAS
+           ================================================= */
 
         const prepareResponse =
             await fetch(
@@ -2031,7 +2023,7 @@ async function uploadToServer() {
         } catch {
 
             throw new Error(
-                `El servidor devolvió una respuesta inválida (${prepareResponse.status}).`
+                `Respuesta inválida del servidor (${prepareResponse.status}).`
             );
 
         }
@@ -2089,11 +2081,9 @@ async function uploadToServer() {
         }
 
 
-        /*
-         * =====================================================
-         * 2. SUBIDA DIRECTA A SUPABASE
-         * =====================================================
-         */
+        /* =================================================
+           2. SUBIDA DIRECTA A SUPABASE STORAGE
+           ================================================= */
 
         const completedFiles =
             [];
@@ -2101,8 +2091,7 @@ async function uploadToServer() {
 
         for (
             let i = 0;
-            i <
-            preparedFiles.length;
+            i < preparedFiles.length;
             i++
         ) {
 
@@ -2137,17 +2126,13 @@ async function uploadToServer() {
             }
 
 
-            const percentageBefore =
+            setUploadStatus(
+                `Subiendo ${local.file.name}...`,
                 (
                     i /
                     preparedFiles.length
                 ) *
-                100;
-
-
-            setUploadStatus(
-                `Subiendo ${local.file.name}...`,
-                percentageBefore
+                    100
             );
 
 
@@ -2157,23 +2142,27 @@ async function uploadToServer() {
                 `Subiendo ${i + 1}/${preparedFiles.length}...`;
 
 
+            /*
+             * IMPORTANTE:
+             *
+             * El bucket REAL se llama "Nasheeds".
+             * No usamos "nushud".
+             *
+             * Tampoco enviamos fileOptions/contentType
+             * para evitar alterar la firma.
+             */
+
             const {
                 error:
                     uploadError
             } =
                 await supabaseClient
                     .storage
-                    .from("nushud")
+                    .from("Nasheeds")
                     .uploadToSignedUrl(
                         prepared.path,
                         prepared.token,
-                        local.file,
-                        {
-                            contentType:
-                                local.file.type ||
-                                prepared.contentType ||
-                                "application/octet-stream"
-                        }
+                        local.file
                     );
 
 
@@ -2211,27 +2200,21 @@ async function uploadToServer() {
             });
 
 
-            const percentageAfter =
+            setUploadStatus(
+                `${i + 1} de ${preparedFiles.length} archivos subidos...`,
                 (
                     (i + 1) /
                     preparedFiles.length
                 ) *
-                100;
-
-
-            setUploadStatus(
-                `${i + 1} de ${preparedFiles.length} archivos subidos...`,
-                percentageAfter
+                    100
             );
 
         }
 
 
-        /*
-         * =====================================================
-         * 3. GUARDAR EN DATABASE
-         * =====================================================
-         */
+        /* =================================================
+           3. GUARDAR EN BASE DE DATOS
+           ================================================= */
 
         uploadBtn.querySelector(
             "span"
@@ -2336,11 +2319,9 @@ async function uploadToServer() {
         }
 
 
-        /*
-         * =====================================================
-         * 4. LIMPIAR FORMULARIO
-         * =====================================================
-         */
+        /* =================================================
+           4. LIMPIAR FORMULARIO
+           ================================================= */
 
         document
             .getElementById(

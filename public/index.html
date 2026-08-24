@@ -15,7 +15,9 @@
 
     <title>NASHEED - Plataforma Espiritual</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4">
+    </script>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
@@ -243,7 +245,66 @@
 
 
         /* =========================================================
-           SUBTÍTULOS
+           ICONOS MENU
+           ========================================================= */
+
+        .desktop-menu-icon {
+
+            width:
+                32px;
+
+            height:
+                32px;
+
+            flex:
+                0 0 32px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            font-size:
+                25px;
+
+            line-height:
+                1;
+
+        }
+
+
+        .mobile-menu-icon {
+
+            width:
+                29px;
+
+            height:
+                29px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            font-size:
+                23px;
+
+            line-height:
+                1;
+
+        }
+
+
+        /* =========================================================
+           SUBTITULOS
            ========================================================= */
 
         #subtitle-overlay {
@@ -580,7 +641,7 @@
 
 
         /* =========================================================
-           SUBTITLE BUTTON
+           BOTON SUBTITULOS
            ========================================================= */
 
         .subtitle-menu-wrapper {
@@ -822,7 +883,7 @@
 
 
         /* =========================================================
-           UI LANGUAGE
+           IDIOMA INTERFAZ
            ========================================================= */
 
         .ui-language-switcher {
@@ -1113,24 +1174,13 @@
             }
 
 
-            .glass-player {
-
-                bottom:
-                    58px !important;
-
-            }
-
-
             #subtitle-overlay {
 
                 bottom:
                     calc(
-                        138px +
+                        var(--mobile-subtitle-bottom, 190px) +
                         env(safe-area-inset-bottom)
                     );
-
-                width:
-                    calc(100vw - 20px);
 
             }
 
@@ -1182,6 +1232,89 @@
             }
 
 
+            .mobile-logo {
+
+                display:
+                    flex;
+
+                margin:
+                    0 0 12px;
+
+                height:
+                    42px;
+
+                align-items:
+                    center;
+
+                gap:
+                    10px;
+
+            }
+
+
+            .mobile-logo-mark {
+
+                width:
+                    40px;
+
+                height:
+                    40px;
+
+                border-radius:
+                    15px;
+
+                display:
+                    flex;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #fbbf24,
+                        #f59e0b,
+                        #b45309
+                    );
+
+                box-shadow:
+                    0 8px 22px
+                    rgba(245,158,11,.15);
+
+            }
+
+
+            .mobile-logo-mark svg {
+
+                width:
+                    21px;
+
+                height:
+                    21px;
+
+            }
+
+
+            .mobile-logo-title {
+
+                font-size:
+                    14px;
+
+                font-weight:
+                    800;
+
+                letter-spacing:
+                    .14em;
+
+                color:
+                    #f59e0b;
+
+            }
+
+
             .mobile-bottom-nav {
 
                 display:
@@ -1202,11 +1335,11 @@
                 bottom:
                     0;
 
-                height:
+                min-height:
                     58px;
 
                 padding:
-                    7px 8px calc(7px + env(safe-area-inset-bottom));
+                    6px 8px calc(6px + env(safe-area-inset-bottom));
 
                 background:
                     rgba(9,9,11,.96);
@@ -1262,6 +1395,9 @@
                 cursor:
                     pointer;
 
+                -webkit-tap-highlight-color:
+                    transparent;
+
             }
 
 
@@ -1282,7 +1418,7 @@
             .mobile-bottom-nav span {
 
                 font-size:
-                    9px;
+                    10px;
 
                 line-height:
                     1;
@@ -1293,10 +1429,40 @@
             }
 
 
+            .mobile-bottom-nav
+            button > span:first-child {
+
+                width:
+                    29px;
+
+                height:
+                    29px;
+
+                display:
+                    flex;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
+
+                font-size:
+                    23px;
+
+                line-height:
+                    1;
+
+            }
+
+
             .mobile-player {
 
                 padding:
                     8px 10px !important;
+
+                gap:
+                    6px !important;
 
             }
 
@@ -1314,6 +1480,14 @@
 
                 padding-top:
                     12px !important;
+
+            }
+
+
+            .mobile-main .grid {
+
+                gap:
+                    8px;
 
             }
 
@@ -1342,23 +1516,6 @@
 
             }
 
-
-            .mobile-logo {
-
-                display:
-                    flex;
-
-                margin:
-                    0 0 10px;
-
-                height:
-                    34px;
-
-                align-items:
-                    center;
-
-            }
-
         }
 
     </style>
@@ -1371,12 +1528,12 @@
 
 
 <!-- =========================================================
-     UI LANGUAGE
+     IDIOMA
      ========================================================= -->
 
 <div
-    class="ui-language-switcher">
-
+    class="ui-language-switcher"
+    aria-label="Idioma">
 
     <button
         id="ui-lang-es"
@@ -1397,7 +1554,6 @@
 
     </button>
 
-
 </div>
 
 
@@ -1405,7 +1561,9 @@
     class="flex flex-1 overflow-hidden relative">
 
 
-    <!-- SIDEBAR -->
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <aside
         class="w-64 glass-sidebar hidden md:flex flex-col justify-between p-6 select-none shrink-0 z-20">
@@ -1465,8 +1623,9 @@
                     id="nav-home"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
 
+
                     <span
-                        class="text-xl">
+                        class="desktop-menu-icon">
 
                         ⌂
 
@@ -1480,6 +1639,7 @@
 
                     </span>
 
+
                 </button>
 
 
@@ -1488,8 +1648,9 @@
                     id="nav-library"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
+
                     <span
-                        class="text-xl">
+                        class="desktop-menu-icon">
 
                         ▣
 
@@ -1503,6 +1664,7 @@
 
                     </span>
 
+
                 </button>
 
 
@@ -1511,8 +1673,9 @@
                     id="nav-favorites"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
+
                     <span
-                        class="text-xl">
+                        class="desktop-menu-icon">
 
                         ★
 
@@ -1526,6 +1689,7 @@
 
                     </span>
 
+
                 </button>
 
 
@@ -1534,8 +1698,9 @@
                     id="nav-settings"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
+
                     <span
-                        class="text-xl">
+                        class="desktop-menu-icon">
 
                         ⚙
 
@@ -1548,6 +1713,7 @@
                         Ajustes / Rendimiento
 
                     </span>
+
 
                 </button>
 
@@ -1608,31 +1774,44 @@
     </aside>
 
 
-    <!-- MAIN -->
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
 
     <main
         class="flex-1 overflow-y-auto pb-36 pt-8 px-6 md:px-12 max-w-7xl mx-auto relative mobile-main">
 
 
         <div
-            class="mobile-logo items-center space-x-2.5 select-none">
+            class="mobile-logo select-none">
 
 
             <div
-                class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center">
+                class="mobile-logo-mark">
 
-                <span
-                    class="text-zinc-950 font-bold">
 
-                    ≋
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round">
 
-                </span>
+                    <path d="M2 12h2"/>
+                    <path d="M6 8v8"/>
+                    <path d="M10 4v16"/>
+                    <path d="M14 7v10"/>
+                    <path d="M18 10v4"/>
+                    <path d="M22 12h-2"/>
+
+                </svg>
+
 
             </div>
 
 
             <span
-                class="font-extrabold text-xs tracking-widest text-amber-500">
+                class="mobile-logo-title">
 
                 NASHEED
 
@@ -1642,7 +1821,9 @@
         </div>
 
 
-        <!-- HOME -->
+        <!-- =================================================
+             HOME
+             ================================================= -->
 
         <div
             id="section-home"
@@ -1661,7 +1842,9 @@
                         class="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-widest">
 
                         <span>
+
                             NASHEED AUDIO PRO
+
                         </span>
 
                     </div>
@@ -1743,7 +1926,9 @@
         </div>
 
 
-        <!-- LIBRARY -->
+        <!-- =================================================
+             LIBRARY
+             ================================================= -->
 
         <div
             id="section-library"
@@ -1800,7 +1985,9 @@
         </div>
 
 
-        <!-- FAVORITES -->
+        <!-- =================================================
+             FAVORITES
+             ================================================= -->
 
         <div
             id="section-favorites"
@@ -1830,7 +2017,9 @@
         </div>
 
 
-        <!-- SETTINGS -->
+        <!-- =================================================
+             SETTINGS
+             ================================================= -->
 
         <div
             id="section-settings"
@@ -1908,7 +2097,7 @@
 
 
 <!-- =========================================================
-     WARNING POPUP
+     WARNING MODAL
      ========================================================= -->
 
 <div
@@ -1984,7 +2173,7 @@
 
 
 <!-- =========================================================
-     SUBTÍTULOS
+     SUBTITULOS
      ========================================================= -->
 
 <div
@@ -2050,6 +2239,7 @@
      ========================================================= -->
 
 <div
+    id="mobile-audio-player"
     class="fixed bottom-0 left-0 right-0 glass-player mobile-player px-6 py-4 z-30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
 
 
@@ -2062,7 +2252,9 @@
             class="w-12 h-12 glass-panel rounded-xl flex items-center justify-center text-amber-400 shrink-0 border border-white/10 overflow-hidden">
 
             <span>
+
                 ♫
+
             </span>
 
         </div>
@@ -2138,8 +2330,6 @@
             </button>
 
 
-            <!-- SUBTÍTULOS -->
-
             <div
                 class="subtitle-menu-wrapper">
 
@@ -2153,7 +2343,9 @@
 
 
                     <span>
+
                         CC
+
                     </span>
 
 
@@ -2257,7 +2449,9 @@
 </div>
 
 
-<!-- MOBILE NAV -->
+<!-- =========================================================
+     MOBILE NAV
+     ========================================================= -->
 
 <nav
     id="mobile-bottom-nav"
@@ -2270,7 +2464,8 @@
         class="active">
 
 
-        <span>
+        <span
+            class="mobile-menu-icon">
 
             ⌂
 
@@ -2293,7 +2488,8 @@
         id="mobile-nav-library">
 
 
-        <span>
+        <span
+            class="mobile-menu-icon">
 
             ▣
 
@@ -2316,7 +2512,8 @@
         id="mobile-nav-favorites">
 
 
-        <span>
+        <span
+            class="mobile-menu-icon">
 
             ★
 
@@ -2339,7 +2536,8 @@
         id="mobile-nav-settings">
 
 
-        <span>
+        <span
+            class="mobile-menu-icon">
 
             ⚙
 
@@ -2372,7 +2570,7 @@
 
 
 /* =========================================================
-   ELEMENTS
+   ELEMENTOS
    ========================================================= */
 
 const audio =
@@ -2480,15 +2678,21 @@ const warningContinue =
         "warning-continue"
     );
 
+const mobileAudioPlayer =
+    document.getElementById(
+        "mobile-audio-player"
+    );
+
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
 
 let allNasheeds =
     [];
 
 let currentTrackIndex =
     -1;
-
-let favorites =
-    [];
 
 let currentSubtitles =
     [];
@@ -2505,6 +2709,10 @@ let currentSecondarySubtitleIndex =
 let currentSubtitleLanguages =
     {};
 
+let pendingTrackIndex =
+    -1;
+
+
 let selectedSubtitleLanguage =
     localStorage.getItem(
         "nasheed_subtitle_language"
@@ -2513,6 +2721,7 @@ let selectedSubtitleLanguage =
         "nushud_subtitle_language"
     ) ||
     "";
+
 
 let interfaceLanguage =
     localStorage.getItem(
@@ -2523,8 +2732,6 @@ let interfaceLanguage =
     ) ||
     "es";
 
-let pendingTrackIndex =
-    -1;
 
 let animationsActive =
     localStorage.getItem(
@@ -2533,9 +2740,9 @@ let animationsActive =
     "false";
 
 
-/* =========================================================
-   FAVORITES
-   ========================================================= */
+let favorites =
+    [];
+
 
 try {
 
@@ -2571,7 +2778,7 @@ try {
 
 
 /* =========================================================
-   TRANSLATIONS
+   TRADUCCIONES
    ========================================================= */
 
 const translations = {
@@ -2805,6 +3012,10 @@ function t(
 }
 
 
+/* =========================================================
+   INTERFACE LANGUAGE
+   ========================================================= */
+
 function setInterfaceLanguage(
     language
 ) {
@@ -2842,26 +3053,22 @@ function setInterfaceLanguage(
         );
 
 
-    document
-        .getElementById(
-            "ui-lang-es"
-        )
-        ?.classList.toggle(
-            "active",
-            interfaceLanguage ===
-                "es"
-        );
+    document.getElementById(
+        "ui-lang-es"
+    )?.classList.toggle(
+        "active",
+        interfaceLanguage ===
+            "es"
+    );
 
 
-    document
-        .getElementById(
-            "ui-lang-en"
-        )
-        ?.classList.toggle(
-            "active",
-            interfaceLanguage ===
-                "en"
-        );
+    document.getElementById(
+        "ui-lang-en"
+    )?.classList.toggle(
+        "active",
+        interfaceLanguage ===
+            "en"
+    );
 
 
     if (
@@ -2877,6 +3084,8 @@ function setInterfaceLanguage(
     }
 
 
+    updateWarningTexts();
+
     renderSubtitleOptions();
 
     updateCountTexts();
@@ -2886,8 +3095,36 @@ function setInterfaceLanguage(
 }
 
 
+function updateWarningTexts() {
+
+    warningTitle.textContent =
+        t(
+            "warningTitle"
+        );
+
+
+    warningText.textContent =
+        t(
+            "warningText"
+        );
+
+
+    warningCancel.textContent =
+        t(
+            "warningCancel"
+        );
+
+
+    warningContinue.textContent =
+        t(
+            "warningContinue"
+        );
+
+}
+
+
 /* =========================================================
-   ANIMATIONS
+   ANIMACIONES
    ========================================================= */
 
 function toggleAnimations() {
@@ -2911,11 +3148,10 @@ function toggleAnimations() {
 
 function applyAnimationsPreference() {
 
-    const btn =
+    const button =
         document.getElementById(
             "anim-toggle-btn"
         );
-
 
     const status =
         document.getElementById(
@@ -2936,10 +3172,10 @@ function applyAnimationsPreference() {
 
 
     if (
-        btn
+        button
     ) {
 
-        btn.textContent =
+        button.textContent =
             animationsActive
                 ? t(
                     "animationsOn"
@@ -2993,6 +3229,17 @@ function switchTab(
     ];
 
 
+    if (
+        !tabs.includes(
+            tab
+        )
+    ) {
+
+        return;
+
+    }
+
+
     tabs.forEach(
         current => {
 
@@ -3016,7 +3263,7 @@ function switchTab(
             }
 
 
-            const desktop =
+            const nav =
                 document.getElementById(
                     "nav-" +
                     current
@@ -3024,24 +3271,36 @@ function switchTab(
 
 
             if (
-                desktop
+                nav
             ) {
 
-                desktop.classList.toggle(
+                nav.classList.toggle(
                     "bg-amber-500/10",
                     current ===
                         tab
                 );
 
-                desktop.classList.toggle(
+                nav.classList.toggle(
                     "text-amber-400",
                     current ===
                         tab
                 );
 
-                desktop.classList.toggle(
+                nav.classList.toggle(
                     "border-amber-500/20",
                     current ===
+                        tab
+                );
+
+                nav.classList.toggle(
+                    "text-zinc-400",
+                    current !==
+                        tab
+                );
+
+                nav.classList.toggle(
+                    "border-transparent",
+                    current !==
                         tab
                 );
 
@@ -3084,7 +3343,7 @@ function switchTab(
 
 
 /* =========================================================
-   API
+   FETCH
    ========================================================= */
 
 async function fetchNasheeds() {
@@ -3095,10 +3354,19 @@ async function fetchNasheeds() {
             await fetch(
                 "/api/nasheeds",
                 {
+                    method:
+                        "GET",
+
+                    credentials:
+                        "same-origin",
+
                     cache:
                         "no-store",
-                    credentials:
-                        "same-origin"
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
                 }
             );
 
@@ -3135,12 +3403,12 @@ async function fetchNasheeds() {
 
         renderGrids();
 
-
     } catch (
         error
     ) {
 
         console.error(
+            "Error cargando nasheeds:",
             error
         );
 
@@ -3182,7 +3450,9 @@ function normalizeNasheed(
 ) {
 
     if (
-        !item
+        !item ||
+        typeof item !==
+            "object"
     ) {
 
         return null;
@@ -3214,7 +3484,10 @@ function normalizeNasheed(
     if (
         item.subtitles &&
         typeof item.subtitles ===
-            "object"
+            "object" &&
+        !Array.isArray(
+            item.subtitles
+        )
     ) {
 
         Object.entries(
@@ -3223,19 +3496,19 @@ function normalizeNasheed(
             (
                 [
                     language,
-                    value
+                    url
                 ]
             ) => {
 
                 if (
-                    typeof value ===
+                    typeof url ===
                         "string" &&
-                    value.trim()
+                    url.trim()
                 ) {
 
                     const safe =
                         safeMediaUrl(
-                            value
+                            url
                         );
 
 
@@ -3273,8 +3546,8 @@ function normalizeNasheed(
         file:
             safeMediaUrl(
                 item.file ||
-                item.audio_url ||
                 item.audio ||
+                item.audio_url ||
                 ""
             ),
 
@@ -3323,7 +3596,7 @@ function safeMediaUrl(
             );
 
 
-        const allowed =
+        const allowedSupabaseOrigin =
             "https://cqvpjmnziorbqbtsmcvy.supabase.co";
 
 
@@ -3343,7 +3616,7 @@ function safeMediaUrl(
             url.origin !==
                 window.location.origin &&
             url.origin !==
-                allowed
+                allowedSupabaseOrigin
         ) {
 
             return "";
@@ -3368,21 +3641,20 @@ function safeMediaUrl(
 
 function renderGrids() {
 
-    const home =
+    const homeGrid =
         document.getElementById(
             "home-grid"
         );
 
-
-    const library =
+    const libraryGrid =
         document.getElementById(
             "library-grid"
         );
 
 
-    home.replaceChildren();
+    homeGrid.replaceChildren();
 
-    library.replaceChildren();
+    libraryGrid.replaceChildren();
 
 
     updateCountTexts();
@@ -3393,7 +3665,7 @@ function renderGrids() {
     ) {
 
         showMessage(
-            home,
+            homeGrid,
             t(
                 "noTracksServer"
             )
@@ -3401,7 +3673,7 @@ function renderGrids() {
 
 
         showMessage(
-            library,
+            libraryGrid,
             t(
                 "noTracksServer"
             )
@@ -3419,7 +3691,7 @@ function renderGrids() {
             index
         ) => {
 
-            home.appendChild(
+            homeGrid.appendChild(
                 createTrackCard(
                     track,
                     index
@@ -3427,7 +3699,7 @@ function renderGrids() {
             );
 
 
-            library.appendChild(
+            libraryGrid.appendChild(
                 createTrackCard(
                     track,
                     index
@@ -3449,8 +3721,12 @@ function updateCountTexts() {
     const label =
         count ===
             1
-            ? t("tracksOne")
-            : t("tracksMany");
+            ? t(
+                "tracksOne"
+            )
+            : t(
+                "tracksMany"
+            );
 
 
     document.getElementById(
@@ -3506,6 +3782,10 @@ function createTrackCard(
             );
 
 
+        image.className =
+            "cover-image";
+
+
         image.src =
             track.cover;
 
@@ -3514,12 +3794,12 @@ function createTrackCard(
             track.title;
 
 
-        image.className =
-            "cover-image";
-
-
         image.loading =
             "lazy";
+
+
+        image.decoding =
+            "async";
 
 
         image.referrerPolicy =
@@ -3530,6 +3810,7 @@ function createTrackCard(
             () => {
 
                 image.remove();
+
 
                 addMusicIcon(
                     coverContainer
@@ -3574,22 +3855,22 @@ function createTrackCard(
     );
 
 
-    const circle =
+    const playCircle =
         document.createElement(
             "span"
         );
 
 
-    circle.className =
-        "w-10 h-10 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold";
+    playCircle.className =
+        "w-10 h-10 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-sm shadow-lg";
 
 
-    circle.textContent =
+    playCircle.textContent =
         "▶";
 
 
     playButton.appendChild(
-        circle
+        playCircle
     );
 
 
@@ -3656,23 +3937,23 @@ function createTrackCard(
         "flex items-center justify-between pt-2.5 border-t border-white/5";
 
 
-    const favorite =
+    const favoriteButton =
         document.createElement(
             "button"
         );
 
 
-    favorite.type =
+    favoriteButton.type =
         "button";
 
 
     updateFavoriteButton(
-        favorite,
+        favoriteButton,
         track.id
     );
 
 
-    favorite.addEventListener(
+    favoriteButton.addEventListener(
         "click",
         () =>
             toggleFavorite(
@@ -3682,7 +3963,7 @@ function createTrackCard(
 
 
     footer.appendChild(
-        favorite
+        favoriteButton
     );
 
 
@@ -3707,7 +3988,7 @@ function createTrackCard(
 
 
 function addMusicIcon(
-    element
+    container
 ) {
 
     const icon =
@@ -3724,7 +4005,7 @@ function addMusicIcon(
         "♫";
 
 
-    element.appendChild(
+    container.appendChild(
         icon
     );
 
@@ -3759,7 +4040,7 @@ function showMessage(
 
 
     box.className =
-        "col-span-full py-10 text-center text-xs text-zinc-500 glass-panel rounded-2xl";
+        "col-span-full py-12 text-center text-xs text-zinc-500 glass-panel rounded-2xl";
 
 
     box.textContent =
@@ -3815,7 +4096,6 @@ function toggleFavorite(
 
 
     renderGrids();
-
 
     renderFavorites();
 
@@ -3877,6 +4157,7 @@ function renderFavorites() {
                 "noFavorites"
             )
         );
+
 
         return;
 
@@ -3955,28 +4236,7 @@ function requestPlayTrack(
 
 function showWarning() {
 
-    warningTitle.textContent =
-        t(
-            "warningTitle"
-        );
-
-
-    warningText.textContent =
-        t(
-            "warningText"
-        );
-
-
-    warningCancel.textContent =
-        t(
-            "warningCancel"
-        );
-
-
-    warningContinue.textContent =
-        t(
-            "warningContinue"
-        );
+    updateWarningTexts();
 
 
     warningModal.classList.add(
@@ -4001,6 +4261,7 @@ warningCancel.addEventListener(
 
         pendingTrackIndex =
             -1;
+
 
         closeWarning();
 
@@ -4050,6 +4311,7 @@ warningModal.addEventListener(
             pendingTrackIndex =
                 -1;
 
+
             closeWarning();
 
         }
@@ -4059,7 +4321,7 @@ warningModal.addEventListener(
 
 
 /* =========================================================
-   PLAY TRACK
+   PLAY
    ========================================================= */
 
 function playTrack(
@@ -4089,8 +4351,9 @@ function playTrack(
     ) {
 
         console.error(
-            "Audio inválido."
+            "La pista no tiene un archivo de audio válido."
         );
+
 
         return;
 
@@ -4118,6 +4381,10 @@ function playTrack(
             );
 
 
+        image.className =
+            "cover-image";
+
+
         image.src =
             track.cover;
 
@@ -4126,14 +4393,11 @@ function playTrack(
             track.title;
 
 
-        image.className =
-            "cover-image";
-
-
         image.onerror =
             () => {
 
                 image.remove();
+
 
                 addMusicIcon(
                     playerCover
@@ -4176,7 +4440,7 @@ function playTrack(
     renderSubtitleOptions();
 
 
-    loadSubtitles(
+    loadArabicAndSecondarySubtitles(
         track
     );
 
@@ -4200,11 +4464,12 @@ function setupTrackSubtitleLanguage(
 
     const languages =
         Object.keys(
-            track.subtitles || {}
+            track.subtitles ||
+            {}
         )
             .filter(
-                code =>
-                    code !==
+                language =>
+                    language !==
                     "ar"
             );
 
@@ -4247,13 +4512,23 @@ function setupTrackSubtitleLanguage(
 
 function toggleSubtitleMenu() {
 
-    subtitleMenu.classList.toggle(
-        "open"
-    );
+    const open =
+        subtitleMenu.classList.toggle(
+            "open"
+        );
 
 
     subtitleButton.classList.toggle(
-        "active"
+        "active",
+        open
+    );
+
+
+    subtitleButton.setAttribute(
+        "aria-expanded",
+        String(
+            open
+        )
     );
 
 }
@@ -4268,6 +4543,12 @@ function closeSubtitleMenu() {
 
     subtitleButton.classList.remove(
         "active"
+    );
+
+
+    subtitleButton.setAttribute(
+        "aria-expanded",
+        "false"
     );
 
 }
@@ -4290,6 +4571,10 @@ document.addEventListener(
     }
 );
 
+
+/* =========================================================
+   SUBTITLE OPTIONS
+   ========================================================= */
 
 function renderSubtitleOptions() {
 
@@ -4545,21 +4830,18 @@ function getLanguageName(
    LOAD SUBTITLES
    ========================================================= */
 
-async function loadSubtitles(
+async function loadArabicAndSecondarySubtitles(
     track
 ) {
 
     currentSubtitles =
         [];
 
-
     currentSecondarySubtitles =
         [];
 
-
     currentSubtitleIndex =
         -1;
-
 
     currentSecondarySubtitleIndex =
         -1;
@@ -4585,9 +4867,7 @@ async function loadSubtitles(
 
     const arabicUrl =
         safeMediaUrl(
-            track
-                ?.subtitles
-                ?.ar
+            currentSubtitleLanguages.ar
         );
 
 
@@ -4645,7 +4925,6 @@ async function loadSecondarySubtitles() {
     currentSecondarySubtitles =
         [];
 
-
     currentSecondarySubtitleIndex =
         -1;
 
@@ -4689,15 +4968,18 @@ async function loadSecondarySubtitles() {
 
 
         if (
-            response.ok
+            !response.ok
         ) {
 
-            currentSecondarySubtitles =
-                parseVTT(
-                    await response.text()
-                );
+            return;
 
         }
+
+
+        currentSecondarySubtitles =
+            parseVTT(
+                await response.text()
+            );
 
     } catch (
         error
@@ -4718,11 +5000,11 @@ async function loadSecondarySubtitles() {
    ========================================================= */
 
 function parseVTT(
-    value
+    vttText
 ) {
 
     if (
-        typeof value !==
+        typeof vttText !==
         "string"
     ) {
 
@@ -4732,7 +5014,7 @@ function parseVTT(
 
 
     const normalized =
-        value
+        vttText
             .replace(
                 /^\uFEFF/,
                 ""
@@ -4763,12 +5045,17 @@ function parseVTT(
     ) {
 
         const lines =
-            block.split(
-                "\n"
-            );
+            block
+                .split(
+                    "\n"
+                )
+                .map(
+                    line =>
+                        line.trimEnd()
+                );
 
 
-        const timeIndex =
+        const timeLineIndex =
             lines.findIndex(
                 line =>
                     line.includes(
@@ -4778,7 +5065,7 @@ function parseVTT(
 
 
         if (
-            timeIndex ===
+            timeLineIndex ===
             -1
         ) {
 
@@ -4789,7 +5076,7 @@ function parseVTT(
 
         const match =
             lines[
-                timeIndex
+                timeLineIndex
             ].match(
                 /(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})/
             );
@@ -4822,10 +5109,26 @@ function parseVTT(
             );
 
 
-        const text =
+        if (
+            !Number.isFinite(
+                start
+            ) ||
+            !Number.isFinite(
+                end
+            ) ||
+            end <=
+                start
+        ) {
+
+            continue;
+
+        }
+
+
+        const rawText =
             lines
                 .slice(
-                    timeIndex +
+                    timeLineIndex +
                     1
                 )
                 .join(
@@ -4836,22 +5139,12 @@ function parseVTT(
 
         const cleanText =
             cleanSubtitleText(
-                text
+                rawText
             );
 
 
         if (
             !cleanText
-        ) {
-
-            continue;
-
-        }
-
-
-        if (
-            end <=
-            start
         ) {
 
             continue;
@@ -4915,8 +5208,7 @@ function parseVTTTime(
 
 
 /* =========================================================
-   IMPORTANT:
-   ELIMINA SOLO TURBOSCRIBE
+   FILTRO TURBOSCRIBE
    ========================================================= */
 
 function cleanSubtitleText(
@@ -4935,15 +5227,57 @@ function cleanSubtitleText(
 
     return text
 
+        /*
+         * Caso:
+         * (Transcrito por TurboScribe.
+         *  Actualizar a Ilimitado para eliminar este mensaje.)
+         */
+
+        .replace(
+            /\(\s*Transcrito por TurboScribe\.\s*Actualizar a Ilimitado para eliminar este mensaje\.\s*\)/gi,
+            ""
+        )
+
+        /*
+         * Caso sin paréntesis.
+         */
+
         .replace(
             /Transcrito por TurboScribe\.\s*Actualizar a Ilimitado para eliminar este mensaje\./gi,
             ""
         )
 
+        /*
+         * Inglés con paréntesis.
+         */
+
+        .replace(
+            /\(\s*Transcribed by TurboScribe\.\s*Upgrade to Unlimited to remove this message\.\s*\)/gi,
+            ""
+        )
+
+        /*
+         * Inglés sin paréntesis.
+         */
+
         .replace(
             /Transcribed by TurboScribe\.\s*Upgrade to Unlimited to remove this message\./gi,
             ""
         )
+
+        /*
+         * Algunas variantes pueden tener espacios
+         * antes del cierre del paréntesis.
+         */
+
+        .replace(
+            /\(\s*\)/g,
+            ""
+        )
+
+        /*
+         * Etiquetas VTT.
+         */
 
         .replace(
             /<v[^>]*>/gi,
@@ -4979,6 +5313,10 @@ function cleanSubtitleText(
             /<[^>]*>/g,
             ""
         )
+
+        /*
+         * Entidades HTML.
+         */
 
         .replace(
             /&nbsp;/gi,
@@ -5018,7 +5356,7 @@ function updateSubtitle() {
 
     if (
         currentTrackIndex ===
-        -1 ||
+            -1 ||
         !audio.src
     ) {
 
@@ -5047,7 +5385,7 @@ function updateSubtitle() {
         );
 
 
-    const arabic =
+    const arabicCue =
         currentSubtitleIndex >=
             0
             ? currentSubtitles[
@@ -5056,7 +5394,7 @@ function updateSubtitle() {
             : null;
 
 
-    const secondary =
+    const secondaryCue =
         currentSecondarySubtitleIndex >=
             0
             ? currentSecondarySubtitles[
@@ -5066,8 +5404,8 @@ function updateSubtitle() {
 
 
     if (
-        !arabic &&
-        !secondary
+        !arabicCue &&
+        !secondaryCue
     ) {
 
         hideSubtitleOverlay();
@@ -5082,7 +5420,7 @@ function updateSubtitle() {
 
 
     if (
-        arabic
+        arabicCue
     ) {
 
         progress =
@@ -5092,11 +5430,11 @@ function updateSubtitle() {
                     1,
                     (
                         time -
-                        arabic.start
+                        arabicCue.start
                     ) /
                     (
-                        arabic.end -
-                        arabic.start
+                        arabicCue.end -
+                        arabicCue.start
                     )
                 )
             );
@@ -5105,11 +5443,11 @@ function updateSubtitle() {
 
 
     showSubtitle(
-        arabic
-            ? arabic.text
+        arabicCue
+            ? arabicCue.text
             : "",
-        secondary
-            ? secondary.text
+        secondaryCue
+            ? secondaryCue.text
             : "",
         progress
     );
@@ -5276,10 +5614,6 @@ function showSubtitle(
 }
 
 
-/* =========================================================
-   HIDE SUBTITLE
-   ========================================================= */
-
 function hideSubtitleOverlay() {
 
     subtitleOverlay.classList.remove(
@@ -5306,7 +5640,7 @@ function hideSubtitleOverlay() {
 
 
 /* =========================================================
-   PLAY
+   PLAY / PAUSE
    ========================================================= */
 
 mainPlayBtn.addEventListener(
@@ -5337,7 +5671,14 @@ mainPlayBtn.addEventListener(
             audio.paused
         ) {
 
-            audio.play();
+            audio
+                .play()
+                .catch(
+                    error =>
+                        console.error(
+                            error
+                        )
+                );
 
         } else {
 
@@ -5348,10 +5689,6 @@ mainPlayBtn.addEventListener(
     }
 );
 
-
-/* =========================================================
-   AUDIO
-   ========================================================= */
 
 audio.addEventListener(
     "play",
@@ -5384,6 +5721,9 @@ audio.addEventListener(
                 audio.duration
             );
 
+
+        updateSubtitleMobilePosition();
+
     }
 );
 
@@ -5398,12 +5738,16 @@ audio.addEventListener(
             )
         ) {
 
-            progressBar.style.width =
+            const percentage =
                 (
                     audio.currentTime /
-                    audio.duration *
-                    100
-                ) +
+                    audio.duration
+                ) *
+                100;
+
+
+            progressBar.style.width =
+                percentage +
                 "%";
 
         }
@@ -5493,7 +5837,7 @@ function nextTrack() {
     }
 
 
-    const next =
+    const nextIndex =
         (
             currentTrackIndex +
             1
@@ -5502,7 +5846,7 @@ function nextTrack() {
 
 
     requestPlayTrack(
-        next
+        nextIndex
     );
 
 }
@@ -5523,7 +5867,7 @@ function prevTrack() {
     }
 
 
-    const previous =
+    const previousIndex =
         currentTrackIndex <=
             0
             ? allNasheeds.length -
@@ -5533,14 +5877,94 @@ function prevTrack() {
 
 
     requestPlayTrack(
-        previous
+        previousIndex
     );
 
 }
 
 
 /* =========================================================
-   TIME
+   MOVIL: POSICION AUTOMATICA DE SUBTITULOS
+   ========================================================= */
+
+function updateSubtitleMobilePosition() {
+
+    if (
+        !mobileAudioPlayer
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        window.innerWidth >
+        767
+    ) {
+
+        document.documentElement.style.removeProperty(
+            "--mobile-subtitle-bottom"
+        );
+
+
+        return;
+
+    }
+
+
+    const playerRect =
+        mobileAudioPlayer.getBoundingClientRect();
+
+
+    const playerHeight =
+        playerRect.height;
+
+
+    const bottom =
+        playerHeight +
+        58 +
+        14;
+
+
+    document.documentElement.style.setProperty(
+        "--mobile-subtitle-bottom",
+        `${bottom}px`
+    );
+
+}
+
+
+window.addEventListener(
+    "resize",
+    updateSubtitleMobilePosition
+);
+
+
+if (
+    typeof ResizeObserver !==
+    "undefined"
+) {
+
+    const playerObserver =
+        new ResizeObserver(
+            () => {
+
+                updateSubtitleMobilePosition();
+
+            }
+        );
+
+
+    playerObserver.observe(
+        mobileAudioPlayer
+    );
+
+}
+
+
+/* =========================================================
+   FORMAT TIME
    ========================================================= */
 
 function formatTime(
@@ -5629,6 +6053,8 @@ document.addEventListener(
         renderSubtitleOptions();
 
         fetchNasheeds();
+
+        updateSubtitleMobilePosition();
 
     }
 );

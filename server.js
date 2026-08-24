@@ -1,10 +1,11 @@
-const express = require('express');
-const multer = require('multer');
-const session = require('express-session');
-const path = require('path');
-const fs = require('fs');
+const express = require("express");
+const crypto = require("crypto");
+const path = require("path");
+require("dotenv").config();
 
-require('dotenv').config();
+const {
+    createClient
+} = require("@supabase/supabase-js");
 
 const app = express();
 
@@ -12,42 +13,52 @@ const PORT =
     process.env.PORT ||
     3000;
 
+const SUPABASE_URL =
+    process.env.SUPABASE_URL;
 
-// =========================================================
-// SESIONES
-// =========================================================
+const SUPABASE_SECRET_KEY =
+    process.env.SUPABASE_SECRET_KEY;
 
-app.use(
-    session({
+const SUPABASE_PUBLISHABLE_KEY =
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    "";
 
-        secret:
-            process.env.SESSION_SECRET ||
-            'nushud-super-secret-key-change-it',
+const STORAGE_BUCKET =
+    "nushud";
 
-        resave:
-            false,
+const ADMIN_PIN =
+    process.env.ADMIN_PIN ||
+    "7777";
 
-        saveUninitialized:
-            false,
+const ADMIN_PATH =
+    process.env.ADMIN_PATH ||
+    "/panel-oculto-propietario-xyz";
 
-        cookie: {
+const SESSION_SECRET =
+    process.env.SESSION_SECRET ||
+    "nushud-super-secret-key-change-it";
 
-            secure:
-                false,
+if (
+    !SUPABASE_URL ||
+    !SUPABASE_SECRET_KEY
+) {
+    console.error(
+        "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY."
+    );
+}
 
-            httpOnly:
-                true,
-
-            maxAge:
-                1000 *
-                60 *
-                60 *
-                2
-
+const supabase =
+    createClient(
+        SUPABASE_URL,
+        SUPABASE_SECRET_KEY,
+        {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false
+            }
         }
-
-    })
-);
+    );
 
 
 // =========================================================
@@ -55,15 +66,367 @@ app.use(
 // =========================================================
 
 app.use(
-    express.json()
+    express.json({
+        limit: "1mb"
+    })
 );
-
 
 app.use(
     express.urlencoded({
-        extended:
-            true
+        extended: true,
+        limit: "1mb"
     })
+);
+
+
+// =========================================================
+// COOKIE ADMIN
+// =========================================================
+
+const ADMIN_COOKIE =
+    "nushud_admin";
+
+
+function base64UrlEncode(
+    value
+) {
+    return Buffer
+        .from(value)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
+}
+
+
+function base64UrlDecode(
+    value
+) {
+    value =
+        value
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+
+    while (
+        value.length % 4
+    ) {
+        value += "=";
+    }
+
+    return Buffer
+        .from(value, "base64")
+        .toString("utf8");
+}
+
+
+function signValue(
+    value
+) {
+    return crypto
+        .createHmac(
+            "sha256",
+            SESSION_SECRET
+        )
+        .update(value)
+        .digest("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
+}
+
+
+function createAdminToken() {
+
+    const payload = {
+
+        admin: true,
+
+        exp:
+            Date.now() +
+            1000 *
+            60 *
+            60 *
+            24 *
+            7
+
+    };
+
+    const encoded =
+        base64UrlEncode(
+            JSON.stringify(
+                payload
+            )
+        );
+
+    const signature =
+        signValue(
+            encoded
+        );
+
+    return (
+        encoded +
+        "." +
+        signature
+    );
+}
+
+
+function verifyAdminToken(
+    token
+) {
+
+    if (
+        typeof token !==
+        "string"
+    ) {
+        return false;
+    }
+
+    const parts =
+        token.split(".");
+
+    if (
+        parts.length !== 2
+    ) {
+        return false;
+    }
+
+    const [
+        encoded,
+        signature
+    ] = parts;
+
+    const expected =
+        signValue(
+            encoded
+        );
+
+    const a =
+        Buffer.from(
+            signature
+        );
+
+    const b =
+        Buffer.from(
+            expected
+        );
+
+    if (
+        a.length !==
+        b.length
+    ) {
+        return false;
+    }
+
+    if (
+        !crypto.timingSafeEqual(
+            a,
+            b
+        )
+    ) {
+        return false;
+    }
+
+    try {
+
+        const payload =
+            JSON.parse(
+                base64UrlDecode(
+                    encoded
+                )
+            );
+
+        if (
+            !payload.admin
+        ) {
+            return false;
+        }
+
+        if (
+            !Number.isFinite(
+                payload.exp
+            )
+        ) {
+            return false;
+        }
+
+        if (
+            Date.now() >=
+            payload.exp
+        ) {
+            return false;
+        }
+
+        return true;
+
+    } catch {
+
+        return false;
+
+    }
+}
+
+
+function getCookie(
+    req,
+    name
+) {
+
+    const header =
+        req.headers.cookie;
+
+    if (
+        !header
+    ) {
+        return "";
+    }
+
+    const parts =
+        header.split(";");
+
+    for (
+        const part of parts
+    ) {
+
+        const index =
+            part.indexOf("=");
+
+        if (
+            index === -1
+        ) {
+            continue;
+        }
+
+        const key =
+            part
+                .slice(
+                    0,
+                    index
+                )
+                .trim();
+
+        if (
+            key !==
+            name
+        ) {
+            continue;
+        }
+
+        return decodeURIComponent(
+            part
+                .slice(index + 1)
+                .trim()
+        );
+    }
+
+    return "";
+}
+
+
+function setAdminCookie(
+    res
+) {
+
+    const secure =
+        process.env.NODE_ENV ===
+        "production";
+
+    res.setHeader(
+        "Set-Cookie",
+        [
+            `${ADMIN_COOKIE}=${encodeURIComponent(createAdminToken())}`,
+            "Path=/",
+            "HttpOnly",
+            "SameSite=Lax",
+            "Max-Age=604800",
+            secure
+                ? "Secure"
+                : ""
+        ]
+            .filter(Boolean)
+            .join("; ")
+    );
+}
+
+
+function clearAdminCookie(
+    res
+) {
+
+    const secure =
+        process.env.NODE_ENV ===
+        "production";
+
+    res.setHeader(
+        "Set-Cookie",
+        [
+            `${ADMIN_COOKIE}=`,
+            "Path=/",
+            "HttpOnly",
+            "SameSite=Lax",
+            "Max-Age=0",
+            secure
+                ? "Secure"
+                : ""
+        ]
+            .filter(Boolean)
+            .join("; ")
+    );
+}
+
+
+// =========================================================
+// REQUIRE ADMIN
+// =========================================================
+
+function requireAdmin(
+    req,
+    res,
+    next
+) {
+
+    const token =
+        getCookie(
+            req,
+            ADMIN_COOKIE
+        );
+
+    if (
+        verifyAdminToken(
+            token
+        )
+    ) {
+
+        return next();
+
+    }
+
+    return res
+        .status(403)
+        .json({
+            error:
+                "Acceso denegado. No autorizado."
+        });
+}
+
+
+// =========================================================
+// ADMIN PAGE
+// =========================================================
+
+app.get(
+    ADMIN_PATH,
+    (req, res) => {
+
+        return res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "admin.html"
+            )
+        );
+
+    }
 );
 
 
@@ -75,588 +438,133 @@ app.use(
     express.static(
         path.join(
             __dirname,
-            'public'
+            "public"
         )
     )
 );
 
 
 // =========================================================
-// RUTA ADMIN
+// CONFIG PÚBLICA
 // =========================================================
 
-const SECRET_ADMIN_PATH =
-    process.env.ADMIN_PATH ||
-    '/panel-oculto-propietario-xyz';
-
-
 app.get(
-    SECRET_ADMIN_PATH,
+    "/api/public-config",
     (req, res) => {
 
-        if (
-            req.session &&
-            req.session.isAdmin
-        ) {
+        return res.json({
 
-            return res.sendFile(
-                path.join(
-                    __dirname,
-                    'public',
-                    'admin.html'
-                )
-            );
+            supabaseUrl:
+                SUPABASE_URL,
 
-        }
+            supabasePublishableKey:
+                SUPABASE_PUBLISHABLE_KEY,
 
+            bucket:
+                STORAGE_BUCKET
 
-        return res.send(`
-<!DOCTYPE html>
-<html lang="es" class="dark">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0">
-
-    <title>Acceso Restringido</title>
-
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
-    <style>
-
-        body {
-
-            font-family:
-                sans-serif;
-
-            background-color:
-                #060608;
-
-            color:
-                #f4f4f5;
-
-        }
-
-    </style>
-
-</head>
-
-
-<body
-    class="min-h-screen flex items-center justify-center p-6">
-
-
-<div
-    class="bg-zinc-900 border border-amber-500/30 p-8 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
-
-
-    <h1
-        class="text-sm font-bold text-amber-400 uppercase tracking-wider text-center">
-
-        Identificación Requerida
-
-    </h1>
-
-
-    <input
-        type="password"
-        id="pin-input"
-        placeholder="Introduce tu PIN"
-        class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-500 text-center tracking-widest">
-
-
-    <button
-        onclick="loginAdmin()"
-        class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs cursor-pointer">
-
-        Acceder al Panel
-
-    </button>
-
-
-    <p
-        id="error-msg"
-        class="text-xs text-red-400 text-center h-4">
-
-    </p>
-
-
-</div>
-
-
-<script>
-
-async function loginAdmin() {
-
-    const pin =
-        document
-            .getElementById(
-                'pin-input'
-            )
-            .value;
-
-
-    try {
-
-        const res =
-            await fetch(
-                '/api/login',
-                {
-
-                    method:
-                        'POST',
-
-                    headers: {
-
-                        'Content-Type':
-                            'application/json'
-
-                    },
-
-                    body:
-                        JSON.stringify({
-                            pin
-                        })
-
-                }
-            );
-
-
-        const data =
-            await res.json();
-
-
-        if (
-            data.success
-        ) {
-
-            window.location.reload();
-
-        } else {
-
-            document
-                .getElementById(
-                    'error-msg'
-                )
-                .textContent =
-                'PIN incorrecto';
-
-        }
-
-    } catch (error) {
-
-        document
-            .getElementById(
-                'error-msg'
-            )
-            .textContent =
-            'Error de conexión';
-
-    }
-
-}
-
-</script>
-
-</body>
-</html>
-        `);
+        });
 
     }
 );
 
 
 // =========================================================
-// UPLOAD DIR
+// API PÚBLICA - NASHEEDS
 // =========================================================
 
-const UPLOAD_DIR =
-    path.join(
-        __dirname,
-        'public',
-        'uploads'
-    );
+app.get(
+    "/api/nasheeds",
+    async (
+        req,
+        res
+    ) => {
 
+        try {
 
-if (
-    !fs.existsSync(
-        UPLOAD_DIR
-    )
-) {
-
-    fs.mkdirSync(
-        UPLOAD_DIR,
-        {
-            recursive:
-                true
-        }
-    );
-
-}
-
-
-// =========================================================
-// MULTER STORAGE
-// =========================================================
-
-const storage =
-    multer.diskStorage({
-
-        destination:
-            (req, file, cb) => {
-
-                cb(
-                    null,
-                    UPLOAD_DIR
-                );
-
-            },
-
-
-        filename:
-            (req, file, cb) => {
-
-                const uniqueSuffix =
-                    Date.now() +
-                    '-' +
-                    Math.round(
-                        Math.random() *
-                        1E9
-                    );
-
-
-                let extension =
-                    path
-                        .extname(
-                            file.originalname
-                        )
-                        .toLowerCase();
-
-
-                if (
-                    file.fieldname ===
-                    'subtitles'
-                ) {
-
-                    extension =
-                        '.vtt';
-
-                }
-
-
-                cb(
-                    null,
-                    uniqueSuffix +
-                    extension
-                );
-
-            }
-
-    });
-
-
-// =========================================================
-// FILE FILTER
-// =========================================================
-
-const upload =
-    multer({
-
-        storage:
-            storage,
-
-        limits: {
-
-            fileSize:
-                25 *
-                1024 *
-                1024
-
-        },
-
-
-        fileFilter:
-            (req, file, cb) => {
-
-
-                if (
-                    file.fieldname ===
-                    'audio'
-                ) {
-
-                    if (
-                        file.mimetype &&
-                        file.mimetype.startsWith(
-                            'audio/'
-                        )
-                    ) {
-
-                        return cb(
-                            null,
-                            true
-                        );
-
-                    }
-
-
-                    return cb(
-                        new Error(
-                            'El archivo de audio no es válido.'
-                        )
-                    );
-
-                }
-
-
-                if (
-                    file.fieldname ===
-                    'cover'
-                ) {
-
-                    if (
-                        file.mimetype &&
-                        file.mimetype.startsWith(
-                            'image/'
-                        )
-                    ) {
-
-                        return cb(
-                            null,
-                            true
-                        );
-
-                    }
-
-
-                    return cb(
-                        new Error(
-                            'La carátula debe ser una imagen.'
-                        )
-                    );
-
-                }
-
-
-                if (
-                    file.fieldname ===
-                    'subtitles'
-                ) {
-
-                    const extension =
-                        path
-                            .extname(
-                                file.originalname
-                            )
-                            .toLowerCase();
-
-
-                    if (
-                        extension ===
-                        '.vtt'
-                    ) {
-
-                        return cb(
-                            null,
-                            true
-                        );
-
-                    }
-
-
-                    return cb(
-                        new Error(
-                            'Los subtítulos deben ser archivos .vtt'
-                        )
-                    );
-
-                }
-
-
-                return cb(
-                    new Error(
-                        'Campo de archivo no permitido.'
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from("nasheeds")
+                    .select(
+                        "id,title,audio_url,cover_url,subtitles,created_at"
                     )
+                    .order(
+                        "created_at",
+                        {
+                            ascending:
+                                false
+                        }
+                    );
+
+            if (
+                error
+            ) {
+
+                console.error(
+                    "Supabase GET nasheeds:",
+                    error
                 );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudieron cargar los nasheeds."
+                    });
 
             }
 
-    });
+            const result =
+                (data || [])
+                    .map(
+                        item => ({
 
+                            id:
+                                Number(
+                                    item.id
+                                ),
 
-// =========================================================
-// BASE DE DATOS
-// =========================================================
+                            title:
+                                item.title,
 
-const DB_FILE =
-    path.join(
-        __dirname,
-        'nasheeds.json'
-    );
+                            file:
+                                item.audio_url,
 
+                            cover:
+                                item.cover_url ||
+                                "",
 
-function getNasheeds() {
+                            subtitles:
+                                item.subtitles ||
+                                {}
 
-    if (
-        !fs.existsSync(
-            DB_FILE
-        )
-    ) {
+                        })
+                    );
 
-        return [];
-
-    }
-
-
-    try {
-
-        const data =
-            fs.readFileSync(
-                DB_FILE,
-                'utf8'
+            return res.json(
+                result
             );
 
-
-        const parsed =
-            JSON.parse(
-                data
-            );
-
-
-        if (
-            !Array.isArray(
-                parsed
-            )
+        } catch (
+            error
         ) {
 
-            return [];
+            console.error(
+                "API pública:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error interno."
+                });
 
         }
-
-
-        return parsed;
-
-    } catch (error) {
-
-        console.error(
-            'Error leyendo nasheeds.json:',
-            error
-        );
-
-
-        return [];
-
-    }
-
-}
-
-
-function saveNasheeds(
-    data
-) {
-
-    fs.writeFileSync(
-
-        DB_FILE,
-
-        JSON.stringify(
-            data,
-            null,
-            2
-        ),
-
-        'utf8'
-
-    );
-
-}
-
-
-// =========================================================
-// ADMIN
-// =========================================================
-
-function requireAdmin(
-    req,
-    res,
-    next
-) {
-
-    if (
-        req.session &&
-        req.session.isAdmin
-    ) {
-
-        return next();
-
-    }
-
-
-    return res
-        .status(403)
-        .json({
-
-            error:
-                'Acceso denegado. No autorizado.'
-
-        });
-
-}
-
-
-// =========================================================
-// API PÚBLICA
-// =========================================================
-
-app.get(
-    '/api/nasheeds',
-    (req, res) => {
-
-        res.json(
-            getNasheeds()
-        );
-
-    }
-);
-
-
-// =========================================================
-// API ADMIN
-// =========================================================
-
-app.get(
-    '/api/admin/nasheeds',
-    requireAdmin,
-    (req, res) => {
-
-        res.json(
-            getNasheeds()
-        );
-
-    }
-);
-
-
-// =========================================================
-// CHECK SESSION
-// =========================================================
-
-app.get(
-    '/api/check-session',
-    (req, res) => {
-
-        res.json({
-
-            isAdmin:
-                !!(
-                    req.session &&
-                    req.session.isAdmin
-                )
-
-        });
 
     }
 );
@@ -667,52 +575,74 @@ app.get(
 // =========================================================
 
 app.post(
-    '/api/login',
+    "/api/login",
     (req, res) => {
 
-        const { pin } =
-            req.body;
-
-
-        const adminPin =
-            process.env.ADMIN_PIN ||
-            '7777';
-
+        const pin =
+            String(
+                req.body?.pin ||
+                ""
+            );
 
         if (
-            pin &&
-            pin ===
-            adminPin
+            pin !==
+            ADMIN_PIN
         ) {
 
-            req.session.isAdmin =
-                true;
+            return res
+                .status(401)
+                .json({
 
+                    success:
+                        false,
 
-            return res.json({
+                    error:
+                        "PIN incorrecto"
 
-                success:
-                    true,
-
-                redirect:
-                    SECRET_ADMIN_PATH
-
-            });
+                });
 
         }
 
+        setAdminCookie(
+            res
+        );
 
-        return res
-            .status(401)
-            .json({
+        return res.json({
 
-                success:
-                    false,
+            success:
+                true,
 
-                error:
-                    'PIN incorrecto'
+            redirect:
+                ADMIN_PATH
 
-            });
+        });
+
+    }
+);
+
+
+// =========================================================
+// CHECK SESSION
+// =========================================================
+
+app.get(
+    "/api/check-session",
+    (req, res) => {
+
+        const token =
+            getCookie(
+                req,
+                ADMIN_COOKIE
+            );
+
+        return res.json({
+
+            isAdmin:
+                verifyAdminToken(
+                    token
+                )
+
+        });
 
     }
 );
@@ -723,618 +653,12 @@ app.post(
 // =========================================================
 
 app.post(
-    '/api/logout',
+    "/api/logout",
     (req, res) => {
 
-        req.session.destroy(
-            () => {
-
-                res.json({
-
-                    success:
-                        true
-
-                });
-
-            }
+        clearAdminCookie(
+            res
         );
-
-    }
-);
-
-
-// =========================================================
-// SUBIR AUDIO + CARÁTULA + MÚLTIPLES VTT
-// =========================================================
-
-app.post(
-
-    '/api/upload',
-
-    requireAdmin,
-
-    upload.fields([
-
-        {
-            name:
-                'audio',
-
-            maxCount:
-                1
-
-        },
-
-        {
-            name:
-                'cover',
-
-            maxCount:
-                1
-
-        },
-
-        {
-            name:
-                'subtitles',
-
-            maxCount:
-                20
-
-        }
-
-    ]),
-
-
-    (req, res) => {
-
-        const title =
-            String(
-                req.body.title ||
-                ''
-            ).trim();
-
-
-        const audioFile =
-            req.files?.audio?.[0];
-
-
-        const coverFile =
-            req.files?.cover?.[0];
-
-
-        const subtitleFiles =
-            req.files?.subtitles ||
-            [];
-
-
-        /*
-         * COMPROBAR BÁSICOS
-         */
-
-        if (
-            !title ||
-            !audioFile
-        ) {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'Faltan el título o el archivo de audio.'
-
-                });
-
-        }
-
-
-        /*
-         * LEER IDIOMAS
-         */
-
-        let subtitleLanguages;
-
-
-        try {
-
-            subtitleLanguages =
-                JSON.parse(
-                    req.body.subtitleLanguages ||
-                    '[]'
-                );
-
-        } catch {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'La información de idiomas no es válida.'
-
-                });
-
-        }
-
-
-        if (
-            !Array.isArray(
-                subtitleLanguages
-            )
-        ) {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'Los idiomas de subtítulos no son válidos.'
-
-                });
-
-        }
-
-
-        /*
-         * CANTIDAD
-         */
-
-        if (
-            subtitleLanguages.length !==
-            subtitleFiles.length
-        ) {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'No coinciden los idiomas con los archivos VTT.'
-
-                });
-
-        }
-
-
-        /*
-         * NORMALIZAR
-         */
-
-        subtitleLanguages =
-            subtitleLanguages.map(
-                language =>
-                    String(
-                        language || ''
-                    )
-                    .trim()
-                    .toLowerCase()
-            );
-
-
-        /*
-         * VALIDAR CÓDIGOS
-         */
-
-        for (
-            const language
-            of subtitleLanguages
-        ) {
-
-            if (
-                !/^[a-z]{2,10}$/.test(
-                    language
-                )
-            ) {
-
-                cleanupFiles([
-                    audioFile,
-                    coverFile,
-                    ...subtitleFiles
-                ]);
-
-
-                return res
-                    .status(400)
-                    .json({
-
-                        error:
-                            `Código de idioma inválido: ${language}`
-
-                    });
-
-            }
-
-        }
-
-
-        /*
-         * EVITAR DUPLICADOS
-         */
-
-        if (
-            new Set(
-                subtitleLanguages
-            ).size !==
-            subtitleLanguages.length
-        ) {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'No puedes subir dos VTT del mismo idioma.'
-
-                });
-
-        }
-
-
-        /*
-         * ÁRABE OBLIGATORIO
-         */
-
-        if (
-            !subtitleLanguages.includes(
-                'ar'
-            )
-        ) {
-
-            cleanupFiles([
-                audioFile,
-                coverFile,
-                ...subtitleFiles
-            ]);
-
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'El VTT árabe es obligatorio.'
-
-                });
-
-        }
-
-
-        /*
-         * CREAR NASHEED
-         */
-
-        const nasheeds =
-            getNasheeds();
-
-
-        const newTrack = {
-
-            id:
-                Date.now(),
-
-            title:
-                title,
-
-            file:
-                `/uploads/${audioFile.filename}`
-
-        };
-
-
-        /*
-         * CARÁTULA
-         */
-
-        if (
-            coverFile
-        ) {
-
-            newTrack.cover =
-                `/uploads/${coverFile.filename}`;
-
-        }
-
-
-        /*
-         * SUBTÍTULOS
-         *
-         * El orden de req.files y
-         * subtitleLanguages es el mismo
-         * porque FormData añade los
-         * archivos en ese orden.
-         */
-
-        newTrack.subtitles =
-            {};
-
-
-        subtitleFiles.forEach(
-            (file,index) => {
-
-                const language =
-                    subtitleLanguages[
-                        index
-                    ];
-
-
-                newTrack.subtitles[
-                    language
-                ] =
-                    `/uploads/${file.filename}`;
-
-            }
-        );
-
-
-        /*
-         * GUARDAR
-         */
-
-        nasheeds.push(
-            newTrack
-        );
-
-
-        saveNasheeds(
-            nasheeds
-        );
-
-
-        return res.json({
-
-            success:
-                true,
-
-            track:
-                newTrack
-
-        });
-
-    }
-
-);
-
-
-// =========================================================
-// LIMPIAR ARCHIVOS
-// =========================================================
-
-function cleanupFiles(
-    files
-) {
-
-    for (
-        const file
-        of files
-    ) {
-
-        if (
-            !file ||
-            !file.filename
-        ) {
-
-            continue;
-
-        }
-
-
-        const filePath =
-            path.join(
-                UPLOAD_DIR,
-                file.filename
-            );
-
-
-        try {
-
-            if (
-                fs.existsSync(
-                    filePath
-                )
-            ) {
-
-                fs.unlinkSync(
-                    filePath
-                );
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                'Error eliminando archivo:',
-                error
-            );
-
-        }
-
-    }
-
-}
-
-
-// =========================================================
-// ELIMINAR NASHEED
-// =========================================================
-
-app.delete(
-
-    '/api/nasheeds/:id',
-
-    requireAdmin,
-
-    (req, res) => {
-
-        const id =
-            Number(
-                req.params.id
-            );
-
-
-        if (
-            !Number.isFinite(id)
-        ) {
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        'ID no válido.'
-
-                });
-
-        }
-
-
-        let nasheeds =
-            getNasheeds();
-
-
-        const track =
-            nasheeds.find(
-                item =>
-                    Number(
-                        item.id
-                    ) ===
-                    id
-            );
-
-
-        if (!track) {
-
-            return res
-                .status(404)
-                .json({
-
-                    error:
-                        'Nasheed no encontrado.'
-
-                });
-
-        }
-
-
-        /*
-         * AUDIO
-         */
-
-        deleteUploadedFile(
-            track.file,
-            'audio'
-        );
-
-
-        /*
-         * CARÁTULA
-         */
-
-        deleteUploadedFile(
-            track.cover,
-            'carátula'
-        );
-
-
-        /*
-         * SUBTÍTULOS NUEVOS
-         */
-
-        if (
-            track.subtitles &&
-            typeof track.subtitles ===
-                'object' &&
-            !Array.isArray(
-                track.subtitles
-            )
-        ) {
-
-            Object.values(
-                track.subtitles
-            ).forEach(
-                url => {
-
-                    deleteUploadedFile(
-                        url,
-                        'subtítulo'
-                    );
-
-                }
-            );
-
-        }
-
-        /*
-         * SUBTÍTULOS ANTIGUOS
-         */
-
-        else {
-
-            deleteUploadedFile(
-                track.subtitles ||
-                track.subtitle ||
-                track.vtt ||
-                track.vtt_url ||
-                track.subtitle_url,
-
-                'subtítulos'
-            );
-
-        }
-
-
-        /*
-         * BORRAR REGISTRO
-         */
-
-        nasheeds =
-            nasheeds.filter(
-                item =>
-                    Number(
-                        item.id
-                    ) !==
-                    id
-            );
-
-
-        saveNasheeds(
-            nasheeds
-        );
-
 
         return res.json({
 
@@ -1344,61 +668,1028 @@ app.delete(
         });
 
     }
-
 );
 
 
 // =========================================================
-// BORRAR ARCHIVO
+// ADMIN - LISTAR
 // =========================================================
 
-function deleteUploadedFile(
-    fileUrl,
-    label
+app.get(
+    "/api/admin/nasheeds",
+    requireAdmin,
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from("nasheeds")
+                    .select(
+                        "id,title,audio_url,cover_url,subtitles,created_at"
+                    )
+                    .order(
+                        "created_at",
+                        {
+                            ascending:
+                                false
+                        }
+                    );
+
+            if (
+                error
+            ) {
+
+                console.error(
+                    "Supabase admin list:",
+                    error
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudieron cargar los nasheeds."
+                    });
+
+            }
+
+            return res.json(
+
+                (data || [])
+                    .map(
+                        item => ({
+
+                            id:
+                                Number(
+                                    item.id
+                                ),
+
+                            title:
+                                item.title,
+
+                            file:
+                                item.audio_url,
+
+                            cover:
+                                item.cover_url ||
+                                "",
+
+                            subtitles:
+                                item.subtitles ||
+                                {},
+
+                            created_at:
+                                item.created_at
+
+                        })
+                    )
+
+            );
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error interno."
+                });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// PREPARAR SUBIDA DIRECTA
+// =========================================================
+
+app.post(
+    "/api/upload-prepare",
+    requireAdmin,
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const title =
+                String(
+                    req.body?.title ||
+                    ""
+                ).trim();
+
+            const files =
+                Array.isArray(
+                    req.body?.files
+                )
+                    ? req.body.files
+                    : [];
+
+            if (
+                !title
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Falta el título."
+                    });
+
+            }
+
+            if (
+                !files.length
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "No hay archivos para subir."
+                    });
+
+            }
+
+            if (
+                files.length >
+                22
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Demasiados archivos."
+                    });
+
+            }
+
+            const seenLanguages =
+                new Set();
+
+            let hasArabic =
+                false;
+
+            const prepared =
+                [];
+
+            for (
+                const file
+                of files
+            ) {
+
+                const field =
+                    String(
+                        file?.field ||
+                        ""
+                    ).trim();
+
+                const language =
+                    String(
+                        file?.language ||
+                        ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
+                const originalName =
+                    String(
+                        file?.name ||
+                        ""
+                    ).trim();
+
+                const contentType =
+                    String(
+                        file?.type ||
+                        "application/octet-stream"
+                    ).trim();
+
+                const size =
+                    Number(
+                        file?.size
+                    );
+
+                if (
+                    !field ||
+                    !originalName ||
+                    !Number.isFinite(
+                        size
+                    )
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            error:
+                                "Datos de archivo inválidos."
+                        });
+
+                }
+
+                if (
+                    size <= 0
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            error:
+                                `Archivo vacío: ${originalName}`
+                        });
+
+                }
+
+                if (
+                    size >
+                    50 *
+                    1024 *
+                    1024
+                ) {
+
+                    return res
+                        .status(400)
+                        .json({
+                            error:
+                                `El archivo ${originalName} supera los 50 MB.`
+                        });
+
+                }
+
+                if (
+                    field ===
+                    "subtitles"
+                ) {
+
+                    if (
+                        !/^[a-z]{2,10}$/.test(
+                            language
+                        )
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                error:
+                                    `Idioma inválido para ${originalName}.`
+                            });
+
+                    }
+
+                    if (
+                        seenLanguages.has(
+                            language
+                        )
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                error:
+                                    `Idioma duplicado: ${language}`
+                            });
+
+                    }
+
+                    seenLanguages.add(
+                        language
+                    );
+
+                    if (
+                        language ===
+                        "ar"
+                    ) {
+
+                        hasArabic =
+                            true;
+
+                    }
+
+                    if (
+                        !originalName
+                            .toLowerCase()
+                            .endsWith(
+                                ".vtt"
+                            )
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                error:
+                                    `El subtítulo ${originalName} debe ser .vtt`
+                            });
+
+                    }
+
+                }
+
+                if (
+                    field ===
+                    "audio"
+                ) {
+
+                    if (
+                        !(
+                            contentType.startsWith(
+                                "audio/"
+                            ) ||
+                            /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(
+                                originalName
+                            )
+                        )
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                error:
+                                    "El archivo de audio no parece válido."
+                            });
+
+                    }
+
+                }
+
+                if (
+                    field ===
+                    "cover"
+                ) {
+
+                    if (
+                        !(
+                            contentType.startsWith(
+                                "image/"
+                            ) ||
+                            /\.(png|jpe?g|webp|gif)$/i.test(
+                                originalName
+                            )
+                        )
+                    ) {
+
+                        return res
+                            .status(400)
+                            .json({
+                                error:
+                                    "La carátula no parece una imagen."
+                            });
+
+                    }
+
+                }
+
+                const extension =
+                    path
+                        .extname(
+                            originalName
+                        )
+                        .toLowerCase() ||
+                    ".bin";
+
+                const safeRandom =
+                    crypto.randomBytes(
+                        10
+                    ).toString(
+                        "hex"
+                    );
+
+                const safeName =
+                    `${Date.now()}-${safeRandom}${extension}`;
+
+                let folder =
+                    "other";
+
+                if (
+                    field ===
+                    "audio"
+                ) {
+
+                    folder =
+                        "audio";
+
+                }
+
+                if (
+                    field ===
+                    "cover"
+                ) {
+
+                    folder =
+                        "covers";
+
+                }
+
+                if (
+                    field ===
+                    "subtitles"
+                ) {
+
+                    folder =
+                        "subtitles/" +
+                        language;
+
+                }
+
+                const storagePath =
+                    `${folder}/${safeName}`;
+
+                const {
+                    data,
+                    error
+                } =
+                    await supabase
+                        .storage
+                        .from(
+                            STORAGE_BUCKET
+                        )
+                        .createSignedUploadUrl(
+                            storagePath,
+                            {
+                                upsert:
+                                    false
+                            }
+                        );
+
+                if (
+                    error
+                ) {
+
+                    console.error(
+                        "createSignedUploadUrl:",
+                        error
+                    );
+
+                    return res
+                        .status(500)
+                        .json({
+                            error:
+                                `No se pudo preparar ${originalName}.`
+                        });
+
+                }
+
+                const publicUrl =
+                    `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
+
+                prepared.push({
+
+                    field,
+
+                    language:
+                        field ===
+                        "subtitles"
+                            ? language
+                            : "",
+
+                    originalName,
+
+                    contentType,
+
+                    size,
+
+                    path:
+                        storagePath,
+
+                    token:
+                        data.token,
+
+                    publicUrl
+
+                });
+
+            }
+
+            if (
+                !hasArabic
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "El VTT árabe es obligatorio."
+                    });
+
+            }
+
+            return res.json({
+
+                success:
+                    true,
+
+                files:
+                    prepared
+
+            });
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "upload-prepare:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "No se pudo preparar la subida."
+                });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// COMPLETAR PUBLICACIÓN
+// =========================================================
+
+app.post(
+    "/api/upload-complete",
+    requireAdmin,
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const title =
+                String(
+                    req.body?.title ||
+                    ""
+                ).trim();
+
+            const files =
+                Array.isArray(
+                    req.body?.files
+                )
+                    ? req.body.files
+                    : [];
+
+            if (
+                !title
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Falta el título."
+                    });
+
+            }
+
+            const audio =
+                files.find(
+                    file =>
+                        file.field ===
+                        "audio"
+                );
+
+            const cover =
+                files.find(
+                    file =>
+                        file.field ===
+                        "cover"
+                );
+
+            const subtitles =
+                files.filter(
+                    file =>
+                        file.field ===
+                        "subtitles"
+                );
+
+            if (
+                !audio
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Falta el audio."
+                    });
+
+            }
+
+            const arabic =
+                subtitles.find(
+                    file =>
+                        file.language ===
+                        "ar"
+                );
+
+            if (
+                !arabic
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "Falta el subtítulo árabe."
+                    });
+
+            }
+
+            const subtitleMap =
+                {};
+
+            for (
+                const file of subtitles
+            ) {
+
+                subtitleMap[
+                    file.language
+                ] =
+                    file.publicUrl;
+
+            }
+
+            const id =
+                Date.now();
+
+            const record = {
+
+                id,
+
+                title,
+
+                audio_url:
+                    audio.publicUrl,
+
+                cover_url:
+                    cover
+                        ? cover.publicUrl
+                        : null,
+
+                subtitles:
+                    subtitleMap
+
+            };
+
+            const {
+                data,
+                error
+            } =
+                await supabase
+                    .from("nasheeds")
+                    .insert(
+                        record
+                    )
+                    .select()
+                    .single();
+
+            if (
+                error
+            ) {
+
+                console.error(
+                    "Supabase insert:",
+                    error
+                );
+
+                /*
+                 * Intentamos borrar
+                 * los archivos si
+                 * la DB falla.
+                 */
+
+                await cleanupStorageFiles(
+                    files
+                        .map(
+                            file =>
+                                file.path
+                        )
+                        .filter(Boolean)
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudo guardar el nasheed."
+                    });
+
+            }
+
+            return res.json({
+
+                success:
+                    true,
+
+                track: {
+
+                    id:
+                        Number(
+                            data.id
+                        ),
+
+                    title:
+                        data.title,
+
+                    file:
+                        data.audio_url,
+
+                    cover:
+                        data.cover_url ||
+                        "",
+
+                    subtitles:
+                        data.subtitles ||
+                        {}
+
+                }
+
+            });
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "upload-complete:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error completando la publicación."
+                });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// DELETE
+// =========================================================
+
+app.delete(
+    "/api/nasheeds/:id",
+    requireAdmin,
+    async (
+        req,
+        res
+    ) => {
+
+        try {
+
+            const id =
+                Number(
+                    req.params.id
+                );
+
+            if (
+                !Number.isSafeInteger(
+                    id
+                )
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+                        error:
+                            "ID no válido."
+                    });
+
+            }
+
+            const {
+                data: track,
+                error:
+                    fetchError
+            } =
+                await supabase
+                    .from("nasheeds")
+                    .select(
+                        "id,title,audio_url,cover_url,subtitles"
+                    )
+                    .eq(
+                        "id",
+                        id
+                    )
+                    .maybeSingle();
+
+            if (
+                fetchError
+            ) {
+
+                console.error(
+                    fetchError
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudo obtener el nasheed."
+                    });
+
+            }
+
+            if (
+                !track
+            ) {
+
+                return res
+                    .status(404)
+                    .json({
+                        error:
+                            "Nasheed no encontrado."
+                    });
+
+            }
+
+            const paths =
+                [];
+
+            addStoragePathFromPublicUrl(
+                track.audio_url,
+                paths
+            );
+
+            addStoragePathFromPublicUrl(
+                track.cover_url,
+                paths
+            );
+
+            if (
+                track.subtitles &&
+                typeof track.subtitles ===
+                    "object"
+            ) {
+
+                Object.values(
+                    track.subtitles
+                ).forEach(
+                    url => {
+
+                        addStoragePathFromPublicUrl(
+                            url,
+                            paths
+                        );
+
+                    }
+                );
+
+            }
+
+            if (
+                paths.length
+            ) {
+
+                const {
+                    error:
+                        storageError
+                } =
+                    await supabase
+                        .storage
+                        .from(
+                            STORAGE_BUCKET
+                        )
+                        .remove(
+                            paths
+                        );
+
+                if (
+                    storageError
+                ) {
+
+                    console.error(
+                        "Error borrando Storage:",
+                        storageError
+                    );
+
+                }
+
+            }
+
+            const {
+                error:
+                    deleteError
+            } =
+                await supabase
+                    .from("nasheeds")
+                    .delete()
+                    .eq(
+                        "id",
+                        id
+                    );
+
+            if (
+                deleteError
+            ) {
+
+                console.error(
+                    deleteError
+                );
+
+                return res
+                    .status(500)
+                    .json({
+                        error:
+                            "No se pudo eliminar el registro."
+                    });
+
+            }
+
+            return res.json({
+
+                success:
+                    true
+
+            });
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "DELETE:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    error:
+                        "Error interno."
+                });
+
+        }
+
+    }
+);
+
+
+// =========================================================
+// LIMPIAR STORAGE
+// =========================================================
+
+async function cleanupStorageFiles(
+    paths
 ) {
 
+    const uniquePaths =
+        [
+            ...new Set(
+                paths
+                    .filter(Boolean)
+            )
+        ];
+
     if (
-        !fileUrl ||
-        typeof fileUrl !==
-            'string'
+        !uniquePaths.length
     ) {
 
         return;
 
     }
 
-
-    const filename =
-        path.basename(
-            fileUrl
-        );
-
-
-    const filePath =
-        path.join(
-            UPLOAD_DIR,
-            filename
-        );
-
-
     try {
 
-        if (
-            fs.existsSync(
-                filePath
+        await supabase
+            .storage
+            .from(
+                STORAGE_BUCKET
             )
-        ) {
-
-            fs.unlinkSync(
-                filePath
+            .remove(
+                uniquePaths
             );
 
-        }
-
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
-            `Error borrando ${label}:`,
+            "cleanupStorageFiles:",
             error
         );
 
@@ -1408,68 +1699,121 @@ function deleteUploadedFile(
 
 
 // =========================================================
-// ERRORES MULTER
+// EXTRAER PATH DE URL
+// =========================================================
+
+function addStoragePathFromPublicUrl(
+    url,
+    output
+) {
+
+    if (
+        typeof url !==
+        "string" ||
+        !url
+    ) {
+
+        return;
+
+    }
+
+    const marker =
+        `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
+    const index =
+        url.indexOf(
+            marker
+        );
+
+    if (
+        index === -1
+    ) {
+
+        return;
+
+    }
+
+    const pathValue =
+        url.slice(
+            index +
+            marker.length
+        );
+
+    if (
+        pathValue
+    ) {
+
+        output.push(
+            decodeURIComponent(
+                pathValue
+            )
+        );
+
+    }
+
+}
+
+
+// =========================================================
+// ERRORES
 // =========================================================
 
 app.use(
-    (err, req, res, next) => {
+    (
+        err,
+        req,
+        res,
+        next
+    ) => {
 
         console.error(
-            'Error:',
+            "Unhandled error:",
             err
         );
 
-
         if (
-            err instanceof
-            multer.MulterError
+            res.headersSent
         ) {
 
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        err.message ||
-                        'Error al subir los archivos.'
-
-                });
+            return next(
+                err
+            );
 
         }
 
-
-        if (err) {
-
-            return res
-                .status(400)
-                .json({
-
-                    error:
-                        err.message ||
-                        'Error al procesar la petición.'
-
-                });
-
-        }
-
-
-        next();
+        return res
+            .status(500)
+            .json({
+                error:
+                    "Error interno del servidor."
+            });
 
     }
 );
 
 
 // =========================================================
-// INICIAR
+// LOCAL
 // =========================================================
 
-app.listen(
-    PORT,
-    () => {
+if (
+    require.main ===
+    module
+) {
 
-        console.log(
-            `Servidor Nushud activo en puerto ${PORT}`
-        );
+    app.listen(
+        PORT,
+        () => {
 
-    }
-);
+            console.log(
+                `Servidor Nushud activo en puerto ${PORT}`
+            );
+
+        }
+    );
+
+}
+
+
+module.exports =
+    app;

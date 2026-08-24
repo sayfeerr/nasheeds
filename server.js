@@ -22,7 +22,7 @@ const SUPABASE_PUBLISHABLE_KEY =
     "";
 
 const STORAGE_BUCKET =
-    "nushud";
+    "Nasheeds";
 
 const ADMIN_PIN =
     process.env.ADMIN_PIN ||

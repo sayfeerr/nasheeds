@@ -11,14 +11,13 @@
 
     <title>Nushud Studio - Admin Privado</title>
 
-
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
 
     <style>
 
@@ -137,7 +136,7 @@
 
             grid-template-columns:
                 145px
-                1fr
+                minmax(0, 1fr)
                 auto;
 
             gap:
@@ -145,6 +144,76 @@
 
             align-items:
                 center;
+
+        }
+
+
+        .upload-status {
+
+            display:
+                none;
+
+            padding:
+                12px 14px;
+
+            border:
+                1px solid
+                rgba(245,158,11,.18);
+
+            background:
+                rgba(245,158,11,.07);
+
+            border-radius:
+                14px;
+
+            font-size:
+                11px;
+
+            color:
+                #d4d4d8;
+
+        }
+
+
+        .progress-track {
+
+            width:
+                100%;
+
+            height:
+                5px;
+
+            background:
+                rgba(255,255,255,.06);
+
+            border-radius:
+                999px;
+
+            overflow:
+                hidden;
+
+            margin-top:
+                8px;
+
+        }
+
+
+        .progress-fill {
+
+            width:
+                0%;
+
+            height:
+                100%;
+
+            background:
+                #f59e0b;
+
+            border-radius:
+                inherit;
+
+            transition:
+                width .2s ease;
 
         }
 
@@ -165,31 +234,27 @@
 </head>
 
 
-<body
-    class="min-h-screen p-4 md:p-8">
+<body class="min-h-screen p-4 md:p-8">
 
 
-<div
-    class="max-w-4xl mx-auto space-y-6">
+<div class="max-w-4xl mx-auto space-y-6">
 
 
+    <!-- ================================================= -->
     <!-- CABECERA -->
+    <!-- ================================================= -->
 
     <div
         class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30">
 
-
         <div
             class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-
 
             <div
                 class="flex items-center space-x-3">
 
-
                 <div
                     class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-
 
                     <svg
                         class="w-5 h-5"
@@ -198,20 +263,15 @@
                         stroke="currentColor"
                         stroke-width="2">
 
-
                         <path
                             d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z">
                         </path>
 
-
                     </svg>
-
 
                 </div>
 
-
                 <div>
-
 
                     <h1
                         class="text-sm font-extrabold text-amber-400 uppercase tracking-wider">
@@ -220,7 +280,6 @@
 
                     </h1>
 
-
                     <p
                         class="text-[11px] text-zinc-500">
 
@@ -228,9 +287,7 @@
 
                     </p>
 
-
                 </div>
-
 
             </div>
 
@@ -243,21 +300,19 @@
 
             </button>
 
-
         </div>
-
 
     </div>
 
 
-    <!-- PUBLICAR -->
+    <!-- ================================================= -->
+    <!-- PUBLICAR NUEVO NASHEED -->
+    <!-- ================================================= -->
 
     <div
         class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl space-y-6">
 
-
         <div>
-
 
             <h2
                 class="text-lg font-bold text-zinc-100">
@@ -266,14 +321,12 @@
 
             </h2>
 
-
             <p
                 class="text-xs text-zinc-500 mt-1">
 
                 Añade audio, carátula y varios idiomas de subtítulos.
 
             </p>
-
 
         </div>
 
@@ -282,7 +335,6 @@
 
         <div>
 
-
             <label
                 class="block text-xs font-medium text-zinc-400 mb-1.5">
 
@@ -290,13 +342,11 @@
 
             </label>
 
-
             <input
                 type="text"
                 id="new-title"
                 placeholder="Ej: Qalu Lahu"
                 class="w-full bg-zinc-950/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-500">
-
 
         </div>
 
@@ -305,7 +355,6 @@
 
         <div>
 
-
             <label
                 class="block text-xs font-medium text-zinc-400 mb-1.5">
 
@@ -313,13 +362,11 @@
 
             </label>
 
-
             <input
                 type="file"
                 id="audio-file-input"
                 accept="audio/*"
                 class="w-full text-xs text-zinc-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-xl p-1.5 bg-zinc-950/80">
-
 
         </div>
 
@@ -327,7 +374,6 @@
         <!-- CARÁTULA -->
 
         <div>
-
 
             <label
                 class="block text-xs font-medium text-zinc-400 mb-1.5">
@@ -343,7 +389,6 @@
 
             </label>
 
-
             <input
                 type="file"
                 id="cover-file-input"
@@ -355,16 +400,13 @@
                 id="cover-preview"
                 class="mt-3 items-center gap-3">
 
-
                 <img
                     id="cover-preview-image"
                     class="w-16 h-16 rounded-xl object-cover border border-white/10"
                     alt="Vista previa de la carátula">
 
-
                 <div
                     class="text-[11px] text-zinc-500">
-
 
                     <p
                         class="text-zinc-300 font-semibold">
@@ -373,19 +415,15 @@
 
                     </p>
 
-
                     <p>
 
                         Se utilizará como portada pública.
 
                     </p>
 
-
                 </div>
 
-
             </div>
-
 
         </div>
 
@@ -394,13 +432,10 @@
 
         <div>
 
-
             <div
                 class="flex items-center justify-between gap-3 mb-2">
 
-
                 <div>
-
 
                     <label
                         class="block text-xs font-medium text-zinc-400">
@@ -409,14 +444,12 @@
 
                     </label>
 
-
                     <p
                         class="text-[10px] text-zinc-600 mt-1">
 
                         El árabe es obligatorio y siempre aparece arriba.
 
                     </p>
-
 
                 </div>
 
@@ -430,7 +463,6 @@
 
                 </button>
 
-
             </div>
 
 
@@ -438,52 +470,67 @@
                 id="subtitle-rows"
                 class="space-y-2">
 
-
             </div>
-
-
-            <p
-                class="text-[10px] text-zinc-600 mt-2">
-
-                Puedes añadir Español, English, Français, etc.
-
-            </p>
-
 
         </div>
 
 
-        <!-- PUBLICAR -->
+        <!-- ESTADO -->
+
+        <div
+            id="upload-status"
+            class="upload-status">
+
+            <div
+                id="upload-status-text">
+
+                Preparando subida...
+
+            </div>
+
+            <div
+                class="progress-track">
+
+                <div
+                    id="upload-progress"
+                    class="progress-fill">
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- BOTÓN -->
 
         <button
             onclick="uploadToServer()"
             id="upload-btn"
             class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-zinc-950 font-bold py-3.5 rounded-xl text-xs cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2">
 
-
             <span>
+
                 Publicar al Servidor
+
             </span>
 
-
         </button>
-
 
     </div>
 
 
-    <!-- LISTA -->
+    <!-- ================================================= -->
+    <!-- NASHEEDS EXISTENTES -->
+    <!-- ================================================= -->
 
     <div
         class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl">
 
-
         <div
             class="flex items-center justify-between mb-5">
 
-
             <div>
-
 
                 <h2
                     class="text-lg font-bold text-zinc-100">
@@ -492,7 +539,6 @@
 
                 </h2>
 
-
                 <p
                     id="nasheed-count"
                     class="text-xs text-zinc-500 mt-1">
@@ -500,7 +546,6 @@
                     Cargando...
 
                 </p>
-
 
             </div>
 
@@ -513,7 +558,6 @@
 
             </button>
 
-
         </div>
 
 
@@ -521,17 +565,7 @@
             id="nasheeds-list"
             class="space-y-3">
 
-
-            <div
-                class="text-center py-8 text-sm text-zinc-600">
-
-                Cargando nasheeds...
-
-            </div>
-
-
         </div>
-
 
     </div>
 
@@ -541,7 +575,6 @@
     <div
         class="text-center pb-8">
 
-
         <a
             href="/"
             class="text-xs text-amber-400 hover:underline">
@@ -549,7 +582,6 @@
             ← Volver a la plataforma pública
 
         </a>
-
 
     </div>
 
@@ -602,6 +634,128 @@ const nasheedCount =
     );
 
 
+const uploadBtn =
+    document.getElementById(
+        "upload-btn"
+    );
+
+
+const uploadStatus =
+    document.getElementById(
+        "upload-status"
+    );
+
+
+const uploadStatusText =
+    document.getElementById(
+        "upload-status-text"
+    );
+
+
+const uploadProgress =
+    document.getElementById(
+        "upload-progress"
+    );
+
+
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
+let supabaseClient =
+    null;
+
+
+async function initSupabase() {
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/public-config",
+                {
+                    method:
+                        "GET",
+
+                    credentials:
+                        "same-origin",
+
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                "No se pudo obtener la configuración de Supabase."
+            );
+
+        }
+
+
+        const config =
+            await response.json();
+
+
+        if (
+            !config.supabaseUrl
+        ) {
+
+            throw new Error(
+                "Falta SUPABASE_URL."
+            );
+
+        }
+
+
+        if (
+            !config.supabasePublishableKey
+        ) {
+
+            throw new Error(
+                "Falta SUPABASE_PUBLISHABLE_KEY en Vercel."
+            );
+
+        }
+
+
+        supabaseClient =
+            window.supabase.createClient(
+                config.supabaseUrl,
+                config.supabasePublishableKey,
+                {
+                    auth: {
+                        persistSession:
+                            false,
+
+                        autoRefreshToken:
+                            false
+                    }
+                }
+            );
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Error inicializando Supabase:",
+            error
+        );
+
+        supabaseClient =
+            null;
+
+    }
+
+}
+
+
 /* =========================================================
    IDIOMAS
    ========================================================= */
@@ -648,7 +802,7 @@ const LANGUAGE_NAMES = {
 
 
 /* =========================================================
-   PREVISUALIZACIÓN CARÁTULA
+   CARÁTULA
    ========================================================= */
 
 coverInput.addEventListener(
@@ -659,7 +813,9 @@ coverInput.addEventListener(
             coverInput.files[0];
 
 
-        if (!file) {
+        if (
+            !file
+        ) {
 
             coverPreview.style.display =
                 "none";
@@ -693,7 +849,7 @@ coverInput.addEventListener(
 
 
 /* =========================================================
-   CREAR FILA VTT
+   CREAR FILA DE SUBTÍTULOS
    ========================================================= */
 
 function createSubtitleRow() {
@@ -721,7 +877,9 @@ function createSubtitleRow() {
     Object.entries(
         LANGUAGE_NAMES
     ).forEach(
-        ([code,name]) => {
+        (
+            [code, name]
+        ) => {
 
             const option =
                 document.createElement(
@@ -774,12 +932,12 @@ function createSubtitleRow() {
         "file";
 
 
-    fileInput.className =
-        "subtitle-file-input w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-lg p-1 bg-zinc-950/80";
-
-
     fileInput.accept =
         ".vtt,text/vtt";
+
+
+    fileInput.className =
+        "subtitle-file-input w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-lg p-1 bg-zinc-950/80";
 
 
     const customInput =
@@ -867,10 +1025,6 @@ function createSubtitleRow() {
     );
 
 
-    /*
-     * Primer idioma = árabe.
-     */
-
     if (
         subtitleRows.children.length ===
         1
@@ -885,14 +1039,7 @@ function createSubtitleRow() {
 
 
 /* =========================================================
-   INICIAR CON ÁRABE
-   ========================================================= */
-
-createSubtitleRow();
-
-
-/* =========================================================
-   ESCAPAR HTML
+   ESCAPE HTML
    ========================================================= */
 
 function escapeHtml(
@@ -917,6 +1064,36 @@ function escapeHtml(
 
 
 /* =========================================================
+   ESTADO DE SUBIDA
+   ========================================================= */
+
+function setUploadStatus(
+    message,
+    percent
+) {
+
+    uploadStatus.style.display =
+        "block";
+
+
+    uploadStatusText.textContent =
+        message;
+
+
+    uploadProgress.style.width =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                percent
+            )
+        ) +
+        "%";
+
+}
+
+
+/* =========================================================
    CARGAR NASHEEDS
    ========================================================= */
 
@@ -936,18 +1113,29 @@ async function loadNasheeds() {
 
     try {
 
-        const res =
+        const response =
             await fetch(
                 "/api/admin/nasheeds",
                 {
+                    method:
+                        "GET",
+
+                    credentials:
+                        "same-origin",
+
                     cache:
-                        "no-store"
+                        "no-store",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
                 }
             );
 
 
         if (
-            res.status ===
+            response.status ===
             403
         ) {
 
@@ -961,16 +1149,16 @@ async function loadNasheeds() {
 
 
         const data =
-            await res.json();
+            await response.json();
 
 
         if (
-            !res.ok
+            !response.ok
         ) {
 
             throw new Error(
                 data.error ||
-                "Error cargando los nasheeds"
+                "Error cargando los nasheeds."
             );
 
         }
@@ -980,7 +1168,10 @@ async function loadNasheeds() {
             data
         );
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             error
@@ -1008,7 +1199,7 @@ async function loadNasheeds() {
 
 
 /* =========================================================
-   RENDER
+   MOSTRAR NASHEEDS
    ========================================================= */
 
 function renderNasheeds(
@@ -1037,7 +1228,6 @@ function renderNasheeds(
                     ♪
 
                 </div>
-
 
                 <p
                     class="text-sm text-zinc-500">
@@ -1070,7 +1260,7 @@ function renderNasheeds(
 
 
 /* =========================================================
-   CARD
+   CREAR CARD
    ========================================================= */
 
 function createNasheedCard(
@@ -1104,7 +1294,6 @@ function createNasheedCard(
                 alt="Carátula"
                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
 
-
             <div
                 class="cover-placeholder"
                 style="display:none;">
@@ -1131,27 +1320,28 @@ function createNasheedCard(
     }
 
 
-    let languageText =
+    let languages =
         "Sin subtítulos";
 
 
     if (
         track.subtitles &&
-        typeof track.subtitles === "object"
+        typeof track.subtitles ===
+            "object"
     ) {
 
-        const languages =
+        const keys =
             Object.keys(
                 track.subtitles
             );
 
 
         if (
-            languages.length
+            keys.length
         ) {
 
-            languageText =
-                languages
+            languages =
+                keys
                     .map(
                         code =>
                             LANGUAGE_NAMES[
@@ -1173,7 +1363,6 @@ function createNasheedCard(
         <div
             class="nasheed-card bg-zinc-950/70 border border-white/10 rounded-2xl p-3 flex items-center gap-3">
 
-
             <div
                 class="flex-shrink-0">
 
@@ -1184,7 +1373,6 @@ function createNasheedCard(
 
             <div
                 class="min-w-0 flex-1">
-
 
                 <p
                     class="text-sm font-semibold text-zinc-100 truncate">
@@ -1205,10 +1393,9 @@ function createNasheedCard(
                 <p
                     class="text-[10px] text-amber-400 mt-1 truncate">
 
-                    ${escapeHtml(languageText)}
+                    ${escapeHtml(languages)}
 
                 </p>
-
 
             </div>
 
@@ -1230,7 +1417,6 @@ function createNasheedCard(
 
             </button>
 
-
         </div>
 
     `;
@@ -1239,15 +1425,71 @@ function createNasheedCard(
 
 
 /* =========================================================
-   ELIMINAR
+   OBTENER LISTA ACTUAL
+   ========================================================= */
+
+async function getCurrentNasheeds() {
+
+    const response =
+        await fetch(
+            "/api/admin/nasheeds",
+            {
+                method:
+                    "GET",
+
+                credentials:
+                    "same-origin",
+
+                cache:
+                    "no-store"
+            }
+        );
+
+
+    if (
+        !response.ok
+    ) {
+
+        throw new Error(
+            "No se pudieron obtener los nasheeds."
+        );
+
+    }
+
+
+    return await response.json();
+
+}
+
+
+/* =========================================================
+   ELIMINAR NASHEED
    ========================================================= */
 
 async function deleteNasheed(
     id
 ) {
 
-    const nasheeds =
-        await getCurrentNasheeds();
+    let nasheeds;
+
+
+    try {
+
+        nasheeds =
+            await getCurrentNasheeds();
+
+    } catch (
+        error
+    ) {
+
+        alert(
+            error.message
+        );
+
+
+        return;
+
+    }
 
 
     const track =
@@ -1256,11 +1498,15 @@ async function deleteNasheed(
                 Number(
                     item.id
                 ) ===
-                Number(id)
+                Number(
+                    id
+                )
         );
 
 
-    if (!track) {
+    if (
+        !track
+    ) {
 
         alert(
             "El nasheed ya no existe."
@@ -1277,11 +1523,13 @@ async function deleteNasheed(
 
     const confirmed =
         confirm(
-            `¿Seguro que quieres eliminar "${track.title}"?\n\nSe eliminarán el audio, la carátula, todos los subtítulos y su registro del servidor.`
+            `¿Seguro que quieres eliminar "${track.title}"?\n\nSe eliminarán el audio, la carátula, todos los subtítulos y el registro.`
         );
 
 
-    if (!confirmed) {
+    if (
+        !confirmed
+    ) {
 
         return;
 
@@ -1290,22 +1538,30 @@ async function deleteNasheed(
 
     try {
 
-        const res =
+        const response =
             await fetch(
                 `/api/nasheeds/${encodeURIComponent(id)}`,
                 {
                     method:
-                        "DELETE"
+                        "DELETE",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
                 }
             );
 
 
         const data =
-            await res.json();
+            await response.json();
 
 
         if (
-            res.status ===
+            response.status ===
             403
         ) {
 
@@ -1324,7 +1580,7 @@ async function deleteNasheed(
 
 
         if (
-            !res.ok ||
+            !response.ok ||
             !data.success
         ) {
 
@@ -1343,7 +1599,10 @@ async function deleteNasheed(
 
         await loadNasheeds();
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             error
@@ -1361,39 +1620,7 @@ async function deleteNasheed(
 
 
 /* =========================================================
-   OBTENER ACTUALES
-   ========================================================= */
-
-async function getCurrentNasheeds() {
-
-    const res =
-        await fetch(
-            "/api/admin/nasheeds",
-            {
-                cache:
-                    "no-store"
-            }
-        );
-
-
-    if (
-        !res.ok
-    ) {
-
-        throw new Error(
-            "No se pudieron obtener los nasheeds."
-        );
-
-    }
-
-
-    return await res.json();
-
-}
-
-
-/* =========================================================
-   SUBIR
+   SUBIR NASHEED
    ========================================================= */
 
 async function uploadToServer() {
@@ -1413,19 +1640,12 @@ async function uploadToServer() {
         );
 
 
-    const uploadBtn =
-        document.getElementById(
-            "upload-btn"
-        );
-
-
     if (
-        !title ||
-        audioInput.files.length === 0
+        !title
     ) {
 
         alert(
-            "Completa el título y selecciona un archivo de audio."
+            "Escribe el título del nasheed."
         );
 
 
@@ -1434,9 +1654,38 @@ async function uploadToServer() {
     }
 
 
-    /*
-     * RECOGEMOS TODOS LOS VTT.
-     */
+    if (
+        !audioInput.files ||
+        audioInput.files.length === 0
+    ) {
+
+        alert(
+            "Selecciona el archivo de audio."
+        );
+
+
+        return;
+
+    }
+
+
+    if (
+        !supabaseClient
+    ) {
+
+        alert(
+            "Supabase no está preparado. Recarga la página."
+        );
+
+
+        return;
+
+    }
+
+
+    const selectedFiles =
+        [];
+
 
     const rows =
         Array.from(
@@ -1444,13 +1693,13 @@ async function uploadToServer() {
         );
 
 
-    const subtitleFiles =
-        [];
+    const usedLanguages =
+        new Set();
 
 
-    const subtitleLanguages =
-        [];
-
+    /*
+     * SUBTÍTULOS
+     */
 
     for (
         const row of rows
@@ -1484,6 +1733,16 @@ async function uploadToServer() {
         }
 
 
+        if (
+            !fileInput.files ||
+            fileInput.files.length === 0
+        ) {
+
+            continue;
+
+        }
+
+
         let language =
             languageSelect.value;
 
@@ -1498,17 +1757,8 @@ async function uploadToServer() {
                     customInput?.value ||
                     ""
                 )
-                .trim()
-                .toLowerCase();
-
-        }
-
-
-        if (
-            !language
-        ) {
-
-            continue;
+                    .trim()
+                    .toLowerCase();
 
         }
 
@@ -1520,8 +1770,7 @@ async function uploadToServer() {
         ) {
 
             alert(
-                "Código de idioma inválido: " +
-                language
+                `Código de idioma inválido: ${language}`
             );
 
 
@@ -1531,12 +1780,24 @@ async function uploadToServer() {
 
 
         if (
-            !fileInput.files.length
+            usedLanguages.has(
+                language
+            )
         ) {
 
-            continue;
+            alert(
+                `Has añadido dos veces el idioma ${language}.`
+            );
+
+
+            return;
 
         }
+
+
+        usedLanguages.add(
+            language
+        );
 
 
         const file =
@@ -1552,7 +1813,7 @@ async function uploadToServer() {
         ) {
 
             alert(
-                "Todos los subtítulos deben ser archivos .vtt."
+                `El archivo de ${language} debe ser .vtt.`
             );
 
 
@@ -1561,31 +1822,18 @@ async function uploadToServer() {
         }
 
 
-        if (
-            subtitleLanguages.includes(
-                language
-            )
-        ) {
+        selectedFiles.push({
 
-            alert(
-                "Has añadido dos veces el idioma: " +
-                language
-            );
+            field:
+                "subtitles",
 
+            language:
+                language,
 
-            return;
+            file:
+                file
 
-        }
-
-
-        subtitleLanguages.push(
-            language
-        );
-
-
-        subtitleFiles.push(
-            file
-        );
+        });
 
     }
 
@@ -1595,13 +1843,13 @@ async function uploadToServer() {
      */
 
     if (
-        !subtitleLanguages.includes(
+        !usedLanguages.has(
             "ar"
         )
     ) {
 
         alert(
-            "Debes añadir el VTT árabe."
+            "Debes añadir el subtítulo árabe."
         );
 
 
@@ -1610,52 +1858,79 @@ async function uploadToServer() {
     }
 
 
-    const formData =
-        new FormData();
+    /*
+     * AUDIO
+     */
+
+    selectedFiles.unshift({
+
+        field:
+            "audio",
+
+        language:
+            "",
+
+        file:
+            audioInput.files[0]
+
+    });
 
 
-    formData.append(
-        "title",
-        title
-    );
-
-
-    formData.append(
-        "audio",
-        audioInput.files[0]
-    );
-
+    /*
+     * CARÁTULA
+     */
 
     if (
-        coverInput.files.length
+        coverInput.files &&
+        coverInput.files.length > 0
     ) {
 
-        formData.append(
-            "cover",
-            coverInput.files[0]
+        selectedFiles.splice(
+            1,
+            0,
+            {
+
+                field:
+                    "cover",
+
+                language:
+                    "",
+
+                file:
+                    coverInput.files[0]
+
+            }
         );
 
     }
 
 
-    subtitleFiles.forEach(
-        file => {
+    /*
+     * LIMITAR CADA ARCHIVO
+     */
 
-            formData.append(
-                "subtitles",
-                file
+    for (
+        const item of
+        selectedFiles
+    ) {
+
+        if (
+            item.file.size >
+            50 *
+            1024 *
+            1024
+        ) {
+
+            alert(
+                `El archivo "${item.file.name}" supera los 50 MB.`
             );
 
+
+            return;
+
         }
-    );
 
-
-    formData.append(
-        "subtitleLanguages",
-        JSON.stringify(
-            subtitleLanguages
-        )
-    );
+    }
 
 
     uploadBtn.disabled =
@@ -1665,102 +1940,495 @@ async function uploadToServer() {
     uploadBtn.querySelector(
         "span"
     ).textContent =
-        "Publicando...";
+        "Preparando...";
+
+
+    setUploadStatus(
+        "Preparando subida segura...",
+        0
+    );
 
 
     try {
 
-        const res =
+        /*
+         * =====================================================
+         * 1. PEDIR URLS FIRMADAS
+         * =====================================================
+         */
+
+        const prepareResponse =
             await fetch(
-                "/api/upload",
+                "/api/upload-prepare",
                 {
+
                     method:
                         "POST",
 
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
                     body:
-                        formData
+                        JSON.stringify({
+
+                            title:
+                                title,
+
+                            files:
+                                selectedFiles
+                                    .map(
+                                        item => ({
+
+                                            field:
+                                                item.field,
+
+                                            language:
+                                                item.language,
+
+                                            name:
+                                                item.file.name,
+
+                                            type:
+                                                item.file.type ||
+                                                "application/octet-stream",
+
+                                            size:
+                                                item.file.size
+
+                                        })
+                                    )
+
+                        })
+
                 }
             );
 
 
-        const data =
-            await res.json();
+        const prepareText =
+            await prepareResponse.text();
 
 
-        if (
-            res.ok &&
-            data.success
-        ) {
-
-            document
-                .getElementById(
-                    "new-title"
-                )
-                .value =
-                "";
+        let prepareData;
 
 
-            audioInput.value =
-                "";
+        try {
 
+            prepareData =
+                JSON.parse(
+                    prepareText
+                );
 
-            coverInput.value =
-                "";
+        } catch {
 
-
-            coverPreview.style.display =
-                "none";
-
-
-            coverPreviewImage.removeAttribute(
-                "src"
-            );
-
-
-            subtitleRows.innerHTML =
-                "";
-
-
-            createSubtitleRow();
-
-
-            alert(
-                "¡Nasheed, carátula y subtítulos publicados correctamente!"
-            );
-
-
-            await loadNasheeds();
-
-        } else {
-
-            alert(
-                data.error ||
-                "Error al publicar."
+            throw new Error(
+                `El servidor devolvió una respuesta inválida (${prepareResponse.status}).`
             );
 
         }
 
-    } catch (error) {
+
+        if (
+            prepareResponse.status ===
+            403
+        ) {
+
+            alert(
+                "Tu sesión de administrador ha caducado."
+            );
+
+
+            window.location.href =
+                "/";
+
+
+            return;
+
+        }
+
+
+        if (
+            !prepareResponse.ok ||
+            !prepareData.success
+        ) {
+
+            throw new Error(
+                prepareData.error ||
+                `No se pudo preparar la subida (${prepareResponse.status}).`
+            );
+
+        }
+
+
+        const preparedFiles =
+            Array.isArray(
+                prepareData.files
+            )
+                ? prepareData.files
+                : [];
+
+
+        if (
+            preparedFiles.length !==
+            selectedFiles.length
+        ) {
+
+            throw new Error(
+                "El servidor no preparó todos los archivos."
+            );
+
+        }
+
+
+        /*
+         * =====================================================
+         * 2. SUBIDA DIRECTA A SUPABASE
+         * =====================================================
+         */
+
+        const completedFiles =
+            [];
+
+
+        for (
+            let i = 0;
+            i <
+            preparedFiles.length;
+            i++
+        ) {
+
+            const prepared =
+                preparedFiles[i];
+
+
+            const local =
+                selectedFiles.find(
+                    item =>
+
+                        item.field ===
+                            prepared.field &&
+
+                        item.language ===
+                            prepared.language &&
+
+                        item.file.name ===
+                            prepared.originalName
+
+                );
+
+
+            if (
+                !local
+            ) {
+
+                throw new Error(
+                    `No se encontró el archivo local ${prepared.originalName}.`
+                );
+
+            }
+
+
+            const percentageBefore =
+                (
+                    i /
+                    preparedFiles.length
+                ) *
+                100;
+
+
+            setUploadStatus(
+                `Subiendo ${local.file.name}...`,
+                percentageBefore
+            );
+
+
+            uploadBtn.querySelector(
+                "span"
+            ).textContent =
+                `Subiendo ${i + 1}/${preparedFiles.length}...`;
+
+
+            const {
+                error:
+                    uploadError
+            } =
+                await supabaseClient
+                    .storage
+                    .from("nushud")
+                    .uploadToSignedUrl(
+                        prepared.path,
+                        prepared.token,
+                        local.file,
+                        {
+                            contentType:
+                                local.file.type ||
+                                prepared.contentType ||
+                                "application/octet-stream"
+                        }
+                    );
+
+
+            if (
+                uploadError
+            ) {
+
+                console.error(
+                    "Supabase Storage:",
+                    uploadError
+                );
+
+
+                throw new Error(
+                    `No se pudo subir "${local.file.name}": ${uploadError.message}`
+                );
+
+            }
+
+
+            completedFiles.push({
+
+                field:
+                    prepared.field,
+
+                language:
+                    prepared.language,
+
+                path:
+                    prepared.path,
+
+                publicUrl:
+                    prepared.publicUrl
+
+            });
+
+
+            const percentageAfter =
+                (
+                    (i + 1) /
+                    preparedFiles.length
+                ) *
+                100;
+
+
+            setUploadStatus(
+                `${i + 1} de ${preparedFiles.length} archivos subidos...`,
+                percentageAfter
+            );
+
+        }
+
+
+        /*
+         * =====================================================
+         * 3. GUARDAR EN DATABASE
+         * =====================================================
+         */
+
+        uploadBtn.querySelector(
+            "span"
+        ).textContent =
+            "Guardando...";
+
+
+        setUploadStatus(
+            "Guardando el nasheed en la base de datos...",
+            100
+        );
+
+
+        const completeResponse =
+            await fetch(
+                "/api/upload-complete",
+                {
+
+                    method:
+                        "POST",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            title:
+                                title,
+
+                            files:
+                                completedFiles
+
+                        })
+
+                }
+            );
+
+
+        const completeText =
+            await completeResponse.text();
+
+
+        let completeData;
+
+
+        try {
+
+            completeData =
+                JSON.parse(
+                    completeText
+                );
+
+        } catch {
+
+            throw new Error(
+                `Respuesta inválida del servidor (${completeResponse.status}).`
+            );
+
+        }
+
+
+        if (
+            completeResponse.status ===
+            403
+        ) {
+
+            alert(
+                "Tu sesión de administrador ha caducado."
+            );
+
+
+            window.location.href =
+                "/";
+
+
+            return;
+
+        }
+
+
+        if (
+            !completeResponse.ok ||
+            !completeData.success
+        ) {
+
+            throw new Error(
+                completeData.error ||
+                `No se pudo guardar el nasheed (${completeResponse.status}).`
+            );
+
+        }
+
+
+        /*
+         * =====================================================
+         * 4. LIMPIAR FORMULARIO
+         * =====================================================
+         */
+
+        document
+            .getElementById(
+                "new-title"
+            )
+            .value =
+            "";
+
+
+        audioInput.value =
+            "";
+
+
+        coverInput.value =
+            "";
+
+
+        coverPreview.style.display =
+            "none";
+
+
+        coverPreviewImage.removeAttribute(
+            "src"
+        );
+
+
+        subtitleRows.innerHTML =
+            "";
+
+
+        createSubtitleRow();
+
+
+        setUploadStatus(
+            "Publicado correctamente.",
+            100
+        );
+
+
+        uploadBtn.querySelector(
+            "span"
+        ).textContent =
+            "Publicado";
+
+
+        alert(
+            "¡Nasheed, carátula y subtítulos publicados correctamente!"
+        );
+
+
+        await loadNasheeds();
+
+
+    } catch (
+        error
+    ) {
 
         console.error(
+            "Error publicando:",
             error
         );
 
 
-        alert(
-            "No se pudo conectar con el servidor."
+        setUploadStatus(
+            "Error: " +
+            (
+                error.message ||
+                "no se pudo completar la subida."
+            ),
+            0
         );
-
-    } finally {
-
-        uploadBtn.disabled =
-            false;
 
 
         uploadBtn.querySelector(
             "span"
         ).textContent =
             "Publicar al Servidor";
+
+
+        alert(
+            error.message ||
+            "No se pudo publicar el nasheed."
+        );
+
+    } finally {
+
+        uploadBtn.disabled =
+            false;
 
     }
 
@@ -1779,11 +2447,16 @@ async function logoutAdmin() {
             "/api/logout",
             {
                 method:
-                    "POST"
+                    "POST",
+
+                credentials:
+                    "same-origin"
             }
         );
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             error
@@ -1799,12 +2472,22 @@ async function logoutAdmin() {
 
 
 /* =========================================================
-   INICIAR
+   INICIO
    ========================================================= */
 
-loadNasheeds();
+(async () => {
+
+    await initSupabase();
+
+    createSubtitleRow();
+
+    await loadNasheeds();
+
+})();
 
 </script>
 
+
 </body>
+
 </html>

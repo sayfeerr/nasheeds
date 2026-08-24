@@ -34,7 +34,7 @@ const ADMIN_PATH =
 
 const SESSION_SECRET =
     process.env.SESSION_SECRET ||
-    "nushud-super-secret-key-change-it";
+    "change-this-secret";
 
 
 /* =========================================================
@@ -45,11 +45,9 @@ if (
     !SUPABASE_URL ||
     !SUPABASE_SECRET_KEY
 ) {
-
     console.error(
         "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY."
     );
-
 }
 
 
@@ -59,11 +57,8 @@ const supabase =
         SUPABASE_SECRET_KEY,
         {
             auth: {
-                persistSession:
-                    false,
-
-                autoRefreshToken:
-                    false
+                persistSession: false,
+                autoRefreshToken: false
             }
         }
     );
@@ -80,12 +75,10 @@ app.use(
     })
 );
 
-
 app.use(
     express.urlencoded({
         extended:
             true,
-
         limit:
             "1mb"
     })
@@ -93,99 +86,60 @@ app.use(
 
 
 /* =========================================================
-   COOKIE
+   ADMIN COOKIE
    ========================================================= */
 
 const ADMIN_COOKIE =
-    "nushud_admin";
+    "nasheed_admin";
 
 
-function base64UrlEncode(
-    value
-) {
+function base64UrlEncode(value) {
 
     return Buffer
         .from(value)
         .toString("base64")
-        .replace(
-            /\+/g,
-            "-"
-        )
-        .replace(
-            /\//g,
-            "_"
-        )
-        .replace(
-            /=+$/g,
-            ""
-        );
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
 
 }
 
 
-function base64UrlDecode(
-    value
-) {
+function base64UrlDecode(value) {
 
     value =
         value
-            .replace(
-                /-/g,
-                "+"
-            )
-            .replace(
-                /_/g,
-                "/"
-            );
-
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
 
     while (
-        value.length %
-        4
+        value.length % 4
     ) {
-
         value += "=";
-
     }
-
 
     return Buffer
         .from(
             value,
             "base64"
         )
-        .toString(
-            "utf8"
-        );
+        .toString("utf8");
 
 }
 
 
-function signValue(
-    value
-) {
+function signValue(value) {
 
     return crypto
         .createHmac(
             "sha256",
             SESSION_SECRET
         )
-        .update(
-            value
-        )
+        .update(value)
         .digest("base64")
-        .replace(
-            /\+/g,
-            "-"
-        )
-        .replace(
-            /\//g,
-            "_"
-        )
-        .replace(
-            /=+$/g,
-            ""
-        );
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/g, "");
 
 }
 
@@ -209,7 +163,6 @@ function createAdminToken() {
 
     };
 
-
     const encoded =
         base64UrlEncode(
             JSON.stringify(
@@ -217,12 +170,10 @@ function createAdminToken() {
             )
         );
 
-
     const signature =
         signValue(
             encoded
         );
-
 
     return (
         encoded +
@@ -233,33 +184,23 @@ function createAdminToken() {
 }
 
 
-function verifyAdminToken(
-    token
-) {
+function verifyAdminToken(token) {
 
     if (
         typeof token !==
         "string"
     ) {
-
         return false;
-
     }
-
 
     const parts =
         token.split(".");
 
-
     if (
-        parts.length !==
-        2
+        parts.length !== 2
     ) {
-
         return false;
-
     }
-
 
     const encoded =
         parts[0];
@@ -267,12 +208,10 @@ function verifyAdminToken(
     const signature =
         parts[1];
 
-
     const expected =
         signValue(
             encoded
         );
-
 
     const a =
         Buffer.from(
@@ -284,16 +223,12 @@ function verifyAdminToken(
             expected
         );
 
-
     if (
         a.length !==
         b.length
     ) {
-
         return false;
-
     }
-
 
     if (
         !crypto.timingSafeEqual(
@@ -301,11 +236,8 @@ function verifyAdminToken(
             b
         )
     ) {
-
         return false;
-
     }
-
 
     try {
 
@@ -316,37 +248,27 @@ function verifyAdminToken(
                 )
             );
 
-
         if (
             payload.admin !==
             true
         ) {
-
             return false;
-
         }
-
 
         if (
             !Number.isFinite(
                 payload.exp
             )
         ) {
-
             return false;
-
         }
-
 
         if (
             Date.now() >=
             payload.exp
         ) {
-
             return false;
-
         }
-
 
         return true;
 
@@ -359,46 +281,30 @@ function verifyAdminToken(
 }
 
 
-function getCookie(
-    req,
-    name
-) {
+function getCookie(req, name) {
 
     const header =
         req.headers.cookie;
 
-
     if (
         !header
     ) {
-
         return "";
-
     }
-
-
-    const parts =
-        header.split(";");
-
 
     for (
         const part of
-        parts
+        header.split(";")
     ) {
 
         const index =
             part.indexOf("=");
 
-
         if (
-            index ===
-            -1
+            index === -1
         ) {
-
             continue;
-
         }
-
 
         const key =
             part
@@ -408,16 +314,12 @@ function getCookie(
                 )
                 .trim();
 
-
         if (
             key !==
             name
         ) {
-
             continue;
-
         }
-
 
         return decodeURIComponent(
             part
@@ -429,15 +331,12 @@ function getCookie(
 
     }
 
-
     return "";
 
 }
 
 
-function isAdmin(
-    req
-) {
+function isAdmin(req) {
 
     return verifyAdminToken(
         getCookie(
@@ -449,14 +348,11 @@ function isAdmin(
 }
 
 
-function setAdminCookie(
-    res
-) {
+function setAdminCookie(res) {
 
     const secure =
         process.env.NODE_ENV ===
         "production";
-
 
     res.setHeader(
         "Set-Cookie",
@@ -477,14 +373,11 @@ function setAdminCookie(
 }
 
 
-function clearAdminCookie(
-    res
-) {
+function clearAdminCookie(res) {
 
     const secure =
         process.env.NODE_ENV ===
         "production";
-
 
     res.setHeader(
         "Set-Cookie",
@@ -506,12 +399,10 @@ function clearAdminCookie(
 
 
 /* =========================================================
-   PÁGINA LOGIN ADMIN
+   ADMIN LOGIN
    ========================================================= */
 
-function sendAdminLoginPage(
-    res
-) {
+function sendAdminLoginPage(res) {
 
     res.send(`
 <!DOCTYPE html>
@@ -525,90 +416,80 @@ function sendAdminLoginPage(
         name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-    <title>Acceso Restringido</title>
+    <title>NASHEED - Acceso privado</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-    <style>
-
-        body {
-
-            font-family:
-                sans-serif;
-
-            background-color:
-                #060608;
-
-            color:
-                #f4f4f5;
-
-        }
-
-    </style>
-
 </head>
 
-
 <body
-    class="min-h-screen flex items-center justify-center p-6">
+    class="min-h-screen flex items-center justify-center p-6 bg-[#060608] text-zinc-100">
 
+    <div
+        class="w-full max-w-sm bg-zinc-900/80 backdrop-blur-2xl border border-amber-500/20 rounded-3xl p-8 shadow-2xl">
 
-<div
-    class="bg-zinc-900 border border-amber-500/30 p-8 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
+        <div
+            class="text-center mb-7">
 
+            <div
+                class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-zinc-950 text-2xl font-black">
 
-    <h1
-        class="text-sm font-bold text-amber-400 uppercase tracking-wider text-center">
+                N
 
-        Identificación Requerida
+            </div>
 
-    </h1>
+            <h1
+                class="font-extrabold tracking-[.2em] text-amber-400 text-sm">
 
+                NASHEED
 
-    <input
-        type="password"
-        id="pin-input"
-        placeholder="Introduce tu PIN"
-        autocomplete="current-password"
-        class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-500 text-center tracking-widest">
+            </h1>
 
+            <p
+                class="text-zinc-500 text-xs mt-2">
 
-    <button
-        onclick="loginAdmin()"
-        id="login-button"
-        class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs cursor-pointer">
+                Acceso privado
 
-        Acceder al Panel
+            </p>
 
-    </button>
+        </div>
 
+        <input
+            id="pin-input"
+            type="password"
+            inputmode="numeric"
+            autocomplete="current-password"
+            placeholder="Introduce tu PIN"
+            class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-center tracking-[.35em] outline-none focus:border-amber-500">
 
-    <p
-        id="error-msg"
-        class="text-xs text-red-400 text-center min-h-4">
+        <button
+            id="login-button"
+            onclick="loginAdmin()"
+            class="w-full mt-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs">
 
-    </p>
+            Acceder
 
+        </button>
 
-</div>
+        <p
+            id="error-msg"
+            class="text-red-400 text-xs text-center min-h-4 mt-3">
 
+        </p>
+
+    </div>
 
 <script>
-
-"use strict";
-
 
 const pinInput =
     document.getElementById(
         "pin-input"
     );
 
-
 const loginButton =
     document.getElementById(
         "login-button"
     );
-
 
 const errorMsg =
     document.getElementById(
@@ -621,38 +502,29 @@ async function loginAdmin() {
     const pin =
         pinInput.value;
 
-
     if (
         !pin
     ) {
 
         errorMsg.textContent =
-            "Introduce tu PIN.";
+            "Introduce el PIN.";
 
         return;
 
     }
 
-
     loginButton.disabled =
         true;
-
 
     loginButton.textContent =
         "Comprobando...";
 
-
-    errorMsg.textContent =
-        "";
-
-
     try {
 
-        const res =
+        const response =
             await fetch(
                 "/api/login",
                 {
-
                     method:
                         "POST",
 
@@ -660,30 +532,22 @@ async function loginAdmin() {
                         "same-origin",
 
                     headers: {
-
                         "Content-Type":
-                            "application/json",
-
-                        "Accept":
                             "application/json"
-
                     },
 
                     body:
                         JSON.stringify({
                             pin
                         })
-
                 }
             );
 
-
         const data =
-            await res.json();
-
+            await response.json();
 
         if (
-            res.ok &&
+            response.ok &&
             data.success
         ) {
 
@@ -694,32 +558,22 @@ async function loginAdmin() {
 
         }
 
-
         errorMsg.textContent =
             data.error ||
             "PIN incorrecto.";
 
-    } catch (
-        error
-    ) {
-
-        console.error(
-            error
-        );
-
+    } catch {
 
         errorMsg.textContent =
             "Error de conexión.";
 
     }
 
-
     loginButton.disabled =
         false;
 
-
     loginButton.textContent =
-        "Acceder al Panel";
+        "Acceder";
 
 }
 
@@ -742,27 +596,16 @@ pinInput.addEventListener(
 
 </script>
 
-
 </body>
-
 </html>
     `);
 
 }
 
 
-/* =========================================================
-   RUTA ADMIN
-   ========================================================= */
-
 app.get(
     ADMIN_PATH,
     (req, res) => {
-
-        /*
-         * SI NO ESTÁ LOGUEADO:
-         * mostrar login.
-         */
 
         if (
             !isAdmin(req)
@@ -773,12 +616,6 @@ app.get(
             );
 
         }
-
-
-        /*
-         * SI ESTÁ LOGUEADO:
-         * mostrar admin.html.
-         */
 
         return res.sendFile(
             path.join(
@@ -793,7 +630,7 @@ app.get(
 
 
 /* =========================================================
-   ARCHIVOS PÚBLICOS
+   STATIC
    ========================================================= */
 
 app.use(
@@ -832,7 +669,7 @@ app.get(
 
 
 /* =========================================================
-   API PÚBLICA
+   PUBLIC NASHEEDS
    ========================================================= */
 
 app.get(
@@ -849,9 +686,11 @@ app.get(
                 error
             } =
                 await supabase
-                    .from("nasheeds")
+                    .from(
+                        "nasheeds"
+                    )
                     .select(
-                        "id,title,audio_url,cover_url,subtitles,created_at"
+                        "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
                     )
                     .order(
                         "created_at",
@@ -861,16 +700,13 @@ app.get(
                         }
                     );
 
-
             if (
                 error
             ) {
 
                 console.error(
-                    "Supabase GET nasheeds:",
                     error
                 );
-
 
                 return res
                     .status(500)
@@ -880,7 +716,6 @@ app.get(
                     });
 
             }
-
 
             return res.json(
 
@@ -905,7 +740,12 @@ app.get(
 
                             subtitles:
                                 item.subtitles ||
-                                {}
+                                {},
+
+                            warning:
+                                Boolean(
+                                    item.warning_enabled
+                                )
 
                         })
                     )
@@ -919,7 +759,6 @@ app.get(
             console.error(
                 error
             );
-
 
             return res
                 .status(500)
@@ -948,7 +787,6 @@ app.post(
                 ""
             );
 
-
         if (
             pin !==
             ADMIN_PIN
@@ -957,22 +795,18 @@ app.post(
             return res
                 .status(401)
                 .json({
-
                     success:
                         false,
 
                     error:
                         "PIN incorrecto"
-
                 });
 
         }
 
-
         setAdminCookie(
             res
         );
-
 
         return res.json({
 
@@ -989,7 +823,7 @@ app.post(
 
 
 /* =========================================================
-   CHECK SESSION
+   SESSION
    ========================================================= */
 
 app.get(
@@ -1018,7 +852,6 @@ app.post(
         clearAdminCookie(
             res
         );
-
 
         return res.json({
 
@@ -1049,21 +882,18 @@ function requireAdmin(
 
     }
 
-
     return res
         .status(403)
         .json({
-
             error:
-                "Acceso denegado. No autorizado."
-
+                "Acceso denegado."
         });
 
 }
 
 
 /* =========================================================
-   ADMIN - LISTAR
+   ADMIN LIST
    ========================================================= */
 
 app.get(
@@ -1081,9 +911,11 @@ app.get(
                 error
             } =
                 await supabase
-                    .from("nasheeds")
+                    .from(
+                        "nasheeds"
+                    )
                     .select(
-                        "id,title,audio_url,cover_url,subtitles,created_at"
+                        "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
                     )
                     .order(
                         "created_at",
@@ -1093,7 +925,6 @@ app.get(
                         }
                     );
 
-
             if (
                 error
             ) {
@@ -1101,7 +932,6 @@ app.get(
                 console.error(
                     error
                 );
-
 
                 return res
                     .status(500)
@@ -1111,7 +941,6 @@ app.get(
                     });
 
             }
-
 
             return res.json(
 
@@ -1138,6 +967,11 @@ app.get(
                                 item.subtitles ||
                                 {},
 
+                            warning:
+                                Boolean(
+                                    item.warning_enabled
+                                ),
+
                             created_at:
                                 item.created_at
 
@@ -1153,7 +987,6 @@ app.get(
             console.error(
                 error
             );
-
 
             return res
                 .status(500)
@@ -1188,14 +1021,12 @@ app.post(
                     ""
                 ).trim();
 
-
             const files =
                 Array.isArray(
                     req.body?.files
                 )
                     ? req.body.files
                     : [];
-
 
             if (
                 !title
@@ -1210,7 +1041,6 @@ app.post(
 
             }
 
-
             if (
                 !files.length
             ) {
@@ -1224,33 +1054,14 @@ app.post(
 
             }
 
-
-            if (
-                files.length >
-                22
-            ) {
-
-                return res
-                    .status(400)
-                    .json({
-                        error:
-                            "Demasiados archivos."
-                    });
-
-            }
-
-
             const seenLanguages =
                 new Set();
-
 
             let hasArabic =
                 false;
 
-
             const prepared =
                 [];
-
 
             for (
                 const file of
@@ -1263,7 +1074,6 @@ app.post(
                         ""
                     ).trim();
 
-
                 const language =
                     String(
                         file?.language ||
@@ -1272,13 +1082,11 @@ app.post(
                         .trim()
                         .toLowerCase();
 
-
                 const originalName =
                     String(
                         file?.name ||
                         ""
                     ).trim();
-
 
                 const contentType =
                     String(
@@ -1286,12 +1094,10 @@ app.post(
                         "application/octet-stream"
                     ).trim();
 
-
                 const size =
                     Number(
                         file?.size
                     );
-
 
                 if (
                     !field ||
@@ -1310,10 +1116,8 @@ app.post(
 
                 }
 
-
                 if (
-                    size <=
-                    0
+                    size <= 0
                 ) {
 
                     return res
@@ -1324,7 +1128,6 @@ app.post(
                         });
 
                 }
-
 
                 if (
                     size >
@@ -1341,7 +1144,6 @@ app.post(
                         });
 
                 }
-
 
                 if (
                     field ===
@@ -1363,7 +1165,6 @@ app.post(
 
                     }
 
-
                     if (
                         seenLanguages.has(
                             language
@@ -1379,11 +1180,9 @@ app.post(
 
                     }
 
-
                     seenLanguages.add(
                         language
                     );
-
 
                     if (
                         language ===
@@ -1394,7 +1193,6 @@ app.post(
                             true;
 
                     }
-
 
                     if (
                         !originalName
@@ -1414,7 +1212,6 @@ app.post(
                     }
 
                 }
-
 
                 if (
                     field ===
@@ -1443,7 +1240,6 @@ app.post(
 
                 }
 
-
                 if (
                     field ===
                     "cover"
@@ -1471,10 +1267,8 @@ app.post(
 
                 }
 
-
                 let folder =
                     "other";
-
 
                 if (
                     field ===
@@ -1486,7 +1280,6 @@ app.post(
 
                 }
 
-
                 if (
                     field ===
                     "cover"
@@ -1496,7 +1289,6 @@ app.post(
                         "covers";
 
                 }
-
 
                 if (
                     field ===
@@ -1508,7 +1300,6 @@ app.post(
 
                 }
 
-
                 const extension =
                     path
                         .extname(
@@ -1516,7 +1307,6 @@ app.post(
                         )
                         .toLowerCase() ||
                     ".bin";
-
 
                 const random =
                     crypto
@@ -1527,10 +1317,8 @@ app.post(
                             "hex"
                         );
 
-
                 const storagePath =
                     `${folder}/${Date.now()}-${random}${extension}`;
-
 
                 const {
                     data,
@@ -1549,7 +1337,6 @@ app.post(
                             }
                         );
 
-
                 if (
                     error
                 ) {
@@ -1557,7 +1344,6 @@ app.post(
                     console.error(
                         error
                     );
-
 
                     return res
                         .status(500)
@@ -1568,10 +1354,8 @@ app.post(
 
                 }
 
-
                 const publicUrl =
                     `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
-
 
                 prepared.push({
 
@@ -1601,7 +1385,6 @@ app.post(
 
             }
 
-
             if (
                 !hasArabic
             ) {
@@ -1614,7 +1397,6 @@ app.post(
                     });
 
             }
-
 
             return res.json({
 
@@ -1633,7 +1415,6 @@ app.post(
             console.error(
                 error
             );
-
 
             return res
                 .status(500)
@@ -1668,7 +1449,6 @@ app.post(
                     ""
                 ).trim();
 
-
             const files =
                 Array.isArray(
                     req.body?.files
@@ -1676,6 +1456,10 @@ app.post(
                     ? req.body.files
                     : [];
 
+            const warningEnabled =
+                Boolean(
+                    req.body?.warningEnabled
+                );
 
             if (
                 !title
@@ -1690,14 +1474,12 @@ app.post(
 
             }
 
-
             const audio =
                 files.find(
                     file =>
                         file.field ===
                         "audio"
                 );
-
 
             const cover =
                 files.find(
@@ -1706,14 +1488,12 @@ app.post(
                         "cover"
                 );
 
-
             const subtitles =
                 files.filter(
                     file =>
                         file.field ===
                         "subtitles"
                 );
-
 
             if (
                 !audio
@@ -1728,14 +1508,12 @@ app.post(
 
             }
 
-
             const arabic =
                 subtitles.find(
                     file =>
                         file.language ===
                         "ar"
                 );
-
 
             if (
                 !arabic
@@ -1750,10 +1528,8 @@ app.post(
 
             }
 
-
             const subtitleMap =
                 {};
-
 
             subtitles.forEach(
                 file => {
@@ -1765,7 +1541,6 @@ app.post(
 
                 }
             );
-
 
             const record = {
 
@@ -1783,23 +1558,26 @@ app.post(
                         : null,
 
                 subtitles:
-                    subtitleMap
+                    subtitleMap,
+
+                warning_enabled:
+                    warningEnabled
 
             };
-
 
             const {
                 data,
                 error
             } =
                 await supabase
-                    .from("nasheeds")
+                    .from(
+                        "nasheeds"
+                    )
                     .insert(
                         record
                     )
                     .select()
                     .single();
-
 
             if (
                 error
@@ -1809,7 +1587,6 @@ app.post(
                     error
                 );
 
-
                 return res
                     .status(500)
                     .json({
@@ -1818,7 +1595,6 @@ app.post(
                     });
 
             }
-
 
             return res.json({
 
@@ -1844,7 +1620,12 @@ app.post(
 
                     subtitles:
                         data.subtitles ||
-                        {}
+                        {},
+
+                    warning:
+                        Boolean(
+                            data.warning_enabled
+                        )
 
                 }
 
@@ -1857,7 +1638,6 @@ app.post(
             console.error(
                 error
             );
-
 
             return res
                 .status(500)
@@ -1873,7 +1653,7 @@ app.post(
 
 
 /* =========================================================
-   ELIMINAR NASHEED
+   ELIMINAR
    ========================================================= */
 
 app.delete(
@@ -1891,7 +1671,6 @@ app.delete(
                     req.params.id
                 );
 
-
             if (
                 !Number.isSafeInteger(
                     id
@@ -1907,14 +1686,15 @@ app.delete(
 
             }
 
-
             const {
                 data: track,
                 error:
                     fetchError
             } =
                 await supabase
-                    .from("nasheeds")
+                    .from(
+                        "nasheeds"
+                    )
                     .select(
                         "id,title,audio_url,cover_url,subtitles"
                     )
@@ -1924,7 +1704,6 @@ app.delete(
                     )
                     .maybeSingle();
 
-
             if (
                 fetchError
             ) {
@@ -1932,7 +1711,6 @@ app.delete(
                 console.error(
                     fetchError
                 );
-
 
                 return res
                     .status(500)
@@ -1942,7 +1720,6 @@ app.delete(
                     });
 
             }
-
 
             if (
                 !track
@@ -1957,22 +1734,18 @@ app.delete(
 
             }
 
-
             const paths =
                 [];
-
 
             addStoragePathFromPublicUrl(
                 track.audio_url,
                 paths
             );
 
-
             addStoragePathFromPublicUrl(
                 track.cover_url,
                 paths
             );
-
 
             if (
                 track.subtitles &&
@@ -1995,7 +1768,6 @@ app.delete(
 
             }
 
-
             if (
                 paths.length
             ) {
@@ -2013,7 +1785,6 @@ app.delete(
                             paths
                         );
 
-
                 if (
                     storageError
                 ) {
@@ -2026,19 +1797,19 @@ app.delete(
 
             }
 
-
             const {
                 error:
                     deleteError
             } =
                 await supabase
-                    .from("nasheeds")
+                    .from(
+                        "nasheeds"
+                    )
                     .delete()
                     .eq(
                         "id",
                         id
                     );
-
 
             if (
                 deleteError
@@ -2048,7 +1819,6 @@ app.delete(
                     deleteError
                 );
 
-
                 return res
                     .status(500)
                     .json({
@@ -2057,7 +1827,6 @@ app.delete(
                     });
 
             }
-
 
             return res.json({
 
@@ -2074,7 +1843,6 @@ app.delete(
                 error
             );
 
-
             return res
                 .status(500)
                 .json({
@@ -2089,7 +1857,7 @@ app.delete(
 
 
 /* =========================================================
-   EXTRAER PATH DE STORAGE
+   PATH STORAGE
    ========================================================= */
 
 function addStoragePathFromPublicUrl(
@@ -2099,7 +1867,7 @@ function addStoragePathFromPublicUrl(
 
     if (
         typeof url !==
-            "string" ||
+        "string" ||
         !url
     ) {
 
@@ -2107,16 +1875,13 @@ function addStoragePathFromPublicUrl(
 
     }
 
-
     const marker =
         `/storage/v1/object/public/${STORAGE_BUCKET}/`;
-
 
     const index =
         url.indexOf(
             marker
         );
-
 
     if (
         index ===
@@ -2127,13 +1892,11 @@ function addStoragePathFromPublicUrl(
 
     }
 
-
     const storagePath =
         url.slice(
             index +
             marker.length
         );
-
 
     if (
         storagePath
@@ -2167,7 +1930,6 @@ app.use(
             err
         );
 
-
         if (
             res.headersSent
         ) {
@@ -2177,7 +1939,6 @@ app.use(
             );
 
         }
-
 
         return res
             .status(500)
@@ -2204,7 +1965,7 @@ if (
         () => {
 
             console.log(
-                `Servidor Nushud activo en puerto ${PORT}`
+                `NASHEED activo en puerto ${PORT}`
             );
 
         }

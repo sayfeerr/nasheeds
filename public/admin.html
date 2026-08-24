@@ -9,7 +9,7 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-    <title>Nushud Studio - Admin Privado</title>
+    <title>NASHEED - Panel privado</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
@@ -27,7 +27,7 @@
                 'Plus Jakarta Sans',
                 sans-serif;
 
-            background-color:
+            background:
                 #060608;
 
             color:
@@ -36,95 +36,25 @@
         }
 
 
-        .glass-panel {
+        .glass {
 
             background:
-                rgba(18,18,23,0.8);
+                rgba(18,18,23,.78);
 
             backdrop-filter:
-                blur(12px);
+                blur(18px);
 
             border:
                 1px solid
-                rgba(255,255,255,0.08);
+                rgba(255,255,255,.08);
 
         }
 
 
-        #cover-preview {
+        .cover-preview {
 
             display:
                 none;
-
-        }
-
-
-        .nasheed-card {
-
-            transition:
-                transform 0.2s ease,
-                border-color 0.2s ease;
-
-        }
-
-
-        .nasheed-card:hover {
-
-            transform:
-                translateY(-2px);
-
-            border-color:
-                rgba(245,158,11,0.35);
-
-        }
-
-
-        .cover-image {
-
-            width:
-                64px;
-
-            height:
-                64px;
-
-            object-fit:
-                cover;
-
-            border-radius:
-                14px;
-
-        }
-
-
-        .cover-placeholder {
-
-            width:
-                64px;
-
-            height:
-                64px;
-
-            border-radius:
-                14px;
-
-            background:
-                rgba(255,255,255,0.05);
-
-            border:
-                1px solid
-                rgba(255,255,255,0.08);
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
-            color:
-                #71717a;
 
         }
 
@@ -148,72 +78,79 @@
         }
 
 
-        .upload-status {
-
-            display:
-                none;
-
-            padding:
-                12px 14px;
+        .warning-box {
 
             border:
                 1px solid
-                rgba(245,158,11,.18);
+                rgba(245,158,11,.25);
 
             background:
                 rgba(245,158,11,.07);
 
             border-radius:
-                14px;
+                18px;
 
-            font-size:
-                11px;
-
-            color:
-                #d4d4d8;
+            padding:
+                15px;
 
         }
 
 
-        .progress-track {
+        .warning-switch {
 
             width:
-                100%;
+                46px;
 
             height:
-                5px;
-
-            background:
-                rgba(255,255,255,.06);
+                25px;
 
             border-radius:
                 999px;
 
-            overflow:
-                hidden;
+            background:
+                rgba(255,255,255,.10);
 
-            margin-top:
-                8px;
+            padding:
+                3px;
+
+            cursor:
+                pointer;
 
         }
 
 
-        .progress-fill {
-
-            width:
-                0%;
-
-            height:
-                100%;
+        .warning-switch.active {
 
             background:
-                #f59e0b;
+                rgba(245,158,11,.85);
+
+        }
+
+
+        .warning-dot {
+
+            width:
+                19px;
+
+            height:
+                19px;
 
             border-radius:
-                inherit;
+                50%;
+
+            background:
+                #fff;
 
             transition:
-                width .2s ease;
+                transform .2s ease;
+
+        }
+
+
+        .warning-switch.active .warning-dot {
+
+            transform:
+                translateX(21px);
 
         }
 
@@ -237,53 +174,46 @@
 <body class="min-h-screen p-4 md:p-8">
 
 
-<div class="max-w-4xl mx-auto space-y-6">
+<div
+    class="max-w-4xl mx-auto space-y-6">
 
 
-    <!-- ================================================= -->
-    <!-- CABECERA -->
-    <!-- ================================================= -->
+    <!-- HEADER -->
 
     <div
-        class="glass-panel p-6 rounded-3xl shadow-2xl border border-amber-500/30">
+        class="glass rounded-3xl p-6 border border-amber-500/20">
+
 
         <div
-            class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+            class="flex justify-between items-center gap-4">
+
 
             <div
-                class="flex items-center space-x-3">
+                class="flex items-center gap-3">
+
 
                 <div
-                    class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                    class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-zinc-950 flex items-center justify-center font-black">
 
-                    <svg
-                        class="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2">
-
-                        <path
-                            d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z">
-                        </path>
-
-                    </svg>
+                    N
 
                 </div>
+
 
                 <div>
 
                     <h1
-                        class="text-sm font-extrabold text-amber-400 uppercase tracking-wider">
+                        class="text-sm font-extrabold tracking-[.18em] text-amber-400">
 
-                        Studio Admin Privado
+                        NASHEED
 
                     </h1>
+
 
                     <p
                         class="text-[11px] text-zinc-500">
 
-                        Gestión de contenido protegido
+                        Panel de administración
 
                     </p>
 
@@ -294,9 +224,9 @@
 
             <button
                 onclick="logoutAdmin()"
-                class="text-xs text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl cursor-pointer">
+                class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">
 
-                Cerrar Sesión
+                Cerrar sesión
 
             </button>
 
@@ -305,27 +235,26 @@
     </div>
 
 
-    <!-- ================================================= -->
     <!-- PUBLICAR -->
-    <!-- ================================================= -->
 
     <div
-        class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl space-y-6">
+        class="glass rounded-3xl p-6 md:p-8 space-y-6">
 
 
         <div>
 
             <h2
-                class="text-lg font-bold text-zinc-100">
+                class="text-lg font-bold">
 
                 Publicar nuevo Nasheed
 
             </h2>
 
+
             <p
                 class="text-xs text-zinc-500 mt-1">
 
-                Añade audio, carátula y varios idiomas de subtítulos.
+                Audio, portada, idiomas y advertencia de contenido.
 
             </p>
 
@@ -337,17 +266,18 @@
         <div>
 
             <label
-                class="block text-xs font-medium text-zinc-400 mb-1.5">
+                class="block text-xs text-zinc-400 mb-2">
 
-                Título del Nasheed
+                Título
 
             </label>
 
+
             <input
-                type="text"
                 id="new-title"
-                placeholder="Ej: Qalu Lahu"
-                class="w-full bg-zinc-950/80 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-500">
+                type="text"
+                placeholder="Ej: Ya Shahida"
+                class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-amber-500">
 
         </div>
 
@@ -357,73 +287,57 @@
         <div>
 
             <label
-                class="block text-xs font-medium text-zinc-400 mb-1.5">
+                class="block text-xs text-zinc-400 mb-2">
 
-                Archivo de Audio
+                Audio
 
             </label>
 
+
             <input
-                type="file"
                 id="audio-file-input"
+                type="file"
                 accept="audio/*"
-                class="w-full text-xs text-zinc-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-xl p-1.5 bg-zinc-950/80">
+                class="w-full text-xs text-zinc-400 border border-white/10 rounded-xl p-2 bg-zinc-950">
 
         </div>
 
 
-        <!-- CARÁTULA -->
+        <!-- COVER -->
 
         <div>
 
             <label
-                class="block text-xs font-medium text-zinc-400 mb-1.5">
+                class="block text-xs text-zinc-400 mb-2">
 
                 Carátula
 
-                <span
-                    class="text-zinc-600">
-
-                    (opcional)
-
-                </span>
-
             </label>
 
+
             <input
-                type="file"
                 id="cover-file-input"
+                type="file"
                 accept="image/*"
-                class="w-full text-xs text-zinc-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-xl p-1.5 bg-zinc-950/80">
+                class="w-full text-xs text-zinc-400 border border-white/10 rounded-xl p-2 bg-zinc-950">
 
 
             <div
                 id="cover-preview"
-                class="mt-3 items-center gap-3">
+                class="cover-preview mt-3 items-center gap-3">
+
 
                 <img
                     id="cover-preview-image"
-                    class="w-16 h-16 rounded-xl object-cover border border-white/10"
-                    alt="Vista previa de la carátula">
+                    class="w-16 h-16 rounded-xl object-cover border border-white/10">
 
 
-                <div
-                    class="text-[11px] text-zinc-500">
+                <span
+                    class="text-xs text-zinc-500">
 
-                    <p
-                        class="text-zinc-300 font-semibold">
+                    Vista previa
 
-                        Carátula seleccionada
-
-                    </p>
-
-                    <p>
-
-                        Se utilizará como portada pública.
-
-                    </p>
-
-                </div>
+                </span>
 
             </div>
 
@@ -435,21 +349,23 @@
         <div>
 
             <div
-                class="flex items-center justify-between gap-3 mb-2">
+                class="flex justify-between items-center mb-3">
+
 
                 <div>
 
                     <label
-                        class="block text-xs font-medium text-zinc-400">
+                        class="block text-xs text-zinc-400">
 
                         Subtítulos
 
                     </label>
 
+
                     <p
                         class="text-[10px] text-zinc-600 mt-1">
 
-                        El árabe es obligatorio y siempre aparece arriba.
+                        El árabe es obligatorio.
 
                     </p>
 
@@ -457,9 +373,9 @@
 
 
                 <button
-                    type="button"
                     onclick="createSubtitleRow()"
-                    class="text-xs text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
+                    type="button"
+                    class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
 
                     + Añadir idioma
 
@@ -477,26 +393,119 @@
         </div>
 
 
-        <!-- ESTADO -->
+        <!-- ADVERTENCIA -->
 
         <div
-            id="upload-status"
-            class="upload-status">
+            class="warning-box">
+
 
             <div
-                id="upload-status-text">
+                class="flex justify-between items-start gap-4">
 
-                Preparando subida...
+
+                <div
+                    class="flex-1">
+
+
+                    <p
+                        class="text-xs font-bold text-amber-300">
+
+                        Advertencia de contenido
+
+                    </p>
+
+
+                    <p
+                        class="text-[10px] text-zinc-500 mt-1 leading-relaxed">
+
+                        Actívala únicamente en los nasheeds que necesiten una advertencia antes de comenzar la reproducción.
+
+                    </p>
+
+
+                </div>
+
+
+                <button
+                    id="warning-switch"
+                    type="button"
+                    class="warning-switch"
+                    onclick="toggleWarning()"
+                    aria-label="Activar advertencia">
+
+
+                    <div
+                        class="warning-dot">
+
+                    </div>
+
+
+                </button>
+
 
             </div>
 
 
             <div
-                class="progress-track">
+                id="warning-preview"
+                class="hidden mt-4 rounded-xl bg-black/20 border border-white/5 p-3">
+
+
+                <p
+                    class="text-[10px] text-zinc-400 mb-2">
+
+                    Aviso que verá el usuario:
+
+                </p>
+
+
+                <div
+                    class="text-xs text-zinc-200 leading-relaxed">
+
+
+                    <p>
+
+                        🇪🇸 Este nasheed trata sobre el concepto de jihad (yihad) y puede contener referencias a conflicto o lucha religiosa.
+
+                    </p>
+
+
+                    <p
+                        class="mt-2">
+
+                        🇬🇧 This nasheed discusses jihad and may contain references to conflict or religious struggle.
+
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        <!-- STATUS -->
+
+        <div
+            id="upload-status"
+            class="hidden bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 text-xs text-zinc-400">
+
+
+            <div
+                id="upload-status-text">
+
+            </div>
+
+
+            <div
+                class="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
+
 
                 <div
                     id="upload-progress"
-                    class="progress-fill">
+                    class="h-full bg-amber-500 w-0">
 
                 </div>
 
@@ -505,16 +514,16 @@
         </div>
 
 
-        <!-- BOTÓN -->
+        <!-- PUBLICAR -->
 
         <button
-            onclick="uploadToServer()"
             id="upload-btn"
-            class="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-zinc-950 font-bold py-3.5 rounded-xl text-xs cursor-pointer shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-2">
+            onclick="uploadToServer()"
+            class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3.5 rounded-xl text-xs">
 
             <span>
 
-                Publicar al Servidor
+                Publicar Nasheed
 
             </span>
 
@@ -523,25 +532,25 @@
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- NASHEEDS EXISTENTES -->
-    <!-- ================================================= -->
+    <!-- EXISTENTES -->
 
     <div
-        class="glass-panel p-6 md:p-8 rounded-3xl shadow-2xl">
+        class="glass rounded-3xl p-6 md:p-8">
 
 
         <div
-            class="flex items-center justify-between mb-5">
+            class="flex justify-between items-center mb-5">
+
 
             <div>
 
                 <h2
-                    class="text-lg font-bold text-zinc-100">
+                    class="text-lg font-bold">
 
                     Nasheeds publicados
 
                 </h2>
+
 
                 <p
                     id="nasheed-count"
@@ -556,7 +565,7 @@
 
             <button
                 onclick="loadNasheeds()"
-                class="text-xs text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
+                class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-xl">
 
                 Actualizar
 
@@ -574,16 +583,14 @@
     </div>
 
 
-    <!-- VOLVER -->
-
     <div
         class="text-center pb-8">
 
         <a
             href="/"
-            class="text-xs text-amber-400 hover:underline">
+            class="text-xs text-amber-400">
 
-            ← Volver a la plataforma pública
+            ← Volver a NASHEED
 
         </a>
 
@@ -598,9 +605,10 @@
 "use strict";
 
 
-/* =========================================================
-   ELEMENTOS
-   ========================================================= */
+const subtitleRows =
+    document.getElementById(
+        "subtitle-rows"
+    );
 
 const coverInput =
     document.getElementById(
@@ -615,21 +623,6 @@ const coverPreview =
 const coverPreviewImage =
     document.getElementById(
         "cover-preview-image"
-    );
-
-const subtitleRows =
-    document.getElementById(
-        "subtitle-rows"
-    );
-
-const nasheedsList =
-    document.getElementById(
-        "nasheeds-list"
-    );
-
-const nasheedCount =
-    document.getElementById(
-        "nasheed-count"
     );
 
 const uploadBtn =
@@ -652,108 +645,24 @@ const uploadProgress =
         "upload-progress"
     );
 
+const warningSwitch =
+    document.getElementById(
+        "warning-switch"
+    );
 
-/* =========================================================
-   SUPABASE
-   ========================================================= */
+const warningPreview =
+    document.getElementById(
+        "warning-preview"
+    );
+
+
+let warningEnabled =
+    false;
+
 
 let supabaseClient =
     null;
 
-
-async function initSupabase() {
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/public-config",
-                {
-                    method:
-                        "GET",
-
-                    credentials:
-                        "same-origin",
-
-                    cache:
-                        "no-store"
-                }
-            );
-
-
-        if (
-            !response.ok
-        ) {
-
-            throw new Error(
-                "No se pudo obtener la configuración de Supabase."
-            );
-
-        }
-
-
-        const config =
-            await response.json();
-
-
-        if (
-            !config.supabaseUrl
-        ) {
-
-            throw new Error(
-                "Falta SUPABASE_URL."
-            );
-
-        }
-
-
-        if (
-            !config.supabasePublishableKey
-        ) {
-
-            throw new Error(
-                "Falta SUPABASE_PUBLISHABLE_KEY en Vercel."
-            );
-
-        }
-
-
-        supabaseClient =
-            window.supabase.createClient(
-                config.supabaseUrl,
-                config.supabasePublishableKey,
-                {
-                    auth: {
-                        persistSession:
-                            false,
-
-                        autoRefreshToken:
-                            false
-                    }
-                }
-            );
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "Error inicializando Supabase:",
-            error
-        );
-
-        supabaseClient =
-            null;
-
-    }
-
-}
-
-
-/* =========================================================
-   IDIOMAS
-   ========================================================= */
 
 const LANGUAGE_NAMES = {
 
@@ -797,7 +706,78 @@ const LANGUAGE_NAMES = {
 
 
 /* =========================================================
-   CARÁTULA
+   SUPABASE
+   ========================================================= */
+
+async function initSupabase() {
+
+    const response =
+        await fetch(
+            "/api/public-config",
+            {
+                cache:
+                    "no-store"
+            }
+        );
+
+    const config =
+        await response.json();
+
+    if (
+        !config.supabaseUrl ||
+        !config.supabasePublishableKey
+    ) {
+
+        throw new Error(
+            "Falta la configuración de Supabase."
+        );
+
+    }
+
+    supabaseClient =
+        window.supabase.createClient(
+            config.supabaseUrl,
+            config.supabasePublishableKey,
+            {
+                auth: {
+                    persistSession:
+                        false,
+
+                    autoRefreshToken:
+                        false
+                }
+            }
+        );
+
+}
+
+
+/* =========================================================
+   WARNING
+   ========================================================= */
+
+function toggleWarning() {
+
+    warningEnabled =
+        !warningEnabled;
+
+
+    warningSwitch.classList.toggle(
+        "active",
+        warningEnabled
+    );
+
+
+    warningPreview.classList.toggle(
+        "hidden",
+        !warningEnabled
+    );
+
+}
+
+
+/* =========================================================
+   COVER
    ========================================================= */
 
 coverInput.addEventListener(
@@ -807,7 +787,6 @@ coverInput.addEventListener(
         const file =
             coverInput.files[0];
 
-
         if (
             !file
         ) {
@@ -815,26 +794,14 @@ coverInput.addEventListener(
             coverPreview.style.display =
                 "none";
 
-
-            coverPreviewImage.removeAttribute(
-                "src"
-            );
-
-
             return;
 
         }
 
-
-        const objectUrl =
+        coverPreviewImage.src =
             URL.createObjectURL(
                 file
             );
-
-
-        coverPreviewImage.src =
-            objectUrl;
-
 
         coverPreview.style.display =
             "flex";
@@ -844,7 +811,7 @@ coverInput.addEventListener(
 
 
 /* =========================================================
-   FILA DE SUBTÍTULOS
+   SUBTÍTULOS
    ========================================================= */
 
 function createSubtitleRow() {
@@ -854,26 +821,27 @@ function createSubtitleRow() {
             "div"
         );
 
-
     row.className =
         "subtitle-row bg-zinc-950/50 border border-white/5 rounded-xl p-2";
 
 
-    const languageSelect =
+    const select =
         document.createElement(
             "select"
         );
 
-
-    languageSelect.className =
-        "subtitle-language-select bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500";
+    select.className =
+        "subtitle-language bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-xs";
 
 
     Object.entries(
         LANGUAGE_NAMES
     ).forEach(
         (
-            [code, name]
+            [
+                code,
+                name
+            ]
         ) => {
 
             const option =
@@ -881,16 +849,13 @@ function createSubtitleRow() {
                     "option"
                 );
 
-
             option.value =
                 code;
-
 
             option.textContent =
                 name;
 
-
-            languageSelect.appendChild(
+            select.appendChild(
                 option
             );
 
@@ -898,86 +863,74 @@ function createSubtitleRow() {
     );
 
 
-    const customOption =
+    const other =
         document.createElement(
             "option"
         );
 
-
-    customOption.value =
+    other.value =
         "custom";
 
-
-    customOption.textContent =
+    other.textContent =
         "Otro...";
 
-
-    languageSelect.appendChild(
-        customOption
+    select.appendChild(
+        other
     );
 
 
-    const fileInput =
+    const input =
         document.createElement(
             "input"
         );
 
-
-    fileInput.type =
+    input.type =
         "file";
 
-
-    fileInput.accept =
+    input.accept =
         ".vtt,text/vtt";
 
+    input.className =
+        "subtitle-file w-full text-xs text-zinc-400 border border-white/10 rounded-lg p-1 bg-zinc-950";
 
-    fileInput.className =
-        "subtitle-file-input w-full text-xs text-zinc-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-amber-500/20 file:text-amber-400 cursor-pointer border border-white/10 rounded-lg p-1 bg-zinc-950/80";
 
-
-    const customInput =
+    const custom =
         document.createElement(
             "input"
         );
 
-
-    customInput.type =
+    custom.type =
         "text";
 
+    custom.placeholder =
+        "Código";
 
-    customInput.placeholder =
-        "Código: es, en, fr";
-
-
-    customInput.className =
-        "subtitle-custom-language hidden bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500";
+    custom.className =
+        "subtitle-custom hidden bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-xs";
 
 
-    const removeButton =
+    const remove =
         document.createElement(
             "button"
         );
 
-
-    removeButton.type =
+    remove.type =
         "button";
 
-
-    removeButton.textContent =
+    remove.textContent =
         "Eliminar";
 
+    remove.className =
+        "text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg";
 
-    removeButton.className =
-        "text-xs text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg";
 
-
-    languageSelect.addEventListener(
+    select.addEventListener(
         "change",
         () => {
 
-            customInput.classList.toggle(
+            custom.classList.toggle(
                 "hidden",
-                languageSelect.value !==
+                select.value !==
                     "custom"
             );
 
@@ -985,7 +938,7 @@ function createSubtitleRow() {
     );
 
 
-    removeButton.addEventListener(
+    remove.addEventListener(
         "click",
         () => {
 
@@ -996,19 +949,19 @@ function createSubtitleRow() {
 
 
     row.appendChild(
-        languageSelect
+        select
     );
 
     row.appendChild(
-        fileInput
+        input
     );
 
     row.appendChild(
-        customInput
+        custom
     );
 
     row.appendChild(
-        removeButton
+        remove
     );
 
 
@@ -1022,7 +975,7 @@ function createSubtitleRow() {
         1
     ) {
 
-        languageSelect.value =
+        select.value =
             "ar";
 
     }
@@ -1031,581 +984,24 @@ function createSubtitleRow() {
 
 
 /* =========================================================
-   ESCAPE HTML
+   STATUS
    ========================================================= */
 
-function escapeHtml(
-    value
-) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-
-    div.textContent =
-        String(
-            value ?? ""
-        );
-
-
-    return div.innerHTML;
-
-}
-
-
-/* =========================================================
-   ESTADO
-   ========================================================= */
-
-function setUploadStatus(
-    message,
+function setStatus(
+    text,
     percent
 ) {
 
-    uploadStatus.style.display =
-        "block";
-
+    uploadStatus.classList.remove(
+        "hidden"
+    );
 
     uploadStatusText.textContent =
-        message;
-
+        text;
 
     uploadProgress.style.width =
-        Math.max(
-            0,
-            Math.min(
-                100,
-                percent
-            )
-        ) +
+        percent +
         "%";
-
-}
-
-
-/* =========================================================
-   LISTAR NASHEEDS
-   ========================================================= */
-
-async function loadNasheeds() {
-
-    nasheedsList.innerHTML = `
-
-        <div
-            class="text-center py-8 text-sm text-zinc-600">
-
-            Cargando nasheeds...
-
-        </div>
-
-    `;
-
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/admin/nasheeds",
-                {
-                    method:
-                        "GET",
-
-                    credentials:
-                        "same-origin",
-
-                    cache:
-                        "no-store",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    }
-                }
-            );
-
-
-        if (
-            response.status ===
-            403
-        ) {
-
-            window.location.href =
-                "/";
-
-
-            return;
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            !response.ok
-        ) {
-
-            throw new Error(
-                data.error ||
-                "Error cargando los nasheeds."
-            );
-
-        }
-
-
-        renderNasheeds(
-            data
-        );
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            error
-        );
-
-
-        nasheedsList.innerHTML = `
-
-            <div
-                class="text-center py-8 text-sm text-red-400">
-
-                No se pudieron cargar los nasheeds.
-
-            </div>
-
-        `;
-
-
-        nasheedCount.textContent =
-            "Error al cargar";
-
-    }
-
-}
-
-
-/* =========================================================
-   RENDER
-   ========================================================= */
-
-function renderNasheeds(
-    nasheeds
-) {
-
-    nasheedCount.textContent =
-        nasheeds.length ===
-            1
-            ? "1 nasheed publicado"
-            : `${nasheeds.length} nasheeds publicados`;
-
-
-    if (
-        !nasheeds ||
-        nasheeds.length ===
-            0
-    ) {
-
-        nasheedsList.innerHTML = `
-
-            <div
-                class="text-center py-10">
-
-                <div
-                    class="text-zinc-700 text-3xl mb-2">
-
-                    ♪
-
-                </div>
-
-                <p
-                    class="text-sm text-zinc-500">
-
-                    Todavía no hay nasheeds publicados.
-
-                </p>
-
-            </div>
-
-        `;
-
-
-        return;
-
-    }
-
-
-    nasheedsList.innerHTML =
-        nasheeds
-            .map(
-                track =>
-                    createNasheedCard(
-                        track
-                    )
-            )
-            .join("");
-
-}
-
-
-/* =========================================================
-   CREAR CARD
-   ========================================================= */
-
-function createNasheedCard(
-    track
-) {
-
-    const title =
-        escapeHtml(
-            track.title
-        );
-
-
-    const id =
-        Number(
-            track.id
-        );
-
-
-    let coverHTML;
-
-
-    if (
-        track.cover
-    ) {
-
-        coverHTML = `
-
-            <img
-                src="${encodeURI(track.cover)}"
-                class="cover-image"
-                alt="Carátula"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-
-            <div
-                class="cover-placeholder"
-                style="display:none;">
-
-                ♪
-
-            </div>
-
-        `;
-
-    } else {
-
-        coverHTML = `
-
-            <div
-                class="cover-placeholder">
-
-                ♪
-
-            </div>
-
-        `;
-
-    }
-
-
-    let languages =
-        "Sin subtítulos";
-
-
-    if (
-        track.subtitles &&
-        typeof track.subtitles ===
-            "object"
-    ) {
-
-        const keys =
-            Object.keys(
-                track.subtitles
-            );
-
-
-        if (
-            keys.length
-        ) {
-
-            languages =
-                keys
-                    .map(
-                        code =>
-                            LANGUAGE_NAMES[
-                                code
-                            ] ||
-                            code.toUpperCase()
-                    )
-                    .join(
-                        " · "
-                    );
-
-        }
-
-    }
-
-
-    return `
-
-        <div
-            class="nasheed-card bg-zinc-950/70 border border-white/10 rounded-2xl p-3 flex items-center gap-3">
-
-            <div
-                class="flex-shrink-0">
-
-                ${coverHTML}
-
-            </div>
-
-            <div
-                class="min-w-0 flex-1">
-
-                <p
-                    class="text-sm font-semibold text-zinc-100 truncate">
-
-                    ${title}
-
-                </p>
-
-                <p
-                    class="text-[10px] text-zinc-600 mt-1">
-
-                    ID: ${id}
-
-                </p>
-
-                <p
-                    class="text-[10px] text-amber-400 mt-1 truncate">
-
-                    ${escapeHtml(
-                        languages
-                    )}
-
-                </p>
-
-            </div>
-
-            <audio
-                controls
-                preload="none"
-                class="hidden md:block w-48 h-8"
-                src="${encodeURI(track.file)}">
-
-            </audio>
-
-            <button
-                onclick="deleteNasheed(${id})"
-                class="flex-shrink-0 text-xs font-semibold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-3 py-2.5 rounded-xl transition cursor-pointer">
-
-                Eliminar
-
-            </button>
-
-        </div>
-
-    `;
-
-}
-
-
-/* =========================================================
-   OBTENER NASHEEDS
-   ========================================================= */
-
-async function getCurrentNasheeds() {
-
-    const response =
-        await fetch(
-            "/api/admin/nasheeds",
-            {
-                method:
-                    "GET",
-
-                credentials:
-                    "same-origin",
-
-                cache:
-                    "no-store"
-            }
-        );
-
-
-    if (
-        !response.ok
-    ) {
-
-        throw new Error(
-            "No se pudieron obtener los nasheeds."
-        );
-
-    }
-
-
-    return await response.json();
-
-}
-
-
-/* =========================================================
-   ELIMINAR
-   ========================================================= */
-
-async function deleteNasheed(
-    id
-) {
-
-    let nasheeds;
-
-
-    try {
-
-        nasheeds =
-            await getCurrentNasheeds();
-
-    } catch (
-        error
-    ) {
-
-        alert(
-            error.message
-        );
-
-
-        return;
-
-    }
-
-
-    const track =
-        nasheeds.find(
-            item =>
-                Number(
-                    item.id
-                ) ===
-                Number(
-                    id
-                )
-        );
-
-
-    if (
-        !track
-    ) {
-
-        alert(
-            "El nasheed ya no existe."
-        );
-
-
-        await loadNasheeds();
-
-
-        return;
-
-    }
-
-
-    const confirmed =
-        confirm(
-            `¿Seguro que quieres eliminar "${track.title}"?\n\nSe eliminarán el audio, la carátula, todos los subtítulos y el registro.`
-        );
-
-
-    if (
-        !confirmed
-    ) {
-
-        return;
-
-    }
-
-
-    try {
-
-        const response =
-            await fetch(
-                `/api/nasheeds/${encodeURIComponent(id)}`,
-                {
-                    method:
-                        "DELETE",
-
-                    credentials:
-                        "same-origin",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    }
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            response.status ===
-            403
-        ) {
-
-            alert(
-                "Tu sesión de administrador ha caducado."
-            );
-
-
-            window.location.href =
-                "/";
-
-
-            return;
-
-        }
-
-
-        if (
-            !response.ok ||
-            !data.success
-        ) {
-
-            throw new Error(
-                data.error ||
-                "No se pudo eliminar."
-            );
-
-        }
-
-
-        alert(
-            "Nasheed eliminado correctamente."
-        );
-
-
-        await loadNasheeds();
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            error
-        );
-
-
-        alert(
-            error.message ||
-            "No se pudo eliminar el nasheed."
-        );
-
-    }
 
 }
 
@@ -1624,7 +1020,6 @@ async function uploadToServer() {
             .value
             .trim();
 
-
     const audioInput =
         document.getElementById(
             "audio-file-input"
@@ -1636,9 +1031,8 @@ async function uploadToServer() {
     ) {
 
         alert(
-            "Escribe el título del nasheed."
+            "Escribe el título."
         );
-
 
         return;
 
@@ -1646,15 +1040,12 @@ async function uploadToServer() {
 
 
     if (
-        !audioInput.files ||
-        audioInput.files.length ===
-            0
+        !audioInput.files.length
     ) {
 
         alert(
-            "Selecciona el archivo de audio."
+            "Selecciona el audio."
         );
-
 
         return;
 
@@ -1666,9 +1057,8 @@ async function uploadToServer() {
     ) {
 
         alert(
-            "Supabase no está preparado. Recarga la página."
+            "Supabase no está preparado."
         );
-
 
         return;
 
@@ -1679,56 +1069,35 @@ async function uploadToServer() {
         [];
 
 
-    const rows =
-        Array.from(
-            subtitleRows.children
-        );
-
-
-    const usedLanguages =
+    const used =
         new Set();
 
 
-    /* =====================================================
-       SUBTÍTULOS
-       ===================================================== */
-
     for (
-        const row of rows
+        const row of
+        Array.from(
+            subtitleRows.children
+        )
     ) {
 
         const languageSelect =
             row.querySelector(
-                ".subtitle-language-select"
+                ".subtitle-language"
             );
-
 
         const fileInput =
             row.querySelector(
-                ".subtitle-file-input"
+                ".subtitle-file"
             );
 
-
-        const customInput =
+        const custom =
             row.querySelector(
-                ".subtitle-custom-language"
+                ".subtitle-custom"
             );
 
 
         if (
-            !languageSelect ||
-            !fileInput
-        ) {
-
-            continue;
-
-        }
-
-
-        if (
-            !fileInput.files ||
-            fileInput.files.length ===
-                0
+            !fileInput.files.length
         ) {
 
             continue;
@@ -1747,7 +1116,7 @@ async function uploadToServer() {
 
             language =
                 (
-                    customInput?.value ||
+                    custom.value ||
                     ""
                 )
                     .trim()
@@ -1763,9 +1132,8 @@ async function uploadToServer() {
         ) {
 
             alert(
-                `Código de idioma inválido: ${language}`
+                "Código de idioma inválido."
             );
-
 
             return;
 
@@ -1773,22 +1141,21 @@ async function uploadToServer() {
 
 
         if (
-            usedLanguages.has(
+            used.has(
                 language
             )
         ) {
 
             alert(
-                `Has añadido dos veces el idioma ${language}.`
+                `Idioma duplicado: ${language}`
             );
-
 
             return;
 
         }
 
 
-        usedLanguages.add(
+        used.add(
             language
         );
 
@@ -1806,9 +1173,8 @@ async function uploadToServer() {
         ) {
 
             alert(
-                `El archivo de ${language} debe ser .vtt.`
+                "Los subtítulos deben ser .vtt"
             );
-
 
             return;
 
@@ -1821,6 +1187,7 @@ async function uploadToServer() {
                 "subtitles",
 
             language:
+
                 language,
 
             file:
@@ -1831,29 +1198,20 @@ async function uploadToServer() {
     }
 
 
-    /* =====================================================
-       ÁRABE OBLIGATORIO
-       ===================================================== */
-
     if (
-        !usedLanguages.has(
+        !used.has(
             "ar"
         )
     ) {
 
         alert(
-            "Debes añadir el subtítulo árabe."
+            "El VTT árabe es obligatorio."
         );
-
 
         return;
 
     }
 
-
-    /* =====================================================
-       AUDIO
-       ===================================================== */
 
     selectedFiles.unshift({
 
@@ -1869,14 +1227,8 @@ async function uploadToServer() {
     });
 
 
-    /* =====================================================
-       CARÁTULA
-       ===================================================== */
-
     if (
-        coverInput.files &&
-        coverInput.files.length >
-            0
+        coverInput.files.length
     ) {
 
         selectedFiles.splice(
@@ -1899,10 +1251,6 @@ async function uploadToServer() {
     }
 
 
-    /* =====================================================
-       LÍMITE DE ARCHIVOS
-       ===================================================== */
-
     for (
         const item of
         selectedFiles
@@ -1916,9 +1264,8 @@ async function uploadToServer() {
         ) {
 
             alert(
-                `El archivo "${item.file.name}" supera los 50 MB.`
+                `El archivo ${item.file.name} supera los 50 MB.`
             );
-
 
             return;
 
@@ -1937,16 +1284,10 @@ async function uploadToServer() {
         "Preparando...";
 
 
-    setUploadStatus(
-        "Preparando subida segura...",
-        0
-    );
-
-
     try {
 
         /* =================================================
-           1. PREPARAR URLS FIRMADAS
+           PREPARE
            ================================================= */
 
         const prepareResponse =
@@ -1963,9 +1304,6 @@ async function uploadToServer() {
                     headers: {
 
                         "Content-Type":
-                            "application/json",
-
-                        "Accept":
                             "application/json"
 
                     },
@@ -1973,32 +1311,30 @@ async function uploadToServer() {
                     body:
                         JSON.stringify({
 
-                            title:
-                                title,
+                            title,
 
                             files:
-                                selectedFiles
-                                    .map(
-                                        item => ({
+                                selectedFiles.map(
+                                    item => ({
 
-                                            field:
-                                                item.field,
+                                        field:
+                                            item.field,
 
-                                            language:
-                                                item.language,
+                                        language:
+                                            item.language,
 
-                                            name:
-                                                item.file.name,
+                                        name:
+                                            item.file.name,
 
-                                            type:
-                                                item.file.type ||
-                                                "application/octet-stream",
+                                        type:
+                                            item.file.type ||
+                                            "application/octet-stream",
 
-                                            size:
-                                                item.file.size
+                                        size:
+                                            item.file.size
 
-                                        })
-                                    )
+                                    })
+                                )
 
                         })
 
@@ -2006,27 +1342,8 @@ async function uploadToServer() {
             );
 
 
-        const prepareText =
-            await prepareResponse.text();
-
-
-        let prepareData;
-
-
-        try {
-
-            prepareData =
-                JSON.parse(
-                    prepareText
-                );
-
-        } catch {
-
-            throw new Error(
-                `Respuesta inválida del servidor (${prepareResponse.status}).`
-            );
-
-        }
+        const prepareData =
+            await prepareResponse.json();
 
 
         if (
@@ -2034,14 +1351,8 @@ async function uploadToServer() {
             403
         ) {
 
-            alert(
-                "Tu sesión de administrador ha caducado."
-            );
-
-
             window.location.href =
                 "/";
-
 
             return;
 
@@ -2049,54 +1360,34 @@ async function uploadToServer() {
 
 
         if (
-            !prepareResponse.ok ||
-            !prepareData.success
+            !prepareResponse.ok
         ) {
 
             throw new Error(
                 prepareData.error ||
-                `No se pudo preparar la subida (${prepareResponse.status}).`
+                "No se pudo preparar la subida."
             );
 
         }
 
 
-        const preparedFiles =
-            Array.isArray(
-                prepareData.files
-            )
-                ? prepareData.files
-                : [];
-
-
-        if (
-            preparedFiles.length !==
-            selectedFiles.length
-        ) {
-
-            throw new Error(
-                "El servidor no preparó todos los archivos."
-            );
-
-        }
-
-
-        /* =================================================
-           2. SUBIDA DIRECTA A SUPABASE STORAGE
-           ================================================= */
-
-        const completedFiles =
+        const completed =
             [];
 
 
+        /* =================================================
+           STORAGE
+           ================================================= */
+
         for (
             let i = 0;
-            i < preparedFiles.length;
+            i <
+            prepareData.files.length;
             i++
         ) {
 
             const prepared =
-                preparedFiles[i];
+                prepareData.files[i];
 
 
             const local =
@@ -2120,45 +1411,30 @@ async function uploadToServer() {
             ) {
 
                 throw new Error(
-                    `No se encontró el archivo local ${prepared.originalName}.`
+                    "Archivo local no encontrado."
                 );
 
             }
 
 
-            setUploadStatus(
+            setStatus(
                 `Subiendo ${local.file.name}...`,
                 (
                     i /
-                    preparedFiles.length
+                    prepareData.files.length
                 ) *
                     100
             );
 
 
-            uploadBtn.querySelector(
-                "span"
-            ).textContent =
-                `Subiendo ${i + 1}/${preparedFiles.length}...`;
-
-
-            /*
-             * IMPORTANTE:
-             *
-             * El bucket REAL se llama "Nasheeds".
-             * No usamos "nushud".
-             *
-             * Tampoco enviamos fileOptions/contentType
-             * para evitar alterar la firma.
-             */
-
             const {
-                error:
-                    uploadError
+                error
             } =
                 await supabaseClient
                     .storage
-                    .from("Nasheeds")
+                    .from(
+                        "Nasheeds"
+                    )
                     .uploadToSignedUrl(
                         prepared.path,
                         prepared.token,
@@ -2167,23 +1443,17 @@ async function uploadToServer() {
 
 
             if (
-                uploadError
+                error
             ) {
 
-                console.error(
-                    "Supabase Storage:",
-                    uploadError
-                );
-
-
                 throw new Error(
-                    `No se pudo subir "${local.file.name}": ${uploadError.message}`
+                    `No se pudo subir "${local.file.name}": ${error.message}`
                 );
 
             }
 
 
-            completedFiles.push({
+            completed.push({
 
                 field:
                     prepared.field,
@@ -2199,31 +1469,15 @@ async function uploadToServer() {
 
             });
 
-
-            setUploadStatus(
-                `${i + 1} de ${preparedFiles.length} archivos subidos...`,
-                (
-                    (i + 1) /
-                    preparedFiles.length
-                ) *
-                    100
-            );
-
         }
 
 
         /* =================================================
-           3. GUARDAR EN BASE DE DATOS
+           DATABASE
            ================================================= */
 
-        uploadBtn.querySelector(
-            "span"
-        ).textContent =
-            "Guardando...";
-
-
-        setUploadStatus(
-            "Guardando el nasheed en la base de datos...",
+        setStatus(
+            "Guardando Nasheed...",
             100
         );
 
@@ -2242,9 +1496,6 @@ async function uploadToServer() {
                     headers: {
 
                         "Content-Type":
-                            "application/json",
-
-                        "Accept":
                             "application/json"
 
                     },
@@ -2252,11 +1503,12 @@ async function uploadToServer() {
                     body:
                         JSON.stringify({
 
-                            title:
-                                title,
+                            title,
+
+                            warningEnabled,
 
                             files:
-                                completedFiles
+                                completed
 
                         })
 
@@ -2264,46 +1516,8 @@ async function uploadToServer() {
             );
 
 
-        const completeText =
-            await completeResponse.text();
-
-
-        let completeData;
-
-
-        try {
-
-            completeData =
-                JSON.parse(
-                    completeText
-                );
-
-        } catch {
-
-            throw new Error(
-                `Respuesta inválida del servidor (${completeResponse.status}).`
-            );
-
-        }
-
-
-        if (
-            completeResponse.status ===
-            403
-        ) {
-
-            alert(
-                "Tu sesión de administrador ha caducado."
-            );
-
-
-            window.location.href =
-                "/";
-
-
-            return;
-
-        }
+        const completeData =
+            await completeResponse.json();
 
 
         if (
@@ -2313,15 +1527,16 @@ async function uploadToServer() {
 
             throw new Error(
                 completeData.error ||
-                `No se pudo guardar el nasheed (${completeResponse.status}).`
+                "No se pudo guardar el Nasheed."
             );
 
         }
 
 
-        /* =================================================
-           4. LIMPIAR FORMULARIO
-           ================================================= */
+        alert(
+            "¡Nasheed publicado correctamente!"
+        );
+
 
         document
             .getElementById(
@@ -2330,47 +1545,30 @@ async function uploadToServer() {
             .value =
             "";
 
-
         audioInput.value =
             "";
-
 
         coverInput.value =
             "";
 
-
         coverPreview.style.display =
             "none";
-
-
-        coverPreviewImage.removeAttribute(
-            "src"
-        );
-
 
         subtitleRows.innerHTML =
             "";
 
+        warningEnabled =
+            false;
+
+        warningSwitch.classList.remove(
+            "active"
+        );
+
+        warningPreview.classList.add(
+            "hidden"
+        );
 
         createSubtitleRow();
-
-
-        setUploadStatus(
-            "Publicado correctamente.",
-            100
-        );
-
-
-        uploadBtn.querySelector(
-            "span"
-        ).textContent =
-            "Publicado";
-
-
-        alert(
-            "¡Nasheed, carátula y subtítulos publicados correctamente!"
-        );
-
 
         await loadNasheeds();
 
@@ -2380,30 +1578,12 @@ async function uploadToServer() {
     ) {
 
         console.error(
-            "Error publicando:",
             error
         );
 
-
-        setUploadStatus(
-            "Error: " +
-            (
-                error.message ||
-                "no se pudo completar la subida."
-            ),
-            0
-        );
-
-
-        uploadBtn.querySelector(
-            "span"
-        ).textContent =
-            "Publicar al Servidor";
-
-
         alert(
             error.message ||
-            "No se pudo publicar el nasheed."
+            "No se pudo publicar."
         );
 
     } finally {
@@ -2411,27 +1591,166 @@ async function uploadToServer() {
         uploadBtn.disabled =
             false;
 
+        uploadBtn.querySelector(
+            "span"
+        ).textContent =
+            "Publicar Nasheed";
+
     }
 
 }
 
 
 /* =========================================================
-   LOGOUT
+   LISTAR
    ========================================================= */
 
-async function logoutAdmin() {
+async function loadNasheeds() {
+
+    const list =
+        document.getElementById(
+            "nasheeds-list"
+        );
+
 
     try {
 
-        await fetch(
-            "/api/logout",
-            {
-                method:
-                    "POST",
+        const response =
+            await fetch(
+                "/api/admin/nasheeds",
+                {
+                    credentials:
+                        "same-origin",
+                    cache:
+                        "no-store"
+                }
+            );
 
-                credentials:
-                    "same-origin"
+
+        if (
+            response.status ===
+            403
+        ) {
+
+            window.location.href =
+                "/";
+
+            return;
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        document.getElementById(
+            "nasheed-count"
+        ).textContent =
+            `${data.length} nasheed${data.length === 1 ? "" : "s"}`;
+
+
+        list.innerHTML =
+            "";
+
+
+        if (
+            data.length ===
+            0
+        ) {
+
+            list.innerHTML =
+                `
+                    <div class="text-center py-10 text-xs text-zinc-500">
+                        No hay nasheeds publicados.
+                    </div>
+                `;
+
+            return;
+
+        }
+
+
+        data.forEach(
+            track => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "bg-zinc-950/60 border border-white/5 rounded-2xl p-3 flex items-center gap-3";
+
+
+                const warningText =
+                    track.warning
+                        ? `
+                            <span class="text-[9px] px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                ⚠ Advertencia
+                            </span>
+                        `
+                        : "";
+
+
+                item.innerHTML = `
+
+                    ${
+                        track.cover
+                            ? `
+                                <img
+                                    src="${escapeHtml(track.cover)}"
+                                    class="w-14 h-14 rounded-xl object-cover">
+                            `
+                            : `
+                                <div
+                                    class="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center text-amber-500">
+                                    ♪
+                                </div>
+                            `
+                    }
+
+                    <div class="min-w-0 flex-1">
+
+                        <p
+                            class="text-sm font-semibold truncate">
+
+                            ${escapeHtml(track.title)}
+
+                        </p>
+
+                        <div
+                            class="mt-1 flex items-center gap-2">
+
+                            ${warningText}
+
+                            <span
+                                class="text-[9px] text-zinc-600">
+
+                                ID ${track.id}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        onclick="deleteNasheed(${track.id})"
+                        class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-xl">
+
+                        Eliminar
+
+                    </button>
+
+                `;
+
+
+                list.appendChild(
+                    item
+                );
+
             }
         );
 
@@ -2443,7 +1762,122 @@ async function logoutAdmin() {
             error
         );
 
+        list.innerHTML =
+            `
+                <div class="text-center py-10 text-xs text-red-400">
+                    No se pudieron cargar los nasheeds.
+                </div>
+            `;
+
     }
+
+}
+
+
+/* =========================================================
+   DELETE
+   ========================================================= */
+
+async function deleteNasheed(
+    id
+) {
+
+    if (
+        !confirm(
+            "¿Eliminar este nasheed, su carátula y sus subtítulos?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/nasheeds/${id}`,
+                {
+                    method:
+                        "DELETE",
+
+                    credentials:
+                        "same-origin"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                data.error ||
+                "No se pudo eliminar."
+            );
+
+        }
+
+
+        await loadNasheeds();
+
+    } catch (
+        error
+    ) {
+
+        alert(
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ESCAPE
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.textContent =
+        String(
+            value ||
+            ""
+        );
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logoutAdmin() {
+
+    await fetch(
+        "/api/logout",
+        {
+            method:
+                "POST",
+            credentials:
+                "same-origin"
+        }
+    );
 
 
     window.location.href =
@@ -2453,22 +1887,32 @@ async function logoutAdmin() {
 
 
 /* =========================================================
-   INICIO
+   START
    ========================================================= */
 
 (async () => {
 
-    await initSupabase();
+    try {
 
-    createSubtitleRow();
+        await initSupabase();
 
-    await loadNasheeds();
+        createSubtitleRow();
+
+        await loadNasheeds();
+
+    } catch (
+        error
+    ) {
+
+        alert(
+            error.message
+        );
+
+    }
 
 })();
 
 </script>
 
-
 </body>
-
 </html>

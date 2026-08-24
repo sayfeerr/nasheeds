@@ -3,9 +3,7 @@ const crypto = require("crypto");
 const path = require("path");
 require("dotenv").config();
 
-const {
-    createClient
-} = require("@supabase/supabase-js");
+const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
 
@@ -21,7 +19,6 @@ const SUPABASE_SECRET_KEY =
 
 const SUPABASE_PUBLISHABLE_KEY =
     process.env.SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
     "";
 
 const STORAGE_BUCKET =
@@ -39,14 +36,22 @@ const SESSION_SECRET =
     process.env.SESSION_SECRET ||
     "nushud-super-secret-key-change-it";
 
+
+/* =========================================================
+   SUPABASE
+   ========================================================= */
+
 if (
     !SUPABASE_URL ||
     !SUPABASE_SECRET_KEY
 ) {
+
     console.error(
         "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY."
     );
+
 }
+
 
 const supabase =
     createClient(
@@ -54,34 +59,42 @@ const supabase =
         SUPABASE_SECRET_KEY,
         {
             auth: {
-                persistSession: false,
-                autoRefreshToken: false
+                persistSession:
+                    false,
+
+                autoRefreshToken:
+                    false
             }
         }
     );
 
 
-// =========================================================
-// MIDDLEWARE
-// =========================================================
+/* =========================================================
+   MIDDLEWARE
+   ========================================================= */
 
 app.use(
     express.json({
-        limit: "1mb"
+        limit:
+            "1mb"
     })
 );
+
 
 app.use(
     express.urlencoded({
-        extended: true,
-        limit: "1mb"
+        extended:
+            true,
+
+        limit:
+            "1mb"
     })
 );
 
 
-// =========================================================
-// COOKIE ADMIN
-// =========================================================
+/* =========================================================
+   COOKIE
+   ========================================================= */
 
 const ADMIN_COOKIE =
     "nushud_admin";
@@ -90,48 +103,90 @@ const ADMIN_COOKIE =
 function base64UrlEncode(
     value
 ) {
+
     return Buffer
         .from(value)
         .toString("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/g, "");
+        .replace(
+            /\+/g,
+            "-"
+        )
+        .replace(
+            /\//g,
+            "_"
+        )
+        .replace(
+            /=+$/g,
+            ""
+        );
+
 }
 
 
 function base64UrlDecode(
     value
 ) {
+
     value =
         value
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
+            .replace(
+                /-/g,
+                "+"
+            )
+            .replace(
+                /_/g,
+                "/"
+            );
+
 
     while (
-        value.length % 4
+        value.length %
+        4
     ) {
+
         value += "=";
+
     }
 
+
     return Buffer
-        .from(value, "base64")
-        .toString("utf8");
+        .from(
+            value,
+            "base64"
+        )
+        .toString(
+            "utf8"
+        );
+
 }
 
 
 function signValue(
     value
 ) {
+
     return crypto
         .createHmac(
             "sha256",
             SESSION_SECRET
         )
-        .update(value)
+        .update(
+            value
+        )
         .digest("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/g, "");
+        .replace(
+            /\+/g,
+            "-"
+        )
+        .replace(
+            /\//g,
+            "_"
+        )
+        .replace(
+            /=+$/g,
+            ""
+        );
+
 }
 
 
@@ -139,17 +194,21 @@ function createAdminToken() {
 
     const payload = {
 
-        admin: true,
+        admin:
+            true,
 
         exp:
             Date.now() +
-            1000 *
-            60 *
-            60 *
-            24 *
-            7
+            (
+                1000 *
+                60 *
+                60 *
+                24 *
+                7
+            )
 
     };
+
 
     const encoded =
         base64UrlEncode(
@@ -158,16 +217,19 @@ function createAdminToken() {
             )
         );
 
+
     const signature =
         signValue(
             encoded
         );
+
 
     return (
         encoded +
         "." +
         signature
     );
+
 }
 
 
@@ -179,27 +241,38 @@ function verifyAdminToken(
         typeof token !==
         "string"
     ) {
+
         return false;
+
     }
+
 
     const parts =
         token.split(".");
 
+
     if (
-        parts.length !== 2
+        parts.length !==
+        2
     ) {
+
         return false;
+
     }
 
-    const [
-        encoded,
-        signature
-    ] = parts;
+
+    const encoded =
+        parts[0];
+
+    const signature =
+        parts[1];
+
 
     const expected =
         signValue(
             encoded
         );
+
 
     const a =
         Buffer.from(
@@ -211,12 +284,16 @@ function verifyAdminToken(
             expected
         );
 
+
     if (
         a.length !==
         b.length
     ) {
+
         return false;
+
     }
+
 
     if (
         !crypto.timingSafeEqual(
@@ -224,8 +301,11 @@ function verifyAdminToken(
             b
         )
     ) {
+
         return false;
+
     }
+
 
     try {
 
@@ -236,26 +316,37 @@ function verifyAdminToken(
                 )
             );
 
+
         if (
-            !payload.admin
+            payload.admin !==
+            true
         ) {
+
             return false;
+
         }
+
 
         if (
             !Number.isFinite(
                 payload.exp
             )
         ) {
+
             return false;
+
         }
+
 
         if (
             Date.now() >=
             payload.exp
         ) {
+
             return false;
+
         }
+
 
         return true;
 
@@ -264,6 +355,7 @@ function verifyAdminToken(
         return false;
 
     }
+
 }
 
 
@@ -275,27 +367,38 @@ function getCookie(
     const header =
         req.headers.cookie;
 
+
     if (
         !header
     ) {
+
         return "";
+
     }
+
 
     const parts =
         header.split(";");
 
+
     for (
-        const part of parts
+        const part of
+        parts
     ) {
 
         const index =
             part.indexOf("=");
 
+
         if (
-            index === -1
+            index ===
+            -1
         ) {
+
             continue;
+
         }
+
 
         const key =
             part
@@ -305,21 +408,44 @@ function getCookie(
                 )
                 .trim();
 
+
         if (
             key !==
             name
         ) {
+
             continue;
+
         }
+
 
         return decodeURIComponent(
             part
-                .slice(index + 1)
+                .slice(
+                    index + 1
+                )
                 .trim()
         );
+
     }
 
+
     return "";
+
+}
+
+
+function isAdmin(
+    req
+) {
+
+    return verifyAdminToken(
+        getCookie(
+            req,
+            ADMIN_COOKIE
+        )
+    );
+
 }
 
 
@@ -330,6 +456,7 @@ function setAdminCookie(
     const secure =
         process.env.NODE_ENV ===
         "production";
+
 
     res.setHeader(
         "Set-Cookie",
@@ -346,6 +473,7 @@ function setAdminCookie(
             .filter(Boolean)
             .join("; ")
     );
+
 }
 
 
@@ -356,6 +484,7 @@ function clearAdminCookie(
     const secure =
         process.env.NODE_ENV ===
         "production";
+
 
     res.setHeader(
         "Set-Cookie",
@@ -372,51 +501,284 @@ function clearAdminCookie(
             .filter(Boolean)
             .join("; ")
     );
+
 }
 
 
-// =========================================================
-// REQUIRE ADMIN
-// =========================================================
+/* =========================================================
+   PÁGINA LOGIN ADMIN
+   ========================================================= */
 
-function requireAdmin(
-    req,
-    res,
-    next
+function sendAdminLoginPage(
+    res
 ) {
 
-    const token =
-        getCookie(
-            req,
-            ADMIN_COOKIE
-        );
+    res.send(`
+<!DOCTYPE html>
+<html lang="es" class="dark">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Acceso Restringido</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style>
+
+        body {
+
+            font-family:
+                sans-serif;
+
+            background-color:
+                #060608;
+
+            color:
+                #f4f4f5;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body
+    class="min-h-screen flex items-center justify-center p-6">
+
+
+<div
+    class="bg-zinc-900 border border-amber-500/30 p-8 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
+
+
+    <h1
+        class="text-sm font-bold text-amber-400 uppercase tracking-wider text-center">
+
+        Identificación Requerida
+
+    </h1>
+
+
+    <input
+        type="password"
+        id="pin-input"
+        placeholder="Introduce tu PIN"
+        autocomplete="current-password"
+        class="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-100 focus:outline-none focus:border-amber-500 text-center tracking-widest">
+
+
+    <button
+        onclick="loginAdmin()"
+        id="login-button"
+        class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl text-xs cursor-pointer">
+
+        Acceder al Panel
+
+    </button>
+
+
+    <p
+        id="error-msg"
+        class="text-xs text-red-400 text-center min-h-4">
+
+    </p>
+
+
+</div>
+
+
+<script>
+
+"use strict";
+
+
+const pinInput =
+    document.getElementById(
+        "pin-input"
+    );
+
+
+const loginButton =
+    document.getElementById(
+        "login-button"
+    );
+
+
+const errorMsg =
+    document.getElementById(
+        "error-msg"
+    );
+
+
+async function loginAdmin() {
+
+    const pin =
+        pinInput.value;
+
 
     if (
-        verifyAdminToken(
-            token
-        )
+        !pin
     ) {
 
-        return next();
+        errorMsg.textContent =
+            "Introduce tu PIN.";
+
+        return;
 
     }
 
-    return res
-        .status(403)
-        .json({
-            error:
-                "Acceso denegado. No autorizado."
-        });
+
+    loginButton.disabled =
+        true;
+
+
+    loginButton.textContent =
+        "Comprobando...";
+
+
+    errorMsg.textContent =
+        "";
+
+
+    try {
+
+        const res =
+            await fetch(
+                "/api/login",
+                {
+
+                    method:
+                        "POST",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify({
+                            pin
+                        })
+
+                }
+            );
+
+
+        const data =
+            await res.json();
+
+
+        if (
+            res.ok &&
+            data.success
+        ) {
+
+            window.location.href =
+                data.redirect;
+
+            return;
+
+        }
+
+
+        errorMsg.textContent =
+            data.error ||
+            "PIN incorrecto.";
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            error
+        );
+
+
+        errorMsg.textContent =
+            "Error de conexión.";
+
+    }
+
+
+    loginButton.disabled =
+        false;
+
+
+    loginButton.textContent =
+        "Acceder al Panel";
+
 }
 
 
-// =========================================================
-// ADMIN PAGE
-// =========================================================
+pinInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key ===
+            "Enter"
+        ) {
+
+            loginAdmin();
+
+        }
+
+    }
+);
+
+</script>
+
+
+</body>
+
+</html>
+    `);
+
+}
+
+
+/* =========================================================
+   RUTA ADMIN
+   ========================================================= */
 
 app.get(
     ADMIN_PATH,
     (req, res) => {
+
+        /*
+         * SI NO ESTÁ LOGUEADO:
+         * mostrar login.
+         */
+
+        if (
+            !isAdmin(req)
+        ) {
+
+            return sendAdminLoginPage(
+                res
+            );
+
+        }
+
+
+        /*
+         * SI ESTÁ LOGUEADO:
+         * mostrar admin.html.
+         */
 
         return res.sendFile(
             path.join(
@@ -430,9 +792,9 @@ app.get(
 );
 
 
-// =========================================================
-// ARCHIVOS PÚBLICOS
-// =========================================================
+/* =========================================================
+   ARCHIVOS PÚBLICOS
+   ========================================================= */
 
 app.use(
     express.static(
@@ -444,9 +806,9 @@ app.use(
 );
 
 
-// =========================================================
-// CONFIG PÚBLICA
-// =========================================================
+/* =========================================================
+   CONFIG PÚBLICA
+   ========================================================= */
 
 app.get(
     "/api/public-config",
@@ -469,9 +831,9 @@ app.get(
 );
 
 
-// =========================================================
-// API PÚBLICA - NASHEEDS
-// =========================================================
+/* =========================================================
+   API PÚBLICA
+   ========================================================= */
 
 app.get(
     "/api/nasheeds",
@@ -499,6 +861,7 @@ app.get(
                         }
                     );
 
+
             if (
                 error
             ) {
@@ -507,6 +870,7 @@ app.get(
                     "Supabase GET nasheeds:",
                     error
                 );
+
 
                 return res
                     .status(500)
@@ -517,7 +881,9 @@ app.get(
 
             }
 
-            const result =
+
+            return res.json(
+
                 (data || [])
                     .map(
                         item => ({
@@ -542,10 +908,8 @@ app.get(
                                 {}
 
                         })
-                    );
+                    )
 
-            return res.json(
-                result
             );
 
         } catch (
@@ -553,9 +917,9 @@ app.get(
         ) {
 
             console.error(
-                "API pública:",
                 error
             );
+
 
             return res
                 .status(500)
@@ -570,9 +934,9 @@ app.get(
 );
 
 
-// =========================================================
-// LOGIN
-// =========================================================
+/* =========================================================
+   LOGIN
+   ========================================================= */
 
 app.post(
     "/api/login",
@@ -583,6 +947,7 @@ app.post(
                 req.body?.pin ||
                 ""
             );
+
 
         if (
             pin !==
@@ -603,9 +968,11 @@ app.post(
 
         }
 
+
         setAdminCookie(
             res
         );
+
 
         return res.json({
 
@@ -621,26 +988,18 @@ app.post(
 );
 
 
-// =========================================================
-// CHECK SESSION
-// =========================================================
+/* =========================================================
+   CHECK SESSION
+   ========================================================= */
 
 app.get(
     "/api/check-session",
     (req, res) => {
 
-        const token =
-            getCookie(
-                req,
-                ADMIN_COOKIE
-            );
-
         return res.json({
 
             isAdmin:
-                verifyAdminToken(
-                    token
-                )
+                isAdmin(req)
 
         });
 
@@ -648,9 +1007,9 @@ app.get(
 );
 
 
-// =========================================================
-// LOGOUT
-// =========================================================
+/* =========================================================
+   LOGOUT
+   ========================================================= */
 
 app.post(
     "/api/logout",
@@ -659,6 +1018,7 @@ app.post(
         clearAdminCookie(
             res
         );
+
 
         return res.json({
 
@@ -671,9 +1031,40 @@ app.post(
 );
 
 
-// =========================================================
-// ADMIN - LISTAR
-// =========================================================
+/* =========================================================
+   REQUIRE ADMIN
+   ========================================================= */
+
+function requireAdmin(
+    req,
+    res,
+    next
+) {
+
+    if (
+        isAdmin(req)
+    ) {
+
+        return next();
+
+    }
+
+
+    return res
+        .status(403)
+        .json({
+
+            error:
+                "Acceso denegado. No autorizado."
+
+        });
+
+}
+
+
+/* =========================================================
+   ADMIN - LISTAR
+   ========================================================= */
 
 app.get(
     "/api/admin/nasheeds",
@@ -702,14 +1093,15 @@ app.get(
                         }
                     );
 
+
             if (
                 error
             ) {
 
                 console.error(
-                    "Supabase admin list:",
                     error
                 );
+
 
                 return res
                     .status(500)
@@ -719,6 +1111,7 @@ app.get(
                     });
 
             }
+
 
             return res.json(
 
@@ -761,6 +1154,7 @@ app.get(
                 error
             );
 
+
             return res
                 .status(500)
                 .json({
@@ -774,9 +1168,9 @@ app.get(
 );
 
 
-// =========================================================
-// PREPARAR SUBIDA DIRECTA
-// =========================================================
+/* =========================================================
+   PREPARAR SUBIDA
+   ========================================================= */
 
 app.post(
     "/api/upload-prepare",
@@ -794,12 +1188,14 @@ app.post(
                     ""
                 ).trim();
 
+
             const files =
                 Array.isArray(
                     req.body?.files
                 )
                     ? req.body.files
                     : [];
+
 
             if (
                 !title
@@ -814,6 +1210,7 @@ app.post(
 
             }
 
+
             if (
                 !files.length
             ) {
@@ -822,10 +1219,11 @@ app.post(
                     .status(400)
                     .json({
                         error:
-                            "No hay archivos para subir."
+                            "No hay archivos."
                     });
 
             }
+
 
             if (
                 files.length >
@@ -841,18 +1239,22 @@ app.post(
 
             }
 
+
             const seenLanguages =
                 new Set();
+
 
             let hasArabic =
                 false;
 
+
             const prepared =
                 [];
 
+
             for (
-                const file
-                of files
+                const file of
+                files
             ) {
 
                 const field =
@@ -861,13 +1263,15 @@ app.post(
                         ""
                     ).trim();
 
+
                 const language =
                     String(
                         file?.language ||
                         ""
                     )
-                    .trim()
-                    .toLowerCase();
+                        .trim()
+                        .toLowerCase();
+
 
                 const originalName =
                     String(
@@ -875,16 +1279,19 @@ app.post(
                         ""
                     ).trim();
 
+
                 const contentType =
                     String(
                         file?.type ||
                         "application/octet-stream"
                     ).trim();
 
+
                 const size =
                     Number(
                         file?.size
                     );
+
 
                 if (
                     !field ||
@@ -903,8 +1310,10 @@ app.post(
 
                 }
 
+
                 if (
-                    size <= 0
+                    size <=
+                    0
                 ) {
 
                     return res
@@ -915,6 +1324,7 @@ app.post(
                         });
 
                 }
+
 
                 if (
                     size >
@@ -932,6 +1342,7 @@ app.post(
 
                 }
 
+
                 if (
                     field ===
                     "subtitles"
@@ -947,10 +1358,11 @@ app.post(
                             .status(400)
                             .json({
                                 error:
-                                    `Idioma inválido para ${originalName}.`
+                                    `Idioma inválido: ${language}`
                             });
 
                     }
+
 
                     if (
                         seenLanguages.has(
@@ -967,9 +1379,11 @@ app.post(
 
                     }
 
+
                     seenLanguages.add(
                         language
                     );
+
 
                     if (
                         language ===
@@ -980,6 +1394,7 @@ app.post(
                             true;
 
                     }
+
 
                     if (
                         !originalName
@@ -993,12 +1408,13 @@ app.post(
                             .status(400)
                             .json({
                                 error:
-                                    `El subtítulo ${originalName} debe ser .vtt`
+                                    `${originalName} debe ser .vtt`
                             });
 
                     }
 
                 }
+
 
                 if (
                     field ===
@@ -1027,6 +1443,7 @@ app.post(
 
                 }
 
+
                 if (
                     field ===
                     "cover"
@@ -1047,33 +1464,17 @@ app.post(
                             .status(400)
                             .json({
                                 error:
-                                    "La carátula no parece una imagen."
+                                    "La carátula no parece válida."
                             });
 
                     }
 
                 }
 
-                const extension =
-                    path
-                        .extname(
-                            originalName
-                        )
-                        .toLowerCase() ||
-                    ".bin";
-
-                const safeRandom =
-                    crypto.randomBytes(
-                        10
-                    ).toString(
-                        "hex"
-                    );
-
-                const safeName =
-                    `${Date.now()}-${safeRandom}${extension}`;
 
                 let folder =
                     "other";
+
 
                 if (
                     field ===
@@ -1085,6 +1486,7 @@ app.post(
 
                 }
 
+
                 if (
                     field ===
                     "cover"
@@ -1095,19 +1497,40 @@ app.post(
 
                 }
 
+
                 if (
                     field ===
                     "subtitles"
                 ) {
 
                     folder =
-                        "subtitles/" +
-                        language;
+                        `subtitles/${language}`;
 
                 }
 
+
+                const extension =
+                    path
+                        .extname(
+                            originalName
+                        )
+                        .toLowerCase() ||
+                    ".bin";
+
+
+                const random =
+                    crypto
+                        .randomBytes(
+                            10
+                        )
+                        .toString(
+                            "hex"
+                        );
+
+
                 const storagePath =
-                    `${folder}/${safeName}`;
+                    `${folder}/${Date.now()}-${random}${extension}`;
+
 
                 const {
                     data,
@@ -1126,14 +1549,15 @@ app.post(
                             }
                         );
 
+
                 if (
                     error
                 ) {
 
                     console.error(
-                        "createSignedUploadUrl:",
                         error
                     );
+
 
                     return res
                         .status(500)
@@ -1144,8 +1568,10 @@ app.post(
 
                 }
 
+
                 const publicUrl =
                     `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
+
 
                 prepared.push({
 
@@ -1175,6 +1601,7 @@ app.post(
 
             }
 
+
             if (
                 !hasArabic
             ) {
@@ -1187,6 +1614,7 @@ app.post(
                     });
 
             }
+
 
             return res.json({
 
@@ -1203,9 +1631,9 @@ app.post(
         ) {
 
             console.error(
-                "upload-prepare:",
                 error
             );
+
 
             return res
                 .status(500)
@@ -1220,9 +1648,9 @@ app.post(
 );
 
 
-// =========================================================
-// COMPLETAR PUBLICACIÓN
-// =========================================================
+/* =========================================================
+   COMPLETAR SUBIDA
+   ========================================================= */
 
 app.post(
     "/api/upload-complete",
@@ -1240,12 +1668,14 @@ app.post(
                     ""
                 ).trim();
 
+
             const files =
                 Array.isArray(
                     req.body?.files
                 )
                     ? req.body.files
                     : [];
+
 
             if (
                 !title
@@ -1260,12 +1690,14 @@ app.post(
 
             }
 
+
             const audio =
                 files.find(
                     file =>
                         file.field ===
                         "audio"
                 );
+
 
             const cover =
                 files.find(
@@ -1274,12 +1706,14 @@ app.post(
                         "cover"
                 );
 
+
             const subtitles =
                 files.filter(
                     file =>
                         file.field ===
                         "subtitles"
                 );
+
 
             if (
                 !audio
@@ -1294,12 +1728,14 @@ app.post(
 
             }
 
+
             const arabic =
                 subtitles.find(
                     file =>
                         file.language ===
                         "ar"
                 );
+
 
             if (
                 !arabic
@@ -1309,31 +1745,32 @@ app.post(
                     .status(400)
                     .json({
                         error:
-                            "Falta el subtítulo árabe."
+                            "Falta el VTT árabe."
                     });
 
             }
 
+
             const subtitleMap =
                 {};
 
-            for (
-                const file of subtitles
-            ) {
 
-                subtitleMap[
-                    file.language
-                ] =
-                    file.publicUrl;
+            subtitles.forEach(
+                file => {
 
-            }
+                    subtitleMap[
+                        file.language
+                    ] =
+                        file.publicUrl;
 
-            const id =
-                Date.now();
+                }
+            );
+
 
             const record = {
 
-                id,
+                id:
+                    Date.now(),
 
                 title,
 
@@ -1350,6 +1787,7 @@ app.post(
 
             };
 
+
             const {
                 data,
                 error
@@ -1362,29 +1800,15 @@ app.post(
                     .select()
                     .single();
 
+
             if (
                 error
             ) {
 
                 console.error(
-                    "Supabase insert:",
                     error
                 );
 
-                /*
-                 * Intentamos borrar
-                 * los archivos si
-                 * la DB falla.
-                 */
-
-                await cleanupStorageFiles(
-                    files
-                        .map(
-                            file =>
-                                file.path
-                        )
-                        .filter(Boolean)
-                );
 
                 return res
                     .status(500)
@@ -1394,6 +1818,7 @@ app.post(
                     });
 
             }
+
 
             return res.json({
 
@@ -1430,9 +1855,9 @@ app.post(
         ) {
 
             console.error(
-                "upload-complete:",
                 error
             );
+
 
             return res
                 .status(500)
@@ -1447,9 +1872,9 @@ app.post(
 );
 
 
-// =========================================================
-// DELETE
-// =========================================================
+/* =========================================================
+   ELIMINAR NASHEED
+   ========================================================= */
 
 app.delete(
     "/api/nasheeds/:id",
@@ -1466,6 +1891,7 @@ app.delete(
                     req.params.id
                 );
 
+
             if (
                 !Number.isSafeInteger(
                     id
@@ -1480,6 +1906,7 @@ app.delete(
                     });
 
             }
+
 
             const {
                 data: track,
@@ -1497,6 +1924,7 @@ app.delete(
                     )
                     .maybeSingle();
 
+
             if (
                 fetchError
             ) {
@@ -1504,6 +1932,7 @@ app.delete(
                 console.error(
                     fetchError
                 );
+
 
                 return res
                     .status(500)
@@ -1513,6 +1942,7 @@ app.delete(
                     });
 
             }
+
 
             if (
                 !track
@@ -1527,18 +1957,22 @@ app.delete(
 
             }
 
+
             const paths =
                 [];
+
 
             addStoragePathFromPublicUrl(
                 track.audio_url,
                 paths
             );
 
+
             addStoragePathFromPublicUrl(
                 track.cover_url,
                 paths
             );
+
 
             if (
                 track.subtitles &&
@@ -1561,6 +1995,7 @@ app.delete(
 
             }
 
+
             if (
                 paths.length
             ) {
@@ -1578,18 +2013,19 @@ app.delete(
                             paths
                         );
 
+
                 if (
                     storageError
                 ) {
 
                     console.error(
-                        "Error borrando Storage:",
                         storageError
                     );
 
                 }
 
             }
+
 
             const {
                 error:
@@ -1603,6 +2039,7 @@ app.delete(
                         id
                     );
 
+
             if (
                 deleteError
             ) {
@@ -1610,6 +2047,7 @@ app.delete(
                 console.error(
                     deleteError
                 );
+
 
                 return res
                     .status(500)
@@ -1619,6 +2057,7 @@ app.delete(
                     });
 
             }
+
 
             return res.json({
 
@@ -1632,9 +2071,9 @@ app.delete(
         ) {
 
             console.error(
-                "DELETE:",
                 error
             );
+
 
             return res
                 .status(500)
@@ -1649,58 +2088,9 @@ app.delete(
 );
 
 
-// =========================================================
-// LIMPIAR STORAGE
-// =========================================================
-
-async function cleanupStorageFiles(
-    paths
-) {
-
-    const uniquePaths =
-        [
-            ...new Set(
-                paths
-                    .filter(Boolean)
-            )
-        ];
-
-    if (
-        !uniquePaths.length
-    ) {
-
-        return;
-
-    }
-
-    try {
-
-        await supabase
-            .storage
-            .from(
-                STORAGE_BUCKET
-            )
-            .remove(
-                uniquePaths
-            );
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "cleanupStorageFiles:",
-            error
-        );
-
-    }
-
-}
-
-
-// =========================================================
-// EXTRAER PATH DE URL
-// =========================================================
+/* =========================================================
+   EXTRAER PATH DE STORAGE
+   ========================================================= */
 
 function addStoragePathFromPublicUrl(
     url,
@@ -1709,7 +2099,7 @@ function addStoragePathFromPublicUrl(
 
     if (
         typeof url !==
-        "string" ||
+            "string" ||
         !url
     ) {
 
@@ -1717,35 +2107,41 @@ function addStoragePathFromPublicUrl(
 
     }
 
+
     const marker =
         `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+
 
     const index =
         url.indexOf(
             marker
         );
 
+
     if (
-        index === -1
+        index ===
+        -1
     ) {
 
         return;
 
     }
 
-    const pathValue =
+
+    const storagePath =
         url.slice(
             index +
             marker.length
         );
 
+
     if (
-        pathValue
+        storagePath
     ) {
 
         output.push(
             decodeURIComponent(
-                pathValue
+                storagePath
             )
         );
 
@@ -1754,9 +2150,9 @@ function addStoragePathFromPublicUrl(
 }
 
 
-// =========================================================
-// ERRORES
-// =========================================================
+/* =========================================================
+   ERRORES
+   ========================================================= */
 
 app.use(
     (
@@ -1767,9 +2163,10 @@ app.use(
     ) => {
 
         console.error(
-            "Unhandled error:",
+            "Error interno:",
             err
         );
+
 
         if (
             res.headersSent
@@ -1780,6 +2177,7 @@ app.use(
             );
 
         }
+
 
         return res
             .status(500)
@@ -1792,9 +2190,9 @@ app.use(
 );
 
 
-// =========================================================
-// LOCAL
-// =========================================================
+/* =========================================================
+   LOCAL
+   ========================================================= */
 
 if (
     require.main ===

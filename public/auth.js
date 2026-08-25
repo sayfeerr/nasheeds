@@ -2,370 +2,1078 @@
 
 (function () {
 
-    var client = null;
-    var user = null;
+    var supabaseClient = null;
+    var currentUser = null;
+    var authMode = "login";
 
-    function getClient() {
-        return fetch("/api/public-config", {
-            cache: "no-store"
-        })
-        .then(function (response) {
-            if (!response.ok) {
-                throw new Error("No se pudo cargar la configuración.");
+    var STYLE_ID = "nushud-auth-style";
+    var ACCOUNT_ID = "nushud-account";
+    var ROOT_ID = "nushud-auth-root";
+    var MENU_ID = "nushud-account-menu";
+
+    var authTexts = {
+        es: {
+            login: "Iniciar sesión",
+            register: "Crear cuenta",
+            access: "Accede a tu cuenta de Nushud.",
+            create: "Crea tu cuenta segura de Nushud.",
+            email: "Correo electrónico",
+            password: "Contraseña",
+            emailPlaceholder: "tu@email.com",
+            passwordPlaceholder: "Tu contraseña",
+            loginButton: "Iniciar sesión",
+            registerButton: "Registrarse",
+            alreadyAccount: "¿Ya tienes cuenta?",
+            noAccount: "¿No tienes cuenta?",
+            forgot: "He olvidado mi contraseña",
+            close: "Cerrar",
+            account: "Cuenta Nushud",
+            signedIn: "Sesión iniciada",
+            creating: "Creando cuenta...",
+            checking: "Comprobando...",
+            invalidEmail: "Introduce un correo electrónico válido.",
+            weakPassword:
+                "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.",
+            invalidPassword:
+                "La contraseña no es válida.",
+            checkEmail:
+                "Cuenta creada. Revisa tu correo para confirmar la cuenta.",
+            resetSent:
+                "Si existe una cuenta con ese correo, recibirás instrucciones para recuperar la contraseña.",
+            writeEmail:
+                "Escribe primero tu correo electrónico.",
+            wrongCredentials:
+                "Correo o contraseña incorrectos.",
+            alreadyRegistered:
+                "Ese correo ya está registrado.",
+            notConfirmed:
+                "Debes confirmar tu correo antes de iniciar sesión.",
+            rateLimit:
+                "Demasiados intentos. Espera unos minutos.",
+            supabaseError:
+                "No se pudo completar la operación.",
+            logout:
+                "Cerrar sesión"
+        },
+
+        en: {
+            login: "Sign in",
+            register: "Create account",
+            access: "Access your Nushud account.",
+            create: "Create your secure Nushud account.",
+            email: "Email address",
+            password: "Password",
+            emailPlaceholder: "you@email.com",
+            passwordPlaceholder: "Your password",
+            loginButton: "Sign in",
+            registerButton: "Register",
+            alreadyAccount: "Already have an account?",
+            noAccount: "Don't have an account?",
+            forgot: "Forgot my password",
+            close: "Close",
+            account: "Nushud account",
+            signedIn: "Signed in",
+            creating: "Creating account...",
+            checking: "Checking...",
+            invalidEmail: "Enter a valid email address.",
+            weakPassword:
+                "Password must contain at least 8 characters, one uppercase letter, one lowercase letter and one number.",
+            invalidPassword:
+                "The password is not valid.",
+            checkEmail:
+                "Account created. Check your email to confirm your account.",
+            resetSent:
+                "If an account exists with this email, you will receive recovery instructions.",
+            writeEmail:
+                "Enter your email address first.",
+            wrongCredentials:
+                "Incorrect email or password.",
+            alreadyRegistered:
+                "That email is already registered.",
+            notConfirmed:
+                "You must confirm your email before signing in.",
+            rateLimit:
+                "Too many attempts. Please wait a few minutes.",
+            supabaseError:
+                "The operation could not be completed.",
+            logout:
+                "Sign out"
+        }
+    };
+
+    function getLanguage() {
+        try {
+            var saved = localStorage.getItem(
+                "nasheed_interface_language"
+            );
+
+            if (saved === "en") {
+                return "en";
             }
-            return response.json();
-        })
-        .then(function (config) {
+        } catch (error) {}
 
-            if (
-                !config.supabaseUrl ||
-                !config.supabasePublishableKey
-            ) {
-                throw new Error("Configuración de Supabase incompleta.");
-            }
-
-            if (
-                !window.supabase ||
-                typeof window.supabase.createClient !== "function"
-            ) {
-                throw new Error("Supabase JS no está cargado.");
-            }
-
-            if (!client) {
-                client = window.supabase.createClient(
-                    config.supabaseUrl,
-                    config.supabasePublishableKey,
-                    {
-                        auth: {
-                            persistSession: true,
-                            autoRefreshToken: true
-                        }
-                    }
-                );
-            }
-
-            return client;
-        });
+        return "es";
     }
 
-    function addStyles() {
+    function text(key) {
+        var lang = getLanguage();
 
-        if (document.getElementById("nushud-auth-css")) {
+        return (
+            authTexts[lang][key] ||
+            authTexts.es[key] ||
+            key
+        );
+    }
+
+    /* =========================================================
+       SUPABASE
+       ========================================================= */
+
+    async function getSupabaseClient() {
+        if (supabaseClient) {
+            return supabaseClient;
+        }
+
+        var response = await fetch(
+            "/api/public-config",
+            {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin",
+                headers: {
+                    "Accept": "application/json"
+                }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                text("supabaseError")
+            );
+        }
+
+        var config =
+            await response.json();
+
+        if (
+            !config ||
+            !config.supabaseUrl ||
+            !config.supabasePublishableKey
+        ) {
+            throw new Error(
+                text("supabaseError")
+            );
+        }
+
+        if (
+            !window.supabase ||
+            typeof window.supabase.createClient !==
+                "function"
+        ) {
+            throw new Error(
+                text("supabaseError")
+            );
+        }
+
+        supabaseClient =
+            window.supabase.createClient(
+                config.supabaseUrl,
+                config.supabasePublishableKey,
+                {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true,
+                        flowType: "pkce"
+                    }
+                }
+            );
+
+        return supabaseClient;
+    }
+
+    /* =========================================================
+       ESTILOS
+       ========================================================= */
+
+    function injectStyles() {
+        if (
+            document.getElementById(
+                STYLE_ID
+            )
+        ) {
             return;
         }
 
-        var style = document.createElement("style");
-        style.id = "nushud-auth-css";
+        var style =
+            document.createElement("style");
+
+        style.id = STYLE_ID;
 
         style.textContent =
             "#nushud-account{" +
                 "position:fixed;" +
                 "top:14px;" +
-                "left:14px;" +
+                "right:108px;" +
+                "left:auto;" +
                 "z-index:9999;" +
             "}" +
 
-            "#nushud-account button{" +
-                "border:1px solid rgba(255,255,255,.1);" +
-                "background:rgba(12,12,15,.94);" +
-                "color:#fff;" +
-                "border-radius:12px;" +
-                "padding:9px 14px;" +
+            ".nushud-account-button{" +
+                "display:flex;" +
+                "align-items:center;" +
+                "gap:8px;" +
+                "padding:6px 11px 6px 6px;" +
+                "min-height:40px;" +
+                "border-radius:13px;" +
+                "border:1px solid rgba(255,255,255,.10);" +
+                "background:rgba(12,12,15,.90);" +
+                "color:#f4f4f5;" +
+                "backdrop-filter:blur(18px);" +
+                "-webkit-backdrop-filter:blur(18px);" +
+                "box-shadow:0 10px 25px rgba(0,0,0,.22);" +
                 "cursor:pointer;" +
-                "font-size:11px;" +
-                "font-weight:700;" +
             "}" +
 
-            "#nushud-auth{" +
-                "display:none;" +
+            ".nushud-account-button:hover{" +
+                "border-color:rgba(245,158,11,.30);" +
+                "background:rgba(24,24,30,.96);" +
+            "}" +
+
+            ".nushud-account-avatar{" +
+                "width:29px;" +
+                "height:29px;" +
+                "min-width:29px;" +
+                "border-radius:50%;" +
+                "display:flex;" +
+                "align-items:center;" +
+                "justify-content:center;" +
+                "background:rgba(245,158,11,.14);" +
+                "border:1px solid rgba(245,158,11,.25);" +
+                "color:#fbbf24;" +
+                "font-size:10px;" +
+                "font-weight:900;" +
+            "}" +
+
+            ".nushud-account-info{" +
+                "max-width:150px;" +
+                "min-width:0;" +
+                "text-align:left;" +
+            "}" +
+
+            ".nushud-account-name{" +
+                "font-size:9px;" +
+                "font-weight:800;" +
+                "overflow:hidden;" +
+                "text-overflow:ellipsis;" +
+                "white-space:nowrap;" +
+            "}" +
+
+            ".nushud-account-status{" +
+                "margin-top:2px;" +
+                "font-size:7px;" +
+                "color:#71717a;" +
+            "}" +
+
+            "#nushud-auth-root{" +
                 "position:fixed;" +
                 "inset:0;" +
                 "z-index:10000;" +
+                "display:none;" +
                 "align-items:center;" +
                 "justify-content:center;" +
-                "background:rgba(0,0,0,.65);" +
-                "padding:20px;" +
+                "padding:18px;" +
+                "box-sizing:border-box;" +
+                "background:rgba(0,0,0,.60);" +
+                "backdrop-filter:blur(12px);" +
+                "-webkit-backdrop-filter:blur(12px);" +
             "}" +
 
-            "#nushud-auth.open{" +
+            "#nushud-auth-root.open{" +
                 "display:flex;" +
             "}" +
 
-            "#nushud-auth-box{" +
-                "width:100%;" +
-                "max-width:400px;" +
-                "background:#101014;" +
-                "border:1px solid rgba(245,158,11,.25);" +
-                "border-radius:22px;" +
-                "padding:25px;" +
+            ".nushud-auth-card{" +
+                "width:min(430px,100%);" +
+                "max-height:calc(100vh - 36px);" +
+                "overflow-y:auto;" +
                 "box-sizing:border-box;" +
+                "padding:26px;" +
+                "border-radius:28px;" +
+                "background:linear-gradient(145deg,rgba(24,24,30,.98),rgba(10,10,13,.98));" +
+                "border:1px solid rgba(245,158,11,.22);" +
+                "box-shadow:0 30px 90px rgba(0,0,0,.65);" +
             "}" +
 
-            "#nushud-auth-box h2{" +
-                "color:#fbbf24;" +
-                "margin:0 0 6px 0;" +
+            ".nushud-auth-close{" +
+                "width:34px;" +
+                "height:34px;" +
+                "border-radius:11px;" +
+                "border:1px solid rgba(255,255,255,.08);" +
+                "background:rgba(255,255,255,.04);" +
+                "color:#a1a1aa;" +
+                "cursor:pointer;" +
+                "font-size:17px;" +
+            "}" +
+
+            ".nushud-auth-mark{" +
+                "width:50px;" +
+                "height:50px;" +
+                "border-radius:17px;" +
+                "display:flex;" +
+                "align-items:center;" +
+                "justify-content:center;" +
+                "margin-bottom:15px;" +
+                "background:linear-gradient(135deg,#fbbf24,#f59e0b,#b45309);" +
+                "color:#18181b;" +
                 "font-size:20px;" +
+                "font-weight:900;" +
             "}" +
 
-            "#nushud-auth-box p{" +
+            ".nushud-auth-title{" +
+                "color:#f4f4f5;" +
+                "font-size:19px;" +
+                "font-weight:800;" +
+            "}" +
+
+            ".nushud-auth-description{" +
+                "margin-top:5px;" +
                 "color:#71717a;" +
                 "font-size:11px;" +
             "}" +
 
-            "#nushud-auth-box input{" +
-                "width:100%;" +
-                "box-sizing:border-box;" +
-                "margin-top:10px;" +
-                "padding:12px;" +
-                "background:#07070a;" +
-                "color:white;" +
-                "border:1px solid rgba(255,255,255,.1);" +
-                "border-radius:10px;" +
-                "outline:none;" +
+            ".nushud-auth-field{" +
+                "margin-top:14px;" +
             "}" +
 
-            "#nushud-auth-submit{" +
+            ".nushud-auth-label{" +
+                "display:block;" +
+                "margin-bottom:7px;" +
+                "color:#a1a1aa;" +
+                "font-size:10px;" +
+                "font-weight:700;" +
+            "}" +
+
+            ".nushud-auth-input{" +
                 "width:100%;" +
-                "margin-top:14px;" +
-                "padding:12px;" +
+                "box-sizing:border-box;" +
+                "padding:12px 13px;" +
+                "border-radius:13px;" +
+                "border:1px solid rgba(255,255,255,.09);" +
+                "background:rgba(6,6,8,.85);" +
+                "color:#f4f4f5;" +
+                "outline:none;" +
+                "font-size:12px;" +
+            "}" +
+
+            ".nushud-auth-input:focus{" +
+                "border-color:rgba(245,158,11,.55);" +
+                "box-shadow:0 0 0 3px rgba(245,158,11,.08);" +
+            "}" +
+
+            ".nushud-auth-button{" +
+                "width:100%;" +
+                "margin-top:17px;" +
+                "padding:12px 14px;" +
                 "border:0;" +
-                "border-radius:10px;" +
+                "border-radius:13px;" +
                 "background:#f59e0b;" +
                 "color:#18181b;" +
+                "font-size:11px;" +
                 "font-weight:800;" +
                 "cursor:pointer;" +
             "}" +
 
-            "#nushud-auth-register," +
-            "#nushud-auth-forgot," +
-            "#nushud-auth-close{" +
+            ".nushud-auth-button:disabled{" +
+                "opacity:.55;" +
+                "cursor:not-allowed;" +
+            "}" +
+
+            ".nushud-auth-secondary{" +
                 "width:100%;" +
                 "margin-top:9px;" +
-                "padding:10px;" +
-                "border:0;" +
-                "background:transparent;" +
-                "color:#fbbf24;" +
+                "padding:10px 14px;" +
+                "border-radius:13px;" +
+                "border:1px solid rgba(255,255,255,.08);" +
+                "background:rgba(255,255,255,.035);" +
+                "color:#a1a1aa;" +
+                "font-size:10px;" +
+                "font-weight:700;" +
                 "cursor:pointer;" +
             "}" +
 
-            "#nushud-auth-message{" +
+            ".nushud-auth-message{" +
+                "min-height:18px;" +
                 "margin-top:12px;" +
                 "text-align:center;" +
-                "font-size:11px;" +
+                "font-size:10px;" +
+            "}" +
+
+            ".nushud-auth-message.error{" +
                 "color:#f87171;" +
-                "min-height:16px;" +
+            "}" +
+
+            ".nushud-auth-message.success{" +
+                "color:#fbbf24;" +
+            "}" +
+
+            ".nushud-auth-switch{" +
+                "margin-top:16px;" +
+                "text-align:center;" +
+                "color:#71717a;" +
+                "font-size:10px;" +
+            "}" +
+
+            ".nushud-auth-switch button{" +
+                "margin-left:4px;" +
+                "padding:0;" +
+                "border:0;" +
+                "background:transparent;" +
+                "color:#fbbf24;" +
+                "font-weight:800;" +
+                "cursor:pointer;" +
+            "}" +
+
+            "#nushud-account-menu{" +
+                "position:fixed;" +
+                "z-index:10001;" +
+                "display:none;" +
+                "width:220px;" +
+                "padding:9px;" +
+                "box-sizing:border-box;" +
+                "border-radius:17px;" +
+                "background:rgba(14,14,18,.98);" +
+                "border:1px solid rgba(255,255,255,.08);" +
+                "box-shadow:0 25px 60px rgba(0,0,0,.55);" +
+            "}" +
+
+            "#nushud-account-menu.open{" +
+                "display:block;" +
+            "}" +
+
+            ".nushud-menu-email{" +
+                "padding:8px;" +
+                "color:#71717a;" +
+                "font-size:9px;" +
+                "overflow:hidden;" +
+                "text-overflow:ellipsis;" +
+                "white-space:nowrap;" +
+            "}" +
+
+            ".nushud-menu-button{" +
+                "width:100%;" +
+                "padding:9px 10px;" +
+                "border:0;" +
+                "border-radius:10px;" +
+                "background:transparent;" +
+                "color:#a1a1aa;" +
+                "text-align:left;" +
+                "font-size:10px;" +
+                "font-weight:700;" +
+                "cursor:pointer;" +
+            "}" +
+
+            ".nushud-menu-button:hover{" +
+                "background:rgba(255,255,255,.05);" +
+                "color:#f4f4f5;" +
+            "}" +
+
+            "@media(max-width:767px){" +
+                "#nushud-account{" +
+                    "top:10px;" +
+                    "right:82px;" +
+                    "left:auto;" +
+                "}" +
+
+                ".nushud-account-info{" +
+                    "max-width:105px;" +
+                "}" +
+
+                ".nushud-account-button{" +
+                    "min-height:38px;" +
+                "}" +
+
+                ".nushud-auth-card{" +
+                    "padding:22px;" +
+                    "border-radius:24px;" +
+                "}" +
             "}";
 
         document.head.appendChild(style);
     }
 
-    function createAccountButton() {
-
-        if (document.getElementById("nushud-account")) {
-            return;
-        }
-
-        var container = document.createElement("div");
-        container.id = "nushud-account";
-
-        var button = document.createElement("button");
-        button.id = "nushud-account-button";
-        button.textContent = "Iniciar sesión";
-
-        button.onclick = function () {
-            openAuth("login");
-        };
-
-        container.appendChild(button);
-        document.body.appendChild(container);
-    }
+    /* =========================================================
+       MODAL
+       ========================================================= */
 
     function createAuthModal() {
-
-        if (document.getElementById("nushud-auth")) {
+        if (
+            document.getElementById(
+                ROOT_ID
+            )
+        ) {
             return;
         }
 
-        var root = document.createElement("div");
-        root.id = "nushud-auth";
+        var root =
+            document.createElement("div");
 
-        var box = document.createElement("div");
-        box.id = "nushud-auth-box";
+        root.id = ROOT_ID;
 
-        var title = document.createElement("h2");
-        title.id = "nushud-auth-title";
-        title.textContent = "Iniciar sesión";
+        root.innerHTML =
+            '<div class="nushud-auth-card">' +
 
-        var description = document.createElement("p");
-        description.id = "nushud-auth-description";
-        description.textContent = "Accede a tu cuenta de Nushud.";
+                '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">' +
+                    '<button id="nushud-auth-close" class="nushud-auth-close" type="button"></button>' +
+                "</div>" +
 
-        var email = document.createElement("input");
-        email.id = "nushud-auth-email";
-        email.type = "email";
-        email.placeholder = "Correo electrónico";
-        email.autocomplete = "email";
+                '<div class="nushud-auth-mark">N</div>' +
 
-        var password = document.createElement("input");
-        password.id = "nushud-auth-password";
-        password.type = "password";
-        password.placeholder = "Contraseña";
-        password.autocomplete = "current-password";
+                '<div id="nushud-auth-title" class="nushud-auth-title"></div>' +
 
-        var submit = document.createElement("button");
-        submit.id = "nushud-auth-submit";
-        submit.textContent = "Iniciar sesión";
+                '<div id="nushud-auth-description" class="nushud-auth-description"></div>' +
 
-        var register = document.createElement("button");
-        register.id = "nushud-auth-register";
-        register.textContent = "Crear cuenta";
+                '<form id="nushud-auth-form" autocomplete="on">' +
 
-        var forgot = document.createElement("button");
-        forgot.id = "nushud-auth-forgot";
-        forgot.textContent = "He olvidado mi contraseña";
+                    '<div class="nushud-auth-field">' +
+                        '<label id="nushud-email-label" class="nushud-auth-label" for="nushud-auth-email"></label>' +
 
-        var close = document.createElement("button");
-        close.id = "nushud-auth-close";
-        close.textContent = "Cerrar";
+                        '<input id="nushud-auth-email" class="nushud-auth-input" type="email" autocomplete="email" maxlength="254" required>' +
+                    "</div>" +
 
-        var message = document.createElement("div");
-        message.id = "nushud-auth-message";
+                    '<div class="nushud-auth-field">' +
+                        '<label id="nushud-password-label" class="nushud-auth-label" for="nushud-auth-password"></label>' +
 
-        box.appendChild(title);
-        box.appendChild(description);
-        box.appendChild(email);
-        box.appendChild(password);
-        box.appendChild(submit);
-        box.appendChild(register);
-        box.appendChild(forgot);
-        box.appendChild(message);
-        box.appendChild(close);
+                        '<input id="nushud-auth-password" class="nushud-auth-input" type="password" autocomplete="current-password" minlength="8" maxlength="72" required>' +
 
-        root.appendChild(box);
+                        '<div id="nushud-password-info" style="margin-top:6px;color:#52525b;font-size:9px;"></div>' +
+                    "</div>" +
+
+                    '<button id="nushud-auth-submit" class="nushud-auth-button" type="submit"></button>' +
+
+                "</form>" +
+
+                '<button id="nushud-auth-reset" class="nushud-auth-secondary" type="button"></button>' +
+
+                '<div id="nushud-auth-message" class="nushud-auth-message"></div>' +
+
+                '<div class="nushud-auth-switch">' +
+                    '<span id="nushud-auth-switch-text"></span>' +
+                    '<button id="nushud-auth-switch" type="button"></button>' +
+                "</div>" +
+
+            "</div>";
+
         document.body.appendChild(root);
 
-        submit.onclick = function () {
-            loginOrRegister();
-        };
+        document
+            .getElementById("nushud-auth-close")
+            .addEventListener(
+                "click",
+                closeAuth
+            );
 
-        register.onclick = function () {
-            openAuth("register");
-        };
+        document
+            .getElementById("nushud-auth-switch")
+            .addEventListener(
+                "click",
+                toggleAuthMode
+            );
 
-        forgot.onclick = function () {
-            resetPassword();
-        };
+        document
+            .getElementById("nushud-auth-reset")
+            .addEventListener(
+                "click",
+                resetPassword
+            );
 
-        close.onclick = function () {
-            closeAuth();
-        };
+        document
+            .getElementById("nushud-auth-form")
+            .addEventListener(
+                "submit",
+                submitAuth
+            );
 
-        root.onclick = function (event) {
-            if (event.target === root) {
-                closeAuth();
+        root.addEventListener(
+            "click",
+            function (event) {
+                if (
+                    event.target === root
+                ) {
+                    closeAuth();
+                }
             }
-        };
+        );
+
+        updateAuthLanguage();
     }
 
-    function openAuth(mode) {
+    function openAuth(
+        mode
+    ) {
+        authMode =
+            mode === "register"
+                ? "register"
+                : "login";
 
-        var root = document.getElementById("nushud-auth");
-        var title = document.getElementById("nushud-auth-title");
-        var description = document.getElementById("nushud-auth-description");
-        var submit = document.getElementById("nushud-auth-submit");
-        var register = document.getElementById("nushud-auth-register");
+        updateAuthLanguage();
+
+        var root =
+            document.getElementById(
+                ROOT_ID
+            );
 
         if (!root) {
             return;
         }
 
-        if (mode === "register") {
+        root.classList.add(
+            "open"
+        );
 
-            root.setAttribute("data-mode", "register");
+        var email =
+            document.getElementById(
+                "nushud-auth-email"
+            );
 
-            title.textContent = "Crear cuenta";
-            description.textContent =
-                "Crea una cuenta nueva en Nushud.";
-
-            submit.textContent = "Registrarse";
-            register.textContent = "Ya tengo una cuenta";
-
-        } else {
-
-            root.setAttribute("data-mode", "login");
-
-            title.textContent = "Iniciar sesión";
-            description.textContent =
-                "Accede a tu cuenta de Nushud.";
-
-            submit.textContent = "Iniciar sesión";
-            register.textContent = "Crear cuenta";
+        if (email) {
+            setTimeout(
+                function () {
+                    email.focus();
+                },
+                50
+            );
         }
-
-        root.className = "open";
-
-        document.getElementById("nushud-auth-email").focus();
     }
 
     function closeAuth() {
-
-        var root = document.getElementById("nushud-auth");
+        var root =
+            document.getElementById(
+                ROOT_ID
+            );
 
         if (root) {
-            root.className = "";
+            root.classList.remove(
+                "open"
+            );
         }
 
         showMessage("");
     }
 
-    function showMessage(text) {
+    function toggleAuthMode() {
+        authMode =
+            authMode === "login"
+                ? "register"
+                : "login";
 
-        var message =
-            document.getElementById("nushud-auth-message");
+        updateAuthLanguage();
+        showMessage("");
 
-        if (message) {
-            message.textContent = text || "";
+        var password =
+            document.getElementById(
+                "nushud-auth-password"
+            );
+
+        if (password) {
+            password.value = "";
         }
     }
 
-    function loginOrRegister() {
+    function updateAuthLanguage() {
 
-        var root = document.getElementById("nushud-auth");
+        var title =
+            document.getElementById(
+                "nushud-auth-title"
+            );
+
+        var description =
+            document.getElementById(
+                "nushud-auth-description"
+            );
+
+        var emailLabel =
+            document.getElementById(
+                "nushud-email-label"
+            );
+
+        var passwordLabel =
+            document.getElementById(
+                "nushud-password-label"
+            );
 
         var email =
-            document.getElementById("nushud-auth-email").value
+            document.getElementById(
+                "nushud-auth-email"
+            );
+
+        var password =
+            document.getElementById(
+                "nushud-auth-password"
+            );
+
+        var info =
+            document.getElementById(
+                "nushud-password-info"
+            );
+
+        var submit =
+            document.getElementById(
+                "nushud-auth-submit"
+            );
+
+        var reset =
+            document.getElementById(
+                "nushud-auth-reset"
+            );
+
+        var switchText =
+            document.getElementById(
+                "nushud-auth-switch-text"
+            );
+
+        var switchButton =
+            document.getElementById(
+                "nushud-auth-switch"
+            );
+
+        var close =
+            document.getElementById(
+                "nushud-auth-close"
+            );
+
+        var accountName =
+            document.getElementById(
+                "nushud-account-name"
+            );
+
+        var accountStatus =
+            document.getElementById(
+                "nushud-account-status"
+            );
+
+        if (title) {
+            title.textContent =
+                authMode === "register"
+                    ? text("register")
+                    : text("login");
+        }
+
+        if (description) {
+            description.textContent =
+                authMode === "register"
+                    ? text("create")
+                    : text("access");
+        }
+
+        if (emailLabel) {
+            emailLabel.textContent =
+                text("email");
+        }
+
+        if (passwordLabel) {
+            passwordLabel.textContent =
+                text("password");
+        }
+
+        if (email) {
+            email.placeholder =
+                text("emailPlaceholder");
+        }
+
+        if (password) {
+            password.placeholder =
+                text("passwordPlaceholder");
+        }
+
+        if (info) {
+            info.textContent =
+                authMode === "register"
+                    ? text("weakPassword")
+                    : "Minimum 8 characters.";
+        }
+
+        if (submit) {
+            submit.textContent =
+                authMode === "register"
+                    ? text("registerButton")
+                    : text("loginButton");
+        }
+
+        if (reset) {
+            reset.textContent =
+                text("forgot");
+
+            reset.style.display =
+                authMode === "register"
+                    ? "none"
+                    : "block";
+        }
+
+        if (switchText) {
+            switchText.textContent =
+                authMode === "register"
+                    ? text("alreadyAccount")
+                    : text("noAccount");
+        }
+
+        if (switchButton) {
+            switchButton.textContent =
+                authMode === "register"
+                    ? text("loginButton")
+                    : text("registerButton");
+        }
+
+        if (close) {
+            close.textContent =
+                text("close");
+        }
+
+        if (accountName) {
+            accountName.textContent =
+                currentUser
+                    ? (
+                        currentUser.email ||
+                        "Usuario"
+                    )
+                    : text("login");
+        }
+
+        if (accountStatus) {
+            accountStatus.textContent =
+                currentUser
+                    ? text("signedIn")
+                    : text("account");
+        }
+
+        var accountButton =
+            document.getElementById(
+                "nushud-account-button"
+            );
+
+        if (
+            accountButton &&
+            !currentUser
+        ) {
+            accountButton.setAttribute(
+                "aria-label",
+                text("login")
+            );
+        }
+    }
+
+    /* =========================================================
+       VALIDACIÓN
+       ========================================================= */
+
+    function validEmail(
+        email
+    ) {
+        return (
+            typeof email ===
+                "string" &&
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                email
+            )
+        );
+    }
+
+    function strongPassword(
+        password
+    ) {
+        return (
+            typeof password ===
+                "string" &&
+            password.length >= 8 &&
+            password.length <= 72 &&
+            /[a-z]/.test(password) &&
+            /[A-Z]/.test(password) &&
+            /\d/.test(password)
+        );
+    }
+
+    function showMessage(
+        message,
+        type
+    ) {
+        var element =
+            document.getElementById(
+                "nushud-auth-message"
+            );
+
+        if (!element) {
+            return;
+        }
+
+        element.textContent =
+            message || "";
+
+        element.className =
+            "nushud-auth-message " +
+            (type || "error");
+    }
+
+    function translateError(
+        error
+    ) {
+        var message =
+            String(
+                error &&
+                error.message
+                    ? error.message
+                    : ""
+            ).toLowerCase();
+
+        if (
+            message.indexOf(
+                "invalid login credentials"
+            ) !== -1
+        ) {
+            return text(
+                "wrongCredentials"
+            );
+        }
+
+        if (
+            message.indexOf(
+                "user already registered"
+            ) !== -1
+        ) {
+            return text(
+                "alreadyRegistered"
+            );
+        }
+
+        if (
+            message.indexOf(
+                "email not confirmed"
+            ) !== -1
+        ) {
+            return text(
+                "notConfirmed"
+            );
+        }
+
+        if (
+            message.indexOf(
+                "rate limit"
+            ) !== -1 ||
+            message.indexOf(
+                "too many requests"
+            ) !== -1
+        ) {
+            return text(
+                "rateLimit"
+            );
+        }
+
+        return (
+            error &&
+            error.message
+                ? error.message
+                : text("supabaseError")
+        );
+    }
+
+    /* =========================================================
+       LOGIN / REGISTRO
+       ========================================================= */
+
+    async function submitAuth(
+        event
+    ) {
+        event.preventDefault();
+
+        showMessage("");
+
+        var emailInput =
+            document.getElementById(
+                "nushud-auth-email"
+            );
+
+        var passwordInput =
+            document.getElementById(
+                "nushud-auth-password"
+            );
+
+        var submit =
+            document.getElementById(
+                "nushud-auth-submit"
+            );
+
+        var email =
+            String(
+                emailInput.value || ""
+            )
                 .trim()
                 .toLowerCase();
 
         var password =
-            document.getElementById("nushud-auth-password").value;
-
-        var submit =
-            document.getElementById("nushud-auth-submit");
-
-        var mode =
-            root.getAttribute("data-mode") || "login";
-
-        if (!email || email.indexOf("@") === -1) {
-            showMessage("Introduce un correo válido.");
-            return;
-        }
-
-        if (password.length < 8) {
-            showMessage(
-                "La contraseña debe tener al menos 8 caracteres."
+            String(
+                passwordInput.value || ""
             );
+
+        if (
+            !validEmail(email)
+        ) {
+            showMessage(
+                text("invalidEmail")
+            );
+
+            emailInput.focus();
+
             return;
         }
 
-        submit.disabled = true;
+        if (
+            authMode === "register" &&
+            !strongPassword(password)
+        ) {
+            showMessage(
+                text("weakPassword")
+            );
 
-        getClient()
-            .then(function (supabase) {
+            passwordInput.focus();
 
-                if (mode === "register") {
+            return;
+        }
 
-                    return supabase.auth.signUp({
+        if (
+            authMode === "login" &&
+            (
+                password.length < 8 ||
+                password.length > 72
+            )
+        ) {
+            showMessage(
+                text("invalidPassword")
+            );
+
+            passwordInput.focus();
+
+            return;
+        }
+
+        submit.disabled =
+            true;
+
+        submit.textContent =
+            authMode === "register"
+                ? text("creating")
+                : text("checking");
+
+        try {
+
+            var client =
+                await getSupabaseClient();
+
+            if (
+                authMode ===
+                "register"
+            ) {
+
+                var registerResult =
+                    await client.auth.signUp({
                         email: email,
                         password: password,
                         options: {
@@ -374,114 +1082,353 @@
                         }
                     });
 
+                if (
+                    registerResult.error
+                ) {
+                    throw registerResult.error;
                 }
 
-                return supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-            })
-            .then(function (result) {
-
-                if (result.error) {
-                    throw result.error;
-                }
-
-                if (mode === "register") {
-
-                    showMessage(
-                        "Cuenta creada. Revisa tu correo para confirmarla."
-                    );
-
-                } else {
-
-                    user =
-                        result.data &&
-                        result.data.user
-                            ? result.data.user
-                            : null;
+                if (
+                    registerResult.data &&
+                    registerResult.data.session
+                ) {
+                    currentUser =
+                        registerResult
+                            .data
+                            .user ||
+                        null;
 
                     closeAuth();
-                    updateAccountButton();
+
+                    updateAccountUI();
+                } else {
+                    showMessage(
+                        text("checkEmail"),
+                        "success"
+                    );
+
+                    passwordInput.value =
+                        "";
                 }
 
-            })
-            .catch(function (error) {
+            } else {
 
-                console.error(
-                    "[NUSHUD AUTH]",
-                    error
-                );
+                var loginResult =
+                    await client.auth
+                        .signInWithPassword({
+                            email: email,
+                            password: password
+                        });
 
-                showMessage(
-                    error && error.message
-                        ? error.message
-                        : "Error de autenticación."
-                );
+                if (
+                    loginResult.error
+                ) {
+                    throw loginResult.error;
+                }
 
-            })
-            .finally(function () {
+                currentUser =
+                    loginResult.data &&
+                    loginResult.data.user
+                        ? loginResult.data.user
+                        : null;
 
-                submit.disabled = false;
+                closeAuth();
 
-            });
+                updateAccountUI();
+            }
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "[NUSHUD AUTH]",
+                error
+            );
+
+            showMessage(
+                translateError(error)
+            );
+        }
+
+        submit.disabled =
+            false;
+
+        updateAuthLanguage();
     }
 
-    function resetPassword() {
+    /* =========================================================
+       RECUPERACIÓN
+       ========================================================= */
+
+    async function resetPassword() {
+
+        showMessage("");
+
+        var emailInput =
+            document.getElementById(
+                "nushud-auth-email"
+            );
 
         var email =
-            document.getElementById("nushud-auth-email").value
+            String(
+                emailInput.value || ""
+            )
                 .trim()
                 .toLowerCase();
 
-        if (!email || email.indexOf("@") === -1) {
+        if (
+            !validEmail(email)
+        ) {
             showMessage(
-                "Escribe primero tu correo."
+                text("writeEmail")
             );
+
+            emailInput.focus();
+
             return;
         }
 
-        getClient()
-            .then(function (supabase) {
+        try {
 
-                return supabase.auth.resetPasswordForEmail(
-                    email,
-                    {
-                        redirectTo:
-                            window.location.origin
-                    }
-                );
+            var client =
+                await getSupabaseClient();
 
-            })
-            .then(function (result) {
+            var result =
+                await client.auth
+                    .resetPasswordForEmail(
+                        email,
+                        {
+                            redirectTo:
+                                window.location.origin
+                        }
+                    );
 
-                if (result.error) {
-                    throw result.error;
-                }
+            if (
+                result.error
+            ) {
+                throw result.error;
+            }
 
-                showMessage(
-                    "Hemos enviado las instrucciones al correo."
-                );
+            showMessage(
+                text("resetSent"),
+                "success"
+            );
 
-            })
-            .catch(function (error) {
+        } catch (
+            error
+        ) {
 
-                console.error(
-                    "[NUSHUD RESET]",
-                    error
-                );
+            console.error(
+                "[NUSHUD RESET]",
+                error
+            );
 
-                showMessage(
-                    error && error.message
-                        ? error.message
-                        : "No se pudo recuperar la contraseña."
-                );
-
-            });
+            showMessage(
+                translateError(error)
+            );
+        }
     }
 
-    function updateAccountButton() {
+    /* =========================================================
+       CUENTA
+       ========================================================= */
+
+    function createAccountUI() {
+
+        if (
+            document.getElementById(
+                ACCOUNT_ID
+            )
+        ) {
+            return;
+        }
+
+        var wrapper =
+            document.createElement(
+                "div"
+            );
+
+        wrapper.id =
+            ACCOUNT_ID;
+
+        wrapper.innerHTML =
+            '<button id="nushud-account-button" class="nushud-account-button" type="button">' +
+                '<div id="nushud-account-avatar" class="nushud-account-avatar">N</div>' +
+
+                '<div class="nushud-account-info">' +
+                    '<div id="nushud-account-name" class="nushud-account-name"></div>' +
+                    '<div id="nushud-account-status" class="nushud-account-status"></div>' +
+                "</div>" +
+
+                '<div style="color:#52525b;font-size:12px;">›</div>' +
+            "</button>";
+
+        document.body.appendChild(
+            wrapper
+        );
+
+        document
+            .getElementById(
+                "nushud-account-button"
+            )
+            .addEventListener(
+                "click",
+                handleAccountClick
+            );
+
+        updateAuthLanguage();
+    }
+
+    function updateAccountUI() {
+
+        createAccountUI();
+
+        var name =
+            document.getElementById(
+                "nushud-account-name"
+            );
+
+        var status =
+            document.getElementById(
+                "nushud-account-status"
+            );
+
+        var avatar =
+            document.getElementById(
+                "nushud-account-avatar"
+            );
+
+        if (
+            !name ||
+            !status ||
+            !avatar
+        ) {
+            return;
+        }
+
+        if (
+            currentUser
+        ) {
+
+            name.textContent =
+                currentUser.email ||
+                "Usuario";
+
+            status.textContent =
+                text("signedIn");
+
+            avatar.textContent =
+                (
+                    currentUser.email ||
+                    "N"
+                )
+                    .charAt(0)
+                    .toUpperCase();
+
+        } else {
+
+            name.textContent =
+                text("login");
+
+            status.textContent =
+                text("account");
+
+            avatar.textContent =
+                "N";
+        }
+
+        updateAuthLanguage();
+    }
+
+    function handleAccountClick() {
+
+        if (
+            currentUser
+        ) {
+            openAccountMenu();
+        } else {
+            openAuth("login");
+        }
+    }
+
+    /* =========================================================
+       MENÚ DE CUENTA
+       ========================================================= */
+
+    function createAccountMenu() {
+
+        var existing =
+            document.getElementById(
+                MENU_ID
+            );
+
+        if (existing) {
+            return existing;
+        }
+
+        var menu =
+            document.createElement(
+                "div"
+            );
+
+        menu.id =
+            MENU_ID;
+
+        document.body.appendChild(
+            menu
+        );
+
+        document.addEventListener(
+            "click",
+            function (event) {
+
+                var button =
+                    document.getElementById(
+                        "nushud-account-button"
+                    );
+
+                if (
+                    menu.classList.contains(
+                        "open"
+                    ) &&
+                    event.target !==
+                        button &&
+                    !button.contains(
+                        event.target
+                    ) &&
+                    !menu.contains(
+                        event.target
+                    )
+                ) {
+                    menu.classList.remove(
+                        "open"
+                    );
+                }
+            }
+        );
+
+        return menu;
+    }
+
+    function openAccountMenu() {
+
+        var menu =
+            createAccountMenu();
+
+        menu.innerHTML =
+            '<div class="nushud-menu-email">' +
+                escapeHtml(
+                    currentUser &&
+                    currentUser.email
+                        ? currentUser.email
+                        : ""
+                ) +
+            "</div>" +
+
+            '<button id="nushud-logout-button" class="nushud-menu-button" type="button">' +
+                text("logout") +
+            "</button>";
 
         var button =
             document.getElementById(
@@ -492,71 +1439,226 @@
             return;
         }
 
-        if (user && user.email) {
-            button.textContent =
-                user.email;
-        } else {
-            button.textContent =
-                "Iniciar sesión";
+        var rect =
+            button.getBoundingClientRect();
+
+        menu.style.left =
+            Math.max(
+                10,
+                rect.left
+            ) + "px";
+
+        menu.style.top =
+            rect.bottom + 8 + "px";
+
+        menu.classList.add(
+            "open"
+        );
+
+        document
+            .getElementById(
+                "nushud-logout-button"
+            )
+            .addEventListener(
+                "click",
+                logout
+            );
+    }
+
+    async function logout() {
+
+        var menu =
+            document.getElementById(
+                MENU_ID
+            );
+
+        if (menu) {
+            menu.classList.remove(
+                "open"
+            );
+        }
+
+        try {
+
+            var client =
+                await getSupabaseClient();
+
+            var result =
+                await client.auth.signOut();
+
+            if (
+                result.error
+            ) {
+                throw result.error;
+            }
+
+            currentUser =
+                null;
+
+            updateAccountUI();
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                "[NUSHUD LOGOUT]",
+                error
+            );
         }
     }
 
-    function restoreSession() {
+    /* =========================================================
+       SESIÓN
+       ========================================================= */
 
-        return getClient()
-            .then(function (supabase) {
+    async function restoreSession() {
 
-                return supabase.auth.getSession();
+        var client =
+            await getSupabaseClient();
 
-            })
-            .then(function (result) {
+        var result =
+            await client.auth.getSession();
 
-                if (result.error) {
-                    throw result.error;
-                }
+        if (
+            result.error
+        ) {
+            throw result.error;
+        }
 
-                user =
-                    result.data &&
-                    result.data.session
-                        ? result.data.session.user
+        currentUser =
+            result.data &&
+            result.data.session
+                ? result.data.session.user
+                : null;
+
+        updateAccountUI();
+
+        client.auth.onAuthStateChange(
+            function (
+                event,
+                session
+            ) {
+
+                currentUser =
+                    session &&
+                    session.user
+                        ? session.user
                         : null;
 
-                updateAccountButton();
-
-            })
-            .catch(function (error) {
-
-                console.error(
-                    "[NUSHUD SESSION]",
-                    error
-                );
-
-            });
+                updateAccountUI();
+            }
+        );
     }
 
-    function init() {
+    /* =========================================================
+       CAMBIO DE IDIOMA
+       ========================================================= */
+
+    function listenLanguageChanges() {
+
+        window.addEventListener(
+            "nushud-language-changed",
+            function () {
+
+                updateAuthLanguage();
+
+                if (
+                    currentUser
+                ) {
+                    updateAccountUI();
+                }
+
+                if (
+                    document.getElementById(
+                        MENU_ID
+                    ) &&
+                    document.getElementById(
+                        MENU_ID
+                    ).classList.contains(
+                        "open"
+                    )
+                ) {
+                    openAccountMenu();
+                }
+            }
+        );
+    }
+
+    /* =========================================================
+       ESCAPE
+       ========================================================= */
+
+    function escapeHtml(
+        value
+    ) {
+
+        var div =
+            document.createElement(
+                "div"
+            );
+
+        div.textContent =
+            String(
+                value == null
+                    ? ""
+                    : value
+            );
+
+        return div.innerHTML;
+    }
+
+    /* =========================================================
+       INICIO
+       ========================================================= */
+
+    async function init() {
 
         console.log(
-            "[NUSHUD AUTH] auth.js cargado correctamente"
+            "[NUSHUD AUTH] auth.js cargado"
         );
 
-        addStyles();
-        createAccountButton();
+        injectStyles();
+        createAccountUI();
         createAuthModal();
-        updateAccountButton();
-        restoreSession();
+        listenLanguageChanges();
+
+        try {
+            await restoreSession();
+        } catch (
+            error
+        ) {
+            console.error(
+                "[NUSHUD AUTH INIT]",
+                error
+            );
+        }
     }
 
-    if (document.readyState === "loading") {
+    if (
+        document.readyState ===
+        "loading"
+    ) {
 
         document.addEventListener(
             "DOMContentLoaded",
-            init
+            init,
+            {
+                once: true
+            }
         );
 
     } else {
 
         init();
     }
+
+    window.NushudAuth = {
+        open: openAuth,
+        logout: logout,
+        getUser: function () {
+            return currentUser;
+        }
+    };
 
 })();

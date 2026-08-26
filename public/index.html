@@ -1740,7 +1740,20 @@
                     onclick="switchTab('favorites')"
                     id="nav-favorites"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
+<button
+    onclick="switchTab('upload')"
+    id="nav-upload"
+    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
+    <span class="desktop-menu-icon">
+        ↑
+    </span>
+
+    <span>
+        Subir nasheed
+    </span>
+
+</button>
 
                     <span
                         class="desktop-menu-icon">
@@ -2078,7 +2091,54 @@
 
         </div>
 
+<div
+    id="section-upload"
+    class="section-tab space-y-6 max-w-xl mx-auto">
 
+    <div
+        class="glass-panel rounded-3xl p-7 border border-amber-500/10">
+
+        <div class="mb-6">
+
+            <h2 class="text-xl font-extrabold text-zinc-100">
+                Subir nasheed
+            </h2>
+
+            <p class="text-xs text-zinc-500 mt-2">
+                Próximamente disponible.
+            </p>
+
+        </div>
+
+        <div
+            class="rounded-2xl border border-amber-500/15 bg-amber-500/5 p-5 text-center">
+
+            <div class="text-3xl mb-3">
+                ↑
+            </div>
+
+            <h3 class="text-sm font-bold text-zinc-200">
+                Próximamente
+            </h3>
+
+            <p class="text-xs text-zinc-500 mt-2">
+                La subida de nasheeds todavía no está disponible.
+            </p>
+
+            <button
+                type="button"
+                disabled
+                class="mt-5 px-5 py-2.5 rounded-xl bg-zinc-800 text-zinc-500 text-xs font-bold cursor-not-allowed">
+
+                Coming soon
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
         <!-- SETTINGS -->
 
         <div
@@ -3248,14 +3308,13 @@ function switchTab(
     tab
 ) {
 
-    const tabs = [
-
-        "home",
-        "library",
-        "favorites",
-        "settings"
-
-    ];
+ const tabs = [
+    "home",
+    "library",
+    "favorites",
+    "upload",
+    "settings"
+];
 
 
     if (

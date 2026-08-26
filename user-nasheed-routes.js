@@ -68,16 +68,27 @@ const GROQ_LLM =
    ========================================================= */
 
 function day() {
+
     return new Date()
         .toISOString()
-        .slice(0, 10);
+        .slice(
+            0,
+            10
+        );
+
 }
 
 
 function rnd() {
+
     return crypto
-        .randomBytes(10)
-        .toString("hex");
+        .randomBytes(
+            10
+        )
+        .toString(
+            "hex"
+        );
+
 }
 
 
@@ -87,13 +98,18 @@ function ext(
 ) {
 
     const extension =
-        String(name || "")
-            .split(".")
+        String(
+            name || ""
+        )
+            .split(
+                "."
+            )
             .pop()
             .toLowerCase();
 
 
     const allowed = [
+
         "mp3",
         "m4a",
         "mp4",
@@ -103,10 +119,12 @@ function ext(
         "wav",
         "webm",
         "flac",
+
         "jpg",
         "jpeg",
         "png",
         "webp"
+
     ];
 
 
@@ -116,7 +134,8 @@ function ext(
         )
     ) {
 
-        return extension === "jpeg"
+        return extension ===
+            "jpeg"
             ? "jpg"
             : extension;
 
@@ -148,11 +167,12 @@ function ext(
         byMime[type] ||
         "bin"
     );
+
 }
 
 
 /* =========================================================
-   AUTENTICACIÓN USUARIO
+   AUTENTICACIÓN DEL USUARIO
    ========================================================= */
 
 async function getUser(
@@ -172,20 +192,26 @@ async function getUser(
             "Bearer "
         )
     ) {
+
         return null;
+
     }
 
 
     const token =
         authorization
-            .slice(7)
+            .slice(
+                7
+            )
             .trim();
 
 
     if (
         !token
     ) {
+
         return null;
+
     }
 
 
@@ -205,7 +231,9 @@ async function getUser(
             !data ||
             !data.user
         ) {
+
             return null;
+
         }
 
 
@@ -216,6 +244,7 @@ async function getUser(
         return null;
 
     }
+
 }
 
 
@@ -228,9 +257,13 @@ function normalizeLanguages(
 ) {
 
     if (
-        !Array.isArray(value)
+        !Array.isArray(
+            value
+        )
     ) {
+
         return [];
+
     }
 
 
@@ -253,11 +286,12 @@ function normalizeLanguages(
                 )
         )
     ];
+
 }
 
 
 /* =========================================================
-   TIEMPOS VTT
+   TIEMPO VTT
    ========================================================= */
 
 function vttTime(
@@ -268,8 +302,9 @@ function vttTime(
         Math.max(
             0,
             Math.round(
-                Number(value || 0) *
-                1000
+                Number(
+                    value || 0
+                ) * 1000
             )
         );
 
@@ -277,7 +312,7 @@ function vttTime(
     const hours =
         Math.floor(
             milliseconds /
-            3600000
+                3600000
         );
 
 
@@ -286,8 +321,7 @@ function vttTime(
             (
                 milliseconds %
                 3600000
-            ) /
-            60000
+            ) / 60000
         );
 
 
@@ -296,8 +330,7 @@ function vttTime(
             (
                 milliseconds %
                 60000
-            ) /
-            1000
+            ) / 1000
         );
 
 
@@ -307,26 +340,35 @@ function vttTime(
 
 
     return (
-        String(hours).padStart(
+        String(
+            hours
+        ).padStart(
             2,
             "0"
         ) +
         ":" +
-        String(minutes).padStart(
+        String(
+            minutes
+        ).padStart(
             2,
             "0"
         ) +
         ":" +
-        String(seconds).padStart(
+        String(
+            seconds
+        ).padStart(
             2,
             "0"
         ) +
         "." +
-        String(ms).padStart(
+        String(
+            ms
+        ).padStart(
             3,
             "0"
         )
     );
+
 }
 
 
@@ -350,6 +392,7 @@ function cleanText(
             " "
         )
         .trim();
+
 }
 
 
@@ -391,11 +434,18 @@ function makeVTT(
 
         if (
             !text ||
-            !Number.isFinite(start) ||
-            !Number.isFinite(end) ||
-            end <= start
+            !Number.isFinite(
+                start
+            ) ||
+            !Number.isFinite(
+                end
+            ) ||
+            end <=
+                start
         ) {
+
             continue;
+
         }
 
 
@@ -412,17 +462,19 @@ function makeVTT(
         lines.push(
             ""
         );
+
     }
 
 
     return lines.join(
         "\n"
     );
+
 }
 
 
 /* =========================================================
-   PETICIONES GROQ
+   PETICIÓN A GROQ
    ========================================================= */
 
 async function groqRequest(
@@ -464,11 +516,14 @@ async function groqRequest(
     } catch {
 
         body = {
+
             error: {
                 message:
                     raw
             }
+
         };
+
     }
 
 
@@ -488,10 +543,12 @@ async function groqRequest(
 
 
         throw error;
+
     }
 
 
     return body;
+
 }
 
 
@@ -532,6 +589,10 @@ async function transcribeArabic(
     );
 
 
+    /*
+     * Groq espera este parámetro como array.
+     */
+
     form.append(
         "timestamp_granularities[]",
         "segment"
@@ -570,6 +631,7 @@ async function transcribeArabic(
         segments
             .map(
                 segment => ({
+
                     start:
                         Number(
                             segment.start
@@ -584,19 +646,25 @@ async function transcribeArabic(
                         cleanText(
                             segment.text
                         )
+
                 })
             )
             .filter(
                 segment =>
+
                     segment.text &&
+
                     Number.isFinite(
                         segment.start
                     ) &&
+
                     Number.isFinite(
                         segment.end
                     ) &&
+
                     segment.end >
                         segment.start
+
             );
 
 
@@ -607,15 +675,17 @@ async function transcribeArabic(
         throw new Error(
             "La IA no devolvió segmentos de transcripción."
         );
+
     }
 
 
     return cleanSegments;
+
 }
 
 
 /* =========================================================
-   TRADUCCIÓN
+   TRADUCCIÓN DE UN BLOQUE
    ========================================================= */
 
 async function translateBatch(
@@ -638,17 +708,36 @@ async function translateBatch(
     };
 
 
+    const targetLanguage =
+        languageNames[
+            language
+        ];
+
+
+    if (
+        !targetLanguage
+    ) {
+
+        throw new Error(
+            `Idioma de traducción no válido: ${language}`
+        );
+
+    }
+
+
     const input =
         batch.map(
             (
                 segment,
                 index
             ) => ({
+
                 i:
                     index,
 
                 text:
                     segment.text
+
             })
         );
 
@@ -657,12 +746,15 @@ async function translateBatch(
         await groqRequest(
             "https://api.groq.com/openai/v1/chat/completions",
             {
+
                 method:
                     "POST",
 
                 headers: {
+
                     "Content-Type":
                         "application/json"
+
                 },
 
                 body:
@@ -674,38 +766,133 @@ async function translateBatch(
                         temperature:
                             0.1,
 
+                        /*
+                         * GPT-OSS puede devolver razonamiento.
+                         * Lo ocultamos para dejar únicamente
+                         * la salida estructurada.
+                         */
+
+                        reasoning_format:
+                            "hidden",
+
+                        /*
+                         * Structured Outputs.
+                         */
+
                         response_format: {
+
                             type:
-                                "json_object"
+                                "json_schema",
+
+                            json_schema: {
+
+                                name:
+                                    "nasheed_translation",
+
+                                strict:
+                                    true,
+
+                                schema: {
+
+                                    type:
+                                        "object",
+
+                                    properties: {
+
+                                        translations: {
+
+                                            type:
+                                                "array",
+
+                                            items: {
+
+                                                type:
+                                                    "object",
+
+                                                properties: {
+
+                                                    i: {
+
+                                                        type:
+                                                            "integer"
+
+                                                    },
+
+                                                    text: {
+
+                                                        type:
+                                                            "string"
+
+                                                    }
+
+                                                },
+
+                                                required: [
+
+                                                    "i",
+                                                    "text"
+
+                                                ],
+
+                                                additionalProperties:
+                                                    false
+
+                                            }
+
+                                        }
+
+                                    },
+
+                                    required: [
+
+                                        "translations"
+
+                                    ],
+
+                                    additionalProperties:
+                                        false
+
+                                }
+
+                            }
+
                         },
 
                         messages: [
 
                             {
+
                                 role:
                                     "system",
 
                                 content:
-                                    `Translate Arabic nasheed lyrics into ${languageNames[language]}. ` +
-                                    "Return only JSON in the form " +
-                                    '{"translations":[{"i":0,"text":"..."}]}. ' +
-                                    "Keep every index and preserve the meaning. " +
-                                    "Do not add explanations."
+                                    `Translate Arabic nasheed lyrics into ${targetLanguage}. ` +
+                                    "Preserve the meaning carefully. " +
+                                    "Translate every supplied item individually. " +
+                                    "Keep the same index for every item. " +
+                                    "Do not add explanations or extra text."
+
                             },
 
                             {
+
                                 role:
                                     "user",
 
                                 content:
                                     JSON.stringify({
+
                                         translations:
                                             input
+
                                     })
+
                             }
 
                         ]
+
                     })
+
             },
             apiKey
         );
@@ -716,17 +903,15 @@ async function translateBatch(
         "";
 
 
-    content =
-        content
-            .trim()
-            .replace(
-                /^```(?:json)?\s*/i,
-                ""
-            )
-            .replace(
-                /\s*```$/,
-                ""
-            );
+    if (
+        !content
+    ) {
+
+        throw new Error(
+            `Groq no devolvió traducciones para ${targetLanguage}.`
+        );
+
+    }
 
 
     let parsed;
@@ -739,30 +924,73 @@ async function translateBatch(
                 content
             );
 
-    } catch {
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "[GROQ TRANSLATION RAW]",
+            content
+        );
+
 
         throw new Error(
-            `La traducción ${language} no devolvió JSON válido.`
+            `La traducción ${targetLanguage} devolvió JSON inválido.`
         );
+
+    }
+
+
+    if (
+        !parsed ||
+        !Array.isArray(
+            parsed.translations
+        )
+    ) {
+
+        throw new Error(
+            `La traducción ${targetLanguage} no contiene translations.`
+        );
+
     }
 
 
     const map =
-        new Map(
-            (
-                parsed.translations ||
-                []
-            ).map(
-                item => [
-                    Number(
-                        item.i
-                    ),
-                    cleanText(
-                        item.text
-                    )
-                ]
-            )
-        );
+        new Map();
+
+
+    for (
+        const item of
+        parsed.translations
+    ) {
+
+        const index =
+            Number(
+                item?.i
+            );
+
+
+        const text =
+            cleanText(
+                item?.text
+            );
+
+
+        if (
+            Number.isInteger(
+                index
+            ) &&
+            text
+        ) {
+
+            map.set(
+                index,
+                text
+            );
+
+        }
+
+    }
 
 
     return batch.map(
@@ -770,6 +998,7 @@ async function translateBatch(
             original,
             index
         ) => ({
+
             start:
                 original.start,
 
@@ -777,10 +1006,14 @@ async function translateBatch(
                 original.end,
 
             text:
-                map.get(index) ||
+                map.get(
+                    index
+                ) ||
                 original.text
+
         })
     );
+
 }
 
 
@@ -822,10 +1055,12 @@ async function translateAll(
         output.push(
             ...translated
         );
+
     }
 
 
     return output;
+
 }
 
 
@@ -856,16 +1091,19 @@ async function signUrl(
     if (
         error
     ) {
+
         throw error;
+
     }
 
 
     return data.signedUrl;
+
 }
 
 
 /* =========================================================
-   NASHEED PRIVADO
+   CONVERTIR NASHEED PRIVADO
    ========================================================= */
 
 async function privateTrack(
@@ -882,7 +1120,8 @@ async function privateTrack(
             language,
             storagePath
         ] of Object.entries(
-            row.subtitles || {}
+            row.subtitles ||
+            {}
         )
     ) {
 
@@ -891,7 +1130,9 @@ async function privateTrack(
                 "__"
             )
         ) {
+
             continue;
+
         }
 
 
@@ -903,6 +1144,7 @@ async function privateTrack(
                 storagePath,
                 86400
             );
+
     }
 
 
@@ -925,11 +1167,13 @@ async function privateTrack(
 
         cover:
             row.cover_path
+
                 ? await signUrl(
                     supabase,
                     row.cover_path,
                     86400
                 )
+
                 : "",
 
         subtitles,
@@ -945,23 +1189,29 @@ async function privateTrack(
 
         created_at:
             row.created_at
+
     };
+
 }
 
 
 /* =========================================================
-   REGISTRO DE RUTAS
+   RUTAS
    ========================================================= */
 
 function registerUserNasheedRoutes({
+
     app,
+
     supabase,
+
     groqApiKey
+
 }) {
 
 
     /* =====================================================
-       LISTA MIS NASHEEDS
+       MIS NASHEEDS
        ===================================================== */
 
     app.get(
@@ -992,6 +1242,7 @@ function registerUserNasheedRoutes({
                             "Debes iniciar sesión."
 
                     });
+
             }
 
 
@@ -1024,7 +1275,9 @@ function registerUserNasheedRoutes({
                 if (
                     error
                 ) {
+
                     throw error;
+
                 }
 
 
@@ -1083,7 +1336,9 @@ function registerUserNasheedRoutes({
                             "No se pudieron cargar tus nasheeds."
 
                     });
+
             }
+
         }
     );
 
@@ -1120,6 +1375,7 @@ function registerUserNasheedRoutes({
                             "Debes iniciar sesión."
 
                     });
+
             }
 
 
@@ -1181,6 +1437,7 @@ function registerUserNasheedRoutes({
                                 "El título es obligatorio y debe tener como máximo 120 caracteres."
 
                         });
+
                 }
 
 
@@ -1204,6 +1461,7 @@ function registerUserNasheedRoutes({
                                 "El audio debe pesar como máximo 25 MB."
 
                         });
+
                 }
 
 
@@ -1223,6 +1481,7 @@ function registerUserNasheedRoutes({
                                 "Formato de audio no compatible."
 
                         });
+
                 }
 
 
@@ -1266,7 +1525,9 @@ function registerUserNasheedRoutes({
                                     "La portada debe ser JPG, PNG o WebP y pesar como máximo 5 MB."
 
                             });
+
                     }
+
                 }
 
 
@@ -1274,9 +1535,9 @@ function registerUserNasheedRoutes({
                     day();
 
 
-                /* ===========================================
-                   COMPROBAR SUBIDA DEL DÍA
-                   =========================================== */
+                /* =========================================
+                   COMPROBAR SUBIDA DIARIA
+                   ========================================= */
 
                 const existing =
                     await supabase
@@ -1300,15 +1561,16 @@ function registerUserNasheedRoutes({
                 if (
                     existing.error
                 ) {
+
                     throw existing.error;
+
                 }
 
 
                 /*
                  * PROCESSING y READY bloquean.
                  *
-                 * ERROR NO BLOQUEA:
-                 * se reutiliza el registro.
+                 * ERROR se puede reintentar.
                  */
 
                 if (
@@ -1340,12 +1602,13 @@ function registerUserNasheedRoutes({
                                 existing.data.status
 
                         });
+
                 }
 
 
-                /* ===========================================
+                /* =========================================
                    REUTILIZAR ERROR
-                   =========================================== */
+                   ========================================= */
 
                 if (
                     existing.data &&
@@ -1376,8 +1639,10 @@ function registerUserNasheedRoutes({
                                     null,
 
                                 subtitles: {
+
                                     __requested:
                                         translations
+
                                 },
 
                                 status:
@@ -1400,15 +1665,17 @@ function registerUserNasheedRoutes({
                     if (
                         reset.error
                     ) {
+
                         throw reset.error;
+
                     }
 
                 }
 
 
-                /* ===========================================
-                   NUEVO REGISTRO
-                   =========================================== */
+                /* =========================================
+                   CREAR REGISTRO
+                   ========================================= */
 
                 if (
                     !uploadId
@@ -1434,8 +1701,10 @@ function registerUserNasheedRoutes({
                                     null,
 
                                 subtitles: {
+
                                     __requested:
                                         translations
+
                                 },
 
                                 status:
@@ -1457,7 +1726,9 @@ function registerUserNasheedRoutes({
                     if (
                         inserted.error
                     ) {
+
                         throw inserted.error;
+
                     }
 
 
@@ -1465,12 +1736,13 @@ function registerUserNasheedRoutes({
                         Number(
                             inserted.data.id
                         );
+
                 }
 
 
-                /* ===========================================
-                   STORAGE PATHS
-                   =========================================== */
+                /* =========================================
+                   PATHS
+                   ========================================= */
 
                 const prefix =
                     `${currentUser.id}/${uploadDay}/${uploadId}-${rnd()}`;
@@ -1485,16 +1757,18 @@ function registerUserNasheedRoutes({
 
                 const coverPath =
                     cover
+
                         ? `${prefix}/cover.${ext(
                             cover.type,
                             cover.name
                         )}`
+
                         : null;
 
 
-                /* ===========================================
-                   SIGNED AUDIO UPLOAD
-                   =========================================== */
+                /* =========================================
+                   AUDIO SIGNED UPLOAD
+                   ========================================= */
 
                 const audioSigned =
                     await supabase
@@ -1514,13 +1788,15 @@ function registerUserNasheedRoutes({
                 if (
                     audioSigned.error
                 ) {
+
                     throw audioSigned.error;
+
                 }
 
 
-                /* ===========================================
-                   SIGNED COVER UPLOAD
-                   =========================================== */
+                /* =========================================
+                   COVER SIGNED UPLOAD
+                   ========================================= */
 
                 let coverSigned =
                     null;
@@ -1548,14 +1824,17 @@ function registerUserNasheedRoutes({
                     if (
                         coverSigned.error
                     ) {
+
                         throw coverSigned.error;
+
                     }
+
                 }
 
 
-                /* ===========================================
+                /* =========================================
                    GUARDAR PATHS
-                   =========================================== */
+                   ========================================= */
 
                 const updated =
                     await supabase
@@ -1584,7 +1863,9 @@ function registerUserNasheedRoutes({
                 if (
                     updated.error
                 ) {
+
                     throw updated.error;
+
                 }
 
 
@@ -1609,7 +1890,9 @@ function registerUserNasheedRoutes({
                     },
 
                     cover:
+
                         coverSigned
+
                             ? {
 
                                 path:
@@ -1621,6 +1904,7 @@ function registerUserNasheedRoutes({
                                         .token
 
                             }
+
                             : null
 
                 });
@@ -1681,7 +1965,9 @@ function registerUserNasheedRoutes({
                             "No se pudo preparar la subida."
 
                     });
+
             }
+
         }
     );
 
@@ -1718,6 +2004,7 @@ function registerUserNasheedRoutes({
                             "Debes iniciar sesión."
 
                     });
+
             }
 
 
@@ -1735,6 +2022,7 @@ function registerUserNasheedRoutes({
                             "GROQ_API_KEY no está configurada."
 
                     });
+
             }
 
 
@@ -1760,14 +2048,11 @@ function registerUserNasheedRoutes({
                             "ID no válido."
 
                     });
+
             }
 
 
             try {
-
-                /* =========================================
-                   OBTENER NASHEED
-                   ========================================= */
 
                 const query =
                     await supabase
@@ -1803,6 +2088,7 @@ function registerUserNasheedRoutes({
                                 "Nasheed no encontrado."
 
                         });
+
                 }
 
 
@@ -1824,6 +2110,7 @@ function registerUserNasheedRoutes({
                                 "Falta el audio subido."
 
                         });
+
                 }
 
 
@@ -1846,12 +2133,14 @@ function registerUserNasheedRoutes({
                 if (
                     signedAudio.error
                 ) {
+
                     throw signedAudio.error;
+
                 }
 
 
                 /* =========================================
-                   TRANSCRIPCIÓN ÁRABE
+                   TRANSCRIPCIÓN
                    ========================================= */
 
                 const arabic =
@@ -1869,12 +2158,16 @@ function registerUserNasheedRoutes({
 
                 const prefix =
                     row.audio_path
-                        .split("/")
+                        .split(
+                            "/"
+                        )
                         .slice(
                             0,
                             -1
                         )
-                        .join("/");
+                        .join(
+                            "/"
+                        );
 
 
                 const subtitlePaths =
@@ -1917,7 +2210,9 @@ function registerUserNasheedRoutes({
                 if (
                     arabicUpload.error
                 ) {
+
                     throw arabicUpload.error;
+
                 }
 
 
@@ -1981,7 +2276,9 @@ function registerUserNasheedRoutes({
                     if (
                         upload.error
                     ) {
+
                         throw upload.error;
+
                     }
 
 
@@ -1989,6 +2286,7 @@ function registerUserNasheedRoutes({
                         language
                     ] =
                         translationPath;
+
                 }
 
 
@@ -2026,7 +2324,9 @@ function registerUserNasheedRoutes({
                 if (
                     saved.error
                 ) {
+
                     throw saved.error;
+
                 }
 
 
@@ -2098,7 +2398,9 @@ function registerUserNasheedRoutes({
                             "No se pudo procesar el nasheed."
 
                     });
+
             }
+
         }
     );
 
@@ -2117,7 +2419,7 @@ function registerUserNasheedRoutes({
             try {
 
                 /* =========================================
-                   PÚBLICOS
+                   NASHEEDS PÚBLICOS
                    ========================================= */
 
                 const publicRows =
@@ -2140,7 +2442,9 @@ function registerUserNasheedRoutes({
                 if (
                     publicRows.error
                 ) {
+
                     throw publicRows.error;
+
                 }
 
 
@@ -2205,7 +2509,7 @@ function registerUserNasheedRoutes({
 
 
                 /* =========================================
-                   PRIVADOS
+                   NASHEEDS PRIVADOS
                    ========================================= */
 
                 const privateRows =
@@ -2236,7 +2540,9 @@ function registerUserNasheedRoutes({
                 if (
                     privateRows.error
                 ) {
+
                     throw privateRows.error;
+
                 }
 
 
@@ -2256,12 +2562,16 @@ function registerUserNasheedRoutes({
                             row
                         )
                     );
+
                 }
 
 
                 return res.json([
+
                     ...privateTracks,
+
                     ...publicTracks
+
                 ]);
 
             } catch (
@@ -2284,9 +2594,12 @@ function registerUserNasheedRoutes({
                             "No se pudieron cargar los nasheeds."
 
                     });
+
             }
+
         }
     );
+
 }
 
 
@@ -2295,5 +2608,7 @@ function registerUserNasheedRoutes({
    ========================================================= */
 
 module.exports = {
+
     registerUserNasheedRoutes
+
 };

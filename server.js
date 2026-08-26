@@ -1,15 +1,34 @@
+"use strict";
+
 const express = require("express");
 const crypto = require("crypto");
 const path = require("path");
+
 require("dotenv").config();
 
-const { createClient } = require("@supabase/supabase-js");
+const {
+    createClient
+} = require("@supabase/supabase-js");
+
+const {
+    registerUserNasheedRoutes
+} = require("./user-nasheed-routes");
+
+
+/* =========================================================
+   APP
+   ========================================================= */
 
 const app = express();
 
 const PORT =
     process.env.PORT ||
     3000;
+
+
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
 
 const SUPABASE_URL =
     process.env.SUPABASE_URL ||
@@ -22,9 +41,11 @@ const SUPABASE_SECRET_KEY =
 const SUPABASE_PUBLISHABLE_KEY =
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     "";
+
 const GROQ_API_KEY =
     process.env.GROQ_API_KEY ||
     "";
+
 const STORAGE_BUCKET =
     "Nasheeds";
 
@@ -41,6 +62,10 @@ const SESSION_SECRET =
     "nasheed-change-this-secret";
 
 
+/* =========================================================
+   COMPROBACIONES
+   ========================================================= */
+
 if (
     !SUPABASE_URL ||
     !SUPABASE_SECRET_KEY
@@ -51,12 +76,21 @@ if (
     );
 
 }
-if (!GROQ_API_KEY) {
+
+if (
+    !GROQ_API_KEY
+) {
+
     console.error(
         "Falta GROQ_API_KEY en las variables de entorno."
     );
+
 }
 
+
+/* =========================================================
+   SUPABASE ADMIN CLIENT
+   ========================================================= */
 
 const supabase =
     createClient(
@@ -153,8 +187,7 @@ function base64UrlDecode(
         4
     ) {
 
-        normalized +=
-            "=";
+        normalized += "=";
 
     }
 
@@ -220,12 +253,14 @@ function createAdminToken() {
 
     };
 
+
     const encoded =
         base64UrlEncode(
             JSON.stringify(
                 payload
             )
         );
+
 
     return (
         encoded +
@@ -250,12 +285,14 @@ function verifyAdminToken(
 
     }
 
+
     const parts =
         String(
             token
         ).split(
             "."
         );
+
 
     if (
         parts.length !==
@@ -265,6 +302,7 @@ function verifyAdminToken(
         return false;
 
     }
+
 
     const encoded =
         parts[0];
@@ -277,6 +315,7 @@ function verifyAdminToken(
             encoded
         );
 
+
     const a =
         Buffer.from(
             signature
@@ -287,6 +326,7 @@ function verifyAdminToken(
             expected
         );
 
+
     if (
         a.length !==
         b.length
@@ -295,6 +335,7 @@ function verifyAdminToken(
         return false;
 
     }
+
 
     if (
         !crypto.timingSafeEqual(
@@ -307,6 +348,7 @@ function verifyAdminToken(
 
     }
 
+
     try {
 
         const payload =
@@ -316,12 +358,15 @@ function verifyAdminToken(
                 )
             );
 
+
         return (
             payload.admin ===
                 true &&
+
             Number.isFinite(
                 payload.exp
             ) &&
+
             Date.now() <
                 payload.exp
         );
@@ -343,6 +388,7 @@ function getCookie(
     const cookieHeader =
         req.headers.cookie;
 
+
     if (
         !cookieHeader
     ) {
@@ -351,10 +397,12 @@ function getCookie(
 
     }
 
+
     const cookies =
         cookieHeader.split(
             ";"
         );
+
 
     for (
         const cookie of
@@ -366,6 +414,7 @@ function getCookie(
                 "="
             );
 
+
         if (
             index ===
             -1
@@ -375,6 +424,7 @@ function getCookie(
 
         }
 
+
         const key =
             cookie
                 .slice(
@@ -382,6 +432,7 @@ function getCookie(
                     index
                 )
                 .trim();
+
 
         if (
             key !==
@@ -392,6 +443,7 @@ function getCookie(
 
         }
 
+
         return decodeURIComponent(
             cookie
                 .slice(
@@ -401,6 +453,7 @@ function getCookie(
         );
 
     }
+
 
     return "";
 
@@ -429,20 +482,32 @@ function setAdminCookie(
         process.env.NODE_ENV ===
         "production";
 
+
     res.setHeader(
         "Set-Cookie",
         [
-            `${ADMIN_COOKIE}=${encodeURIComponent(createAdminToken())}`,
+            `${ADMIN_COOKIE}=${encodeURIComponent(
+                createAdminToken()
+            )}`,
+
             "Path=/",
+
             "HttpOnly",
+
             "SameSite=Lax",
+
             "Max-Age=604800",
+
             isProduction
                 ? "Secure"
                 : ""
         ]
-            .filter(Boolean)
-            .join("; ")
+            .filter(
+                Boolean
+            )
+            .join(
+                "; "
+            )
     );
 
 }
@@ -456,20 +521,30 @@ function clearAdminCookie(
         process.env.NODE_ENV ===
         "production";
 
+
     res.setHeader(
         "Set-Cookie",
         [
             `${ADMIN_COOKIE}=`,
+
             "Path=/",
+
             "HttpOnly",
+
             "SameSite=Lax",
+
             "Max-Age=0",
+
             isProduction
                 ? "Secure"
                 : ""
         ]
-            .filter(Boolean)
-            .join("; ")
+            .filter(
+                Boolean
+            )
+            .join(
+                "; "
+            )
     );
 
 }
@@ -607,18 +682,14 @@ async function login() {
                         "same-origin",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
-
                     },
 
                     body:
                         JSON.stringify({
-
                             pin:
                                 pin.value
-
                         })
 
                 }
@@ -690,7 +761,7 @@ pin.addEventListener(
 
 
 /* =========================================================
-   STATIC / ADMIN
+   ADMIN PAGE
    ========================================================= */
 
 app.get(
@@ -710,6 +781,7 @@ app.get(
 
         }
 
+
         return res.sendFile(
             path.join(
                 __dirname,
@@ -722,6 +794,10 @@ app.get(
 );
 
 
+/* =========================================================
+   STATIC
+   ========================================================= */
+
 app.use(
     express.static(
         path.join(
@@ -733,7 +809,7 @@ app.use(
 
 
 /* =========================================================
-   LOGIN
+   ADMIN LOGIN
    ========================================================= */
 
 app.post(
@@ -749,6 +825,7 @@ app.post(
                 ""
             );
 
+
         if (
             !ADMIN_PIN ||
             pin !==
@@ -756,7 +833,9 @@ app.post(
         ) {
 
             return res
-                .status(401)
+                .status(
+                    401
+                )
                 .json({
                     success:
                         false,
@@ -767,18 +846,18 @@ app.post(
 
         }
 
+
         setAdminCookie(
             res
         );
 
-        return res.json({
 
+        return res.json({
             success:
                 true,
 
             redirect:
                 ADMIN_PATH
-
         });
 
     }
@@ -786,7 +865,7 @@ app.post(
 
 
 /* =========================================================
-   LOGOUT
+   ADMIN LOGOUT
    ========================================================= */
 
 app.post(
@@ -855,15 +934,26 @@ function requireAdmin(
 
     }
 
+
     return res
-        .status(403)
+        .status(
+            403
+        )
         .json({
             error:
                 "Acceso denegado."
         });
 
 }
-async function getAuthenticatedUser(req) {
+
+
+/* =========================================================
+   AUTENTICACIÓN USUARIO
+   ========================================================= */
+
+async function getAuthenticatedUser(
+    req
+) {
 
     const authorization =
         String(
@@ -871,20 +961,34 @@ async function getAuthenticatedUser(req) {
             ""
         );
 
+
     if (
-        !authorization.startsWith("Bearer ")
+        !authorization.startsWith(
+            "Bearer "
+        )
     ) {
+
         return null;
+
     }
+
 
     const token =
         authorization
-            .slice(7)
+            .slice(
+                7
+            )
             .trim();
 
-    if (!token) {
+
+    if (
+        !token
+    ) {
+
         return null;
+
     }
+
 
     try {
 
@@ -896,17 +1000,23 @@ async function getAuthenticatedUser(req) {
                 token
             );
 
+
         if (
             error ||
             !data ||
             !data.user
         ) {
+
             return null;
+
         }
+
 
         return data.user;
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "[USER AUTH]",
@@ -914,7 +1024,9 @@ async function getAuthenticatedUser(req) {
         );
 
         return null;
+
     }
+
 }
 
 
@@ -929,128 +1041,44 @@ async function requireUser(
             req
         );
 
-    if (!user) {
+
+    if (
+        !user
+    ) {
 
         return res
-            .status(401)
+            .status(
+                401
+            )
             .json({
                 error:
                     "Debes iniciar sesión."
             });
+
     }
+
 
     req.user =
         user;
 
+
     return next();
+
 }
 
+
 /* =========================================================
-   PUBLIC NASHEEDS
+   RUTAS NASHEEDS DE USUARIO
    ========================================================= */
 
-app.get(
-    "/api/nasheeds",
-    async (
-        req,
-        res
-    ) => {
+registerUserNasheedRoutes({
+    app,
 
-        try {
+    supabase,
 
-            const {
-                data,
-                error
-            } =
-                await supabase
-                    .from(
-                        "nasheeds"
-                    )
-                    .select(
-                        "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
-                    )
-                    .order(
-                        "created_at",
-                        {
-                            ascending:
-                                false
-                        }
-                    );
-
-
-            if (
-                error
-            ) {
-
-                console.error(
-                    error
-                );
-
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            "No se pudieron cargar los nasheeds."
-                    });
-
-            }
-
-
-            return res.json(
-                (
-                    data ||
-                    []
-                ).map(
-                    item => ({
-
-                        id:
-                            Number(
-                                item.id
-                            ),
-
-                        title:
-                            item.title,
-
-                        file:
-                            item.audio_url,
-
-                        cover:
-                            item.cover_url ||
-                            "",
-
-                        subtitles:
-                            item.subtitles ||
-                            {},
-
-                        warning:
-                            Boolean(
-                                item.warning_enabled
-                            )
-
-                    })
-                )
-            );
-
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                error
-            );
-
-            return res
-                .status(500)
-                .json({
-                    error:
-                        "Error interno."
-                });
-
-        }
-
-    }
-);
+    groqApiKey:
+        GROQ_API_KEY
+});
 
 
 /* =========================================================
@@ -1096,7 +1124,9 @@ app.get(
                 );
 
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
                         error:
                             "No se pudieron cargar los nasheeds."
@@ -1111,7 +1141,6 @@ app.get(
                     []
                 ).map(
                     item => ({
-
                         id:
                             Number(
                                 item.id
@@ -1138,11 +1167,9 @@ app.get(
 
                         created_at:
                             item.created_at
-
                     })
                 )
             );
-
 
         } catch (
             error
@@ -1153,7 +1180,9 @@ app.get(
             );
 
             return res
-                .status(500)
+                .status(
+                    500
+                )
                 .json({
                     error:
                         "Error interno."
@@ -1166,7 +1195,7 @@ app.get(
 
 
 /* =========================================================
-   PREPARE UPLOAD
+   PREPARE ADMIN UPLOAD
    ========================================================= */
 
 app.post(
@@ -1199,7 +1228,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "Falta el título."
@@ -1213,7 +1244,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "No hay archivos."
@@ -1284,7 +1317,9 @@ app.post(
                 ) {
 
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
                             error:
                                 "Datos de archivo inválidos."
@@ -1301,7 +1336,9 @@ app.post(
                 ) {
 
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
                             error:
                                 `El archivo "${originalName}" supera los 50 MB.`
@@ -1322,7 +1359,9 @@ app.post(
                     ) {
 
                         return res
-                            .status(400)
+                            .status(
+                                400
+                            )
                             .json({
                                 error:
                                     `Idioma inválido: ${language}`
@@ -1338,7 +1377,9 @@ app.post(
                     ) {
 
                         return res
-                            .status(400)
+                            .status(
+                                400
+                            )
                             .json({
                                 error:
                                     `Idioma duplicado: ${language}`
@@ -1372,7 +1413,9 @@ app.post(
                     ) {
 
                         return res
-                            .status(400)
+                            .status(
+                                400
+                            )
                             .json({
                                 error:
                                     `${originalName} debe ser un VTT.`
@@ -1468,7 +1511,9 @@ app.post(
                     );
 
                     return res
-                        .status(500)
+                        .status(
+                            500
+                        )
                         .json({
                             error:
                                 `No se pudo preparar ${originalName}.`
@@ -1515,7 +1560,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "Debes añadir el subtítulo árabe."
@@ -1534,7 +1581,6 @@ app.post(
 
             });
 
-
         } catch (
             error
         ) {
@@ -1544,7 +1590,9 @@ app.post(
             );
 
             return res
-                .status(500)
+                .status(
+                    500
+                )
                 .json({
                     error:
                         "No se pudo preparar la subida."
@@ -1557,7 +1605,7 @@ app.post(
 
 
 /* =========================================================
-   COMPLETE UPLOAD
+   COMPLETE ADMIN UPLOAD
    ========================================================= */
 
 app.post(
@@ -1620,7 +1668,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "Falta el título."
@@ -1634,7 +1684,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "Falta el audio."
@@ -1652,7 +1704,9 @@ app.post(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "Falta el subtítulo árabe."
@@ -1725,7 +1779,9 @@ app.post(
                 );
 
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
                         error:
                             "No se pudo guardar el nasheed."
@@ -1769,7 +1825,6 @@ app.post(
 
             });
 
-
         } catch (
             error
         ) {
@@ -1779,7 +1834,9 @@ app.post(
             );
 
             return res
-                .status(500)
+                .status(
+                    500
+                )
                 .json({
                     error:
                         "Error guardando el nasheed."
@@ -1818,7 +1875,9 @@ app.patch(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "ID no válido."
@@ -1842,10 +1901,8 @@ app.patch(
                         "nasheeds"
                     )
                     .update({
-
                         warning_enabled:
                             enabled
-
                     })
                     .eq(
                         "id",
@@ -1866,7 +1923,9 @@ app.patch(
                 );
 
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
                         error:
                             "No se pudo actualizar la advertencia."
@@ -1892,7 +1951,6 @@ app.patch(
 
             });
 
-
         } catch (
             error
         ) {
@@ -1902,7 +1960,9 @@ app.patch(
             );
 
             return res
-                .status(500)
+                .status(
+                    500
+                )
                 .json({
                     error:
                         "Error interno."
@@ -1915,7 +1975,7 @@ app.patch(
 
 
 /* =========================================================
-   DELETE
+   DELETE PUBLIC NASHEED
    ========================================================= */
 
 app.delete(
@@ -1941,7 +2001,9 @@ app.delete(
             ) {
 
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
                         error:
                             "ID no válido."
@@ -1952,8 +2014,7 @@ app.delete(
 
             const {
                 data: track,
-                error:
-                    findError
+                error: findError
             } =
                 await supabase
                     .from(
@@ -1978,7 +2039,9 @@ app.delete(
                 );
 
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
                         error:
                             "No se pudo obtener el nasheed."
@@ -1992,7 +2055,9 @@ app.delete(
             ) {
 
                 return res
-                    .status(404)
+                    .status(
+                        404
+                    )
                     .json({
                         error:
                             "Nasheed no encontrado."
@@ -2094,7 +2159,9 @@ app.delete(
                 );
 
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
                         error:
                             "No se pudo eliminar el registro."
@@ -2110,7 +2177,6 @@ app.delete(
 
             });
 
-
         } catch (
             error
         ) {
@@ -2120,7 +2186,9 @@ app.delete(
             );
 
             return res
-                .status(500)
+                .status(
+                    500
+                )
                 .json({
                     error:
                         "Error interno."
@@ -2143,7 +2211,7 @@ function addStoragePath(
 
     if (
         typeof url !==
-        "string" ||
+            "string" ||
         !url
     ) {
 
@@ -2223,7 +2291,9 @@ app.use(
 
 
         return res
-            .status(500)
+            .status(
+                500
+            )
             .json({
                 error:
                     "Error interno del servidor."

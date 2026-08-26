@@ -3,64 +3,43 @@
 const crypto = require("crypto");
 
 /* =========================================================
-   CONFIGURACIÓN
+   CONFIG
    ========================================================= */
 
 const BUCKET = "UserNasheeds";
 
-const MAX_AUDIO =
-    25 * 1024 * 1024;
+const MAX_AUDIO = 25 * 1024 * 1024;
+const MAX_COVER = 5 * 1024 * 1024;
 
-const MAX_COVER =
-    5 * 1024 * 1024;
+const AUDIO_TYPES = new Set([
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/mp4",
+    "audio/x-m4a",
+    "audio/m4a",
+    "audio/ogg",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/webm",
+    "audio/flac",
+    "video/mp4",
+    "video/webm"
+]);
 
+const COVER_TYPES = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+]);
 
-/* =========================================================
-   FORMATOS
-   ========================================================= */
+const LANGS = new Set([
+    "es",
+    "en",
+    "ru"
+]);
 
-const AUDIO_TYPES =
-    new Set([
-        "audio/mpeg",
-        "audio/mp3",
-        "audio/mp4",
-        "audio/x-m4a",
-        "audio/m4a",
-        "audio/ogg",
-        "audio/wav",
-        "audio/x-wav",
-        "audio/webm",
-        "audio/flac",
-        "video/mp4",
-        "video/webm"
-    ]);
-
-
-const COVER_TYPES =
-    new Set([
-        "image/jpeg",
-        "image/png",
-        "image/webp"
-    ]);
-
-
-const LANGS =
-    new Set([
-        "es",
-        "en",
-        "ru"
-    ]);
-
-
-/* =========================================================
-   MODELOS GROQ
-   ========================================================= */
-
-const GROQ_STT =
-    "whisper-large-v3-turbo";
-
-const GROQ_LLM =
-    "openai/gpt-oss-20b";
+const GROQ_STT = "whisper-large-v3-turbo";
+const GROQ_LLM = "openai/gpt-oss-20b";
 
 
 /* =========================================================
@@ -68,48 +47,26 @@ const GROQ_LLM =
    ========================================================= */
 
 function day() {
-
     return new Date()
         .toISOString()
-        .slice(
-            0,
-            10
-        );
-
+        .slice(0, 10);
 }
-
 
 function rnd() {
-
     return crypto
-        .randomBytes(
-            10
-        )
-        .toString(
-            "hex"
-        );
-
+        .randomBytes(10)
+        .toString("hex");
 }
 
-
-function ext(
-    type,
-    name
-) {
+function ext(type, name) {
 
     const extension =
-        String(
-            name || ""
-        )
-            .split(
-                "."
-            )
+        String(name || "")
+            .split(".")
             .pop()
             .toLowerCase();
 
-
     const allowed = [
-
         "mp3",
         "m4a",
         "mp4",
@@ -119,31 +76,19 @@ function ext(
         "wav",
         "webm",
         "flac",
-
         "jpg",
         "jpeg",
         "png",
         "webp"
-
     ];
 
-
-    if (
-        allowed.includes(
-            extension
-        )
-    ) {
-
-        return extension ===
-            "jpeg"
+    if (allowed.includes(extension)) {
+        return extension === "jpeg"
             ? "jpg"
             : extension;
-
     }
 
-
     const byMime = {
-
         "audio/mpeg": "mp3",
         "audio/mp3": "mp3",
         "audio/mp4": "m4a",
@@ -159,61 +104,35 @@ function ext(
         "image/jpeg": "jpg",
         "image/png": "png",
         "image/webp": "webp"
-
     };
 
-
-    return (
-        byMime[type] ||
-        "bin"
-    );
-
+    return byMime[type] || "bin";
 }
 
 
 /* =========================================================
-   AUTENTICACIÓN DEL USUARIO
+   AUTH USER
    ========================================================= */
 
-async function getUser(
-    req,
-    supabase
-) {
+async function getUser(req, supabase) {
 
     const authorization =
         String(
-            req.headers.authorization ||
-            ""
+            req.headers.authorization || ""
         );
 
-
-    if (
-        !authorization.startsWith(
-            "Bearer "
-        )
-    ) {
-
+    if (!authorization.startsWith("Bearer ")) {
         return null;
-
     }
-
 
     const token =
         authorization
-            .slice(
-                7
-            )
+            .slice(7)
             .trim();
 
-
-    if (
-        !token
-    ) {
-
+    if (!token) {
         return null;
-
     }
-
 
     try {
 
@@ -225,256 +144,239 @@ async function getUser(
                 token
             );
 
-
         if (
             error ||
             !data ||
             !data.user
         ) {
-
             return null;
-
         }
-
 
         return data.user;
 
     } catch {
-
         return null;
-
     }
-
 }
 
 
 /* =========================================================
-   IDIOMAS
+   LANGUAGES
    ========================================================= */
 
-function normalizeLanguages(
-    value
-) {
+function normalizeLanguages(value) {
 
-    if (
-        !Array.isArray(
-            value
-        )
-    ) {
-
+    if (!Array.isArray(value)) {
         return [];
-
     }
-
 
     return [
         ...new Set(
             value
                 .map(
                     item =>
-                        String(
-                            item || ""
-                        )
+                        String(item || "")
                             .trim()
                             .toLowerCase()
                 )
                 .filter(
                     item =>
-                        LANGS.has(
-                            item
-                        )
+                        LANGS.has(item)
                 )
         )
     ];
-
 }
 
 
 /* =========================================================
-   TIEMPO VTT
+   VTT TIME
    ========================================================= */
 
-function vttTime(
-    value
-) {
+function vttTime(value) {
 
     const milliseconds =
         Math.max(
             0,
             Math.round(
-                Number(
-                    value || 0
-                ) * 1000
+                Number(value || 0) * 1000
             )
         );
 
-
     const hours =
         Math.floor(
-            milliseconds /
-                3600000
+            milliseconds / 3600000
         );
-
 
     const minutes =
         Math.floor(
-            (
-                milliseconds %
-                3600000
-            ) / 60000
+            (milliseconds % 3600000) / 60000
         );
-
 
     const seconds =
         Math.floor(
-            (
-                milliseconds %
-                60000
-            ) / 1000
+            (milliseconds % 60000) / 1000
         );
 
-
     const ms =
-        milliseconds %
-        1000;
-
+        milliseconds % 1000;
 
     return (
-        String(
-            hours
-        ).padStart(
-            2,
-            "0"
-        ) +
+        String(hours).padStart(2, "0") +
         ":" +
-        String(
-            minutes
-        ).padStart(
-            2,
-            "0"
-        ) +
+        String(minutes).padStart(2, "0") +
         ":" +
-        String(
-            seconds
-        ).padStart(
-            2,
-            "0"
-        ) +
+        String(seconds).padStart(2, "0") +
         "." +
-        String(
-            ms
-        ).padStart(
-            3,
-            "0"
-        )
+        String(ms).padStart(3, "0")
     );
-
 }
 
 
 /* =========================================================
-   LIMPIAR TEXTO
+   CLEAN TEXT
    ========================================================= */
 
-function cleanText(
-    value
-) {
+function cleanText(value) {
 
-    return String(
-        value || ""
-    )
-        .replace(
-            /\r|\n+/g,
-            " "
-        )
-        .replace(
-            /\s+/g,
-            " "
-        )
+    return String(value || "")
+        .replace(/\r|\n+/g, " ")
+        .replace(/\s+/g, " ")
         .trim();
-
 }
 
 
 /* =========================================================
-   CREAR VTT
+   NORMALIZE SEGMENTS
    ========================================================= */
 
-function makeVTT(
-    segments
-) {
+function normalizeSegments(segments) {
+
+    if (!Array.isArray(segments)) {
+        return [];
+    }
+
+    return segments
+        .map(segment => ({
+            start:
+                Number(segment?.start),
+
+            end:
+                Number(segment?.end),
+
+            text:
+                cleanText(
+                    segment?.text
+                )
+        }))
+        .filter(segment =>
+            segment.text &&
+            Number.isFinite(segment.start) &&
+            Number.isFinite(segment.end) &&
+            segment.end > segment.start
+        )
+        .sort(
+            (a, b) =>
+                a.start - b.start
+        );
+}
+
+
+/* =========================================================
+   MAKE VTT
+   ========================================================= */
+
+function makeVTT(segments) {
+
+    const validSegments =
+        normalizeSegments(
+            segments
+        );
 
     const lines = [
         "WEBVTT",
         ""
     ];
 
+    const MAX_GAP_EXTENSION = 15;
 
     for (
-        const segment of segments
+        let i = 0;
+        i < validSegments.length;
+        i++
     ) {
 
-        const text =
-            cleanText(
-                segment.text
-            );
+        const segment =
+            validSegments[i];
 
+        const next =
+            validSegments[i + 1] || null;
 
-        const start =
-            Number(
-                segment.start
-            );
+        let start =
+            segment.start;
 
+        let end =
+            segment.end;
 
-        const end =
-            Number(
-                segment.end
-            );
-
+        /*
+         * Si hay hueco entre un segmento y el siguiente,
+         * extendemos el anterior hasta el comienzo del siguiente.
+         *
+         * Esto evita que los subtítulos desaparezcan
+         * durante pequeños o medianos huecos de Whisper.
+         */
 
         if (
-            !text ||
-            !Number.isFinite(
-                start
-            ) ||
-            !Number.isFinite(
-                end
-            ) ||
-            end <=
-                start
+            next &&
+            next.start > end
         ) {
 
-            continue;
+            const gap =
+                next.start - end;
 
+            if (
+                gap <=
+                MAX_GAP_EXTENSION
+            ) {
+
+                end =
+                    next.start;
+
+            } else {
+
+                /*
+                 * En huecos excesivamente largos
+                 * no mantenemos indefinidamente
+                 * la misma frase.
+                 */
+
+                end =
+                    segment.end +
+                    MAX_GAP_EXTENSION;
+
+            }
         }
 
+        if (end <= start) {
+            continue;
+        }
 
         lines.push(
             `${vttTime(start)} --> ${vttTime(end)}`
         );
 
-
         lines.push(
-            text
+            segment.text
         );
 
-
-        lines.push(
-            ""
-        );
-
+        lines.push("");
     }
 
-
-    return lines.join(
-        "\n"
-    );
-
+    return lines.join("\n");
 }
 
 
 /* =========================================================
-   PETICIÓN A GROQ
+   GROQ REQUEST
    ========================================================= */
 
 async function groqRequest(
@@ -488,48 +390,35 @@ async function groqRequest(
             url,
             {
                 ...options,
-
                 headers: {
                     ...(options.headers || {}),
-
                     Authorization:
                         `Bearer ${apiKey}`
                 }
             }
         );
 
-
     const raw =
         await response.text();
 
-
     let body;
-
 
     try {
 
         body =
-            JSON.parse(
-                raw
-            );
+            JSON.parse(raw);
 
     } catch {
 
         body = {
-
             error: {
-                message:
-                    raw
+                message: raw
             }
-
         };
 
     }
 
-
-    if (
-        !response.ok
-    ) {
+    if (!response.ok) {
 
         const error =
             new Error(
@@ -537,23 +426,18 @@ async function groqRequest(
                 `Groq HTTP ${response.status}`
             );
 
-
         error.status =
             response.status;
 
-
         throw error;
-
     }
 
-
     return body;
-
 }
 
 
 /* =========================================================
-   TRANSCRIPCIÓN ÁRABE
+   WHISPER ARABIC
    ========================================================= */
 
 async function transcribeArabic(
@@ -564,128 +448,64 @@ async function transcribeArabic(
     const form =
         new FormData();
 
-
     form.append(
         "model",
         GROQ_STT
     );
-
 
     form.append(
         "url",
         audioUrl
     );
 
-
     form.append(
         "language",
         "ar"
     );
-
 
     form.append(
         "response_format",
         "verbose_json"
     );
 
-
     /*
-     * Groq espera este parámetro como array.
+     * NO timestamp_granularities.
+     *
+     * El endpoint devuelve segments con verbose_json.
      */
-
-    form.append(
-        "timestamp_granularities[]",
-        "segment"
-    );
-
 
     form.append(
         "temperature",
         "0"
     );
 
-
     const result =
         await groqRequest(
             "https://api.groq.com/openai/v1/audio/transcriptions",
             {
-                method:
-                    "POST",
-
-                body:
-                    form
+                method: "POST",
+                body: form
             },
             apiKey
         );
 
-
-    const segments =
-        Array.isArray(
-            result.segments
-        )
-            ? result.segments
-            : [];
-
-
     const cleanSegments =
-        segments
-            .map(
-                segment => ({
+        normalizeSegments(
+            result?.segments
+        );
 
-                    start:
-                        Number(
-                            segment.start
-                        ),
-
-                    end:
-                        Number(
-                            segment.end
-                        ),
-
-                    text:
-                        cleanText(
-                            segment.text
-                        )
-
-                })
-            )
-            .filter(
-                segment =>
-
-                    segment.text &&
-
-                    Number.isFinite(
-                        segment.start
-                    ) &&
-
-                    Number.isFinite(
-                        segment.end
-                    ) &&
-
-                    segment.end >
-                        segment.start
-
-            );
-
-
-    if (
-        !cleanSegments.length
-    ) {
-
+    if (!cleanSegments.length) {
         throw new Error(
             "La IA no devolvió segmentos de transcripción."
         );
-
     }
 
-
     return cleanSegments;
-
 }
 
 
 /* =========================================================
-   TRADUCCIÓN DE UN BLOQUE
+   TRANSLATE BATCH
    ========================================================= */
 
 async function translateBatch(
@@ -695,35 +515,19 @@ async function translateBatch(
 ) {
 
     const languageNames = {
-
-        es:
-            "Spanish",
-
-        en:
-            "English",
-
-        ru:
-            "Russian"
-
+        es: "Spanish",
+        en: "English",
+        ru: "Russian"
     };
 
-
     const targetLanguage =
-        languageNames[
-            language
-        ];
+        languageNames[language];
 
-
-    if (
-        !targetLanguage
-    ) {
-
+    if (!targetLanguage) {
         throw new Error(
-            `Idioma de traducción no válido: ${language}`
+            `Idioma no soportado: ${language}`
         );
-
     }
-
 
     const input =
         batch.map(
@@ -731,215 +535,278 @@ async function translateBatch(
                 segment,
                 index
             ) => ({
-
-                i:
-                    index,
-
-                text:
-                    segment.text
-
+                i: index,
+                text: segment.text
             })
         );
 
+    /*
+     * Primero intentamos Structured Outputs.
+     */
 
-    const result =
-        await groqRequest(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
+    const structuredBody = {
 
-                method:
-                    "POST",
+        model:
+            GROQ_LLM,
 
-                headers: {
+        temperature:
+            0.1,
 
-                    "Content-Type":
-                        "application/json"
+        response_format: {
 
-                },
+            type:
+                "json_schema",
 
-                body:
-                    JSON.stringify({
+            json_schema: {
 
-                        model:
-                            GROQ_LLM,
+                name:
+                    "nasheed_translation",
 
-                        temperature:
-                            0.1,
+                strict:
+                    true,
 
-                        /*
-                         * GPT-OSS puede devolver razonamiento.
-                         * Lo ocultamos para dejar únicamente
-                         * la salida estructurada.
-                         */
+                schema: {
 
-                        reasoning_format:
-                            "hidden",
+                    type:
+                        "object",
 
-                        /*
-                         * Structured Outputs.
-                         */
+                    properties: {
 
-                        response_format: {
+                        translations: {
 
                             type:
-                                "json_schema",
+                                "array",
 
-                            json_schema: {
+                            items: {
 
-                                name:
-                                    "nasheed_translation",
+                                type:
+                                    "object",
 
-                                strict:
-                                    true,
+                                properties: {
 
-                                schema: {
-
-                                    type:
-                                        "object",
-
-                                    properties: {
-
-                                        translations: {
-
-                                            type:
-                                                "array",
-
-                                            items: {
-
-                                                type:
-                                                    "object",
-
-                                                properties: {
-
-                                                    i: {
-
-                                                        type:
-                                                            "integer"
-
-                                                    },
-
-                                                    text: {
-
-                                                        type:
-                                                            "string"
-
-                                                    }
-
-                                                },
-
-                                                required: [
-
-                                                    "i",
-                                                    "text"
-
-                                                ],
-
-                                                additionalProperties:
-                                                    false
-
-                                            }
-
-                                        }
-
+                                    i: {
+                                        type:
+                                            "integer"
                                     },
 
-                                    required: [
+                                    text: {
+                                        type:
+                                            "string"
+                                    }
 
-                                        "translations"
+                                },
 
-                                    ],
+                                required: [
+                                    "i",
+                                    "text"
+                                ],
 
-                                    additionalProperties:
-                                        false
-
-                                }
-
+                                additionalProperties:
+                                    false
                             }
+                        }
+                    },
 
-                        },
+                    required: [
+                        "translations"
+                    ],
 
-                        messages: [
+                    additionalProperties:
+                        false
+                }
+            }
+        },
 
-                            {
+        messages: [
 
-                                role:
-                                    "system",
+            {
+                role:
+                    "system",
 
-                                content:
-                                    `Translate Arabic nasheed lyrics into ${targetLanguage}. ` +
-                                    "Preserve the meaning carefully. " +
-                                    "Translate every supplied item individually. " +
-                                    "Keep the same index for every item. " +
-                                    "Do not add explanations or extra text."
+                content:
+                    `Translate Arabic nasheed lyrics into ${targetLanguage}.
 
-                            },
-
-                            {
-
-                                role:
-                                    "user",
-
-                                content:
-                                    JSON.stringify({
-
-                                        translations:
-                                            input
-
-                                    })
-
-                            }
-
-                        ]
-
-                    })
-
+Rules:
+- Translate every segment.
+- Preserve every index.
+- Never omit a segment.
+- Do not return Arabic as the translated text.
+- Do not explain anything.
+- Return only the requested JSON structure.`
             },
-            apiKey
-        );
 
+            {
+                role:
+                    "user",
 
-    let content =
-        result?.choices?.[0]?.message?.content ||
-        "";
+                content:
+                    JSON.stringify({
+                        translations:
+                            input
+                    })
+            }
 
+        ]
+    };
 
-    if (
-        !content
-    ) {
+    let result;
 
-        throw new Error(
-            `Groq no devolvió traducciones para ${targetLanguage}.`
-        );
+    try {
 
+        result =
+            await groqRequest(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            structuredBody
+                        )
+                },
+                apiKey
+            );
+
+    } catch (error) {
+
+        /*
+         * Fallback por compatibilidad con la
+         * API si Structured Outputs devuelve 400.
+         */
+
+        if (error.status !== 400) {
+            throw error;
+        }
+
+        const fallbackBody = {
+
+            model:
+                GROQ_LLM,
+
+            temperature:
+                0.1,
+
+            response_format: {
+                type:
+                    "json_object"
+            },
+
+            messages: [
+
+                {
+                    role:
+                        "system",
+
+                    content:
+                        `Translate Arabic nasheed lyrics into ${targetLanguage}.
+
+Return ONLY valid JSON:
+{
+  "translations": [
+    {
+      "i": 0,
+      "text": "translated text"
+    }
+  ]
+}
+
+Rules:
+- Translate every segment.
+- Keep every index.
+- Do not omit segments.
+- Do not return Arabic as translation.
+- Do not add explanations.`
+                },
+
+                {
+                    role:
+                        "user",
+
+                    content:
+                        JSON.stringify({
+                            translations:
+                                input
+                        })
+                }
+
+            ]
+        };
+
+        result =
+            await groqRequest(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            fallbackBody
+                        )
+                },
+                apiKey
+            );
     }
 
+    let content =
+        result
+            ?.choices
+            ?.[0]
+            ?.message
+            ?.content || "";
+
+    content =
+        content
+            .trim()
+            .replace(
+                /^```json\s*/i,
+                ""
+            )
+            .replace(
+                /^```\s*/i,
+                ""
+            )
+            .replace(
+                /\s*```$/i,
+                ""
+            )
+            .trim();
+
+    if (!content) {
+        throw new Error(
+            `Groq no devolvió traducción para ${targetLanguage}.`
+        );
+    }
 
     let parsed;
-
 
     try {
 
         parsed =
-            JSON.parse(
-                content
-            );
+            JSON.parse(content);
 
-    } catch (
-        error
-    ) {
+    } catch {
 
         console.error(
             "[GROQ TRANSLATION RAW]",
             content
         );
 
-
         throw new Error(
-            `La traducción ${targetLanguage} devolvió JSON inválido.`
+            `La traducción ${targetLanguage} no devolvió JSON válido.`
         );
-
     }
-
 
     if (
         !parsed ||
@@ -951,13 +818,10 @@ async function translateBatch(
         throw new Error(
             `La traducción ${targetLanguage} no contiene translations.`
         );
-
     }
-
 
     const map =
         new Map();
-
 
     for (
         const item of
@@ -969,17 +833,13 @@ async function translateBatch(
                 item?.i
             );
 
-
         const text =
             cleanText(
                 item?.text
             );
 
-
         if (
-            Number.isInteger(
-                index
-            ) &&
+            Number.isInteger(index) &&
             text
         ) {
 
@@ -989,36 +849,52 @@ async function translateBatch(
             );
 
         }
-
     }
 
+    /*
+     * IMPORTANTE:
+     *
+     * NO usamos:
+     * map.get(index) || original.text
+     *
+     * porque eso hacía que el árabe apareciera
+     * como "traducción".
+     */
 
     return batch.map(
         (
             original,
             index
-        ) => ({
+        ) => {
 
-            start:
-                original.start,
+            const translated =
+                map.get(index);
 
-            end:
-                original.end,
+            if (!translated) {
 
-            text:
-                map.get(
-                    index
-                ) ||
-                original.text
+                throw new Error(
+                    `La traducción ${targetLanguage} no devolvió el segmento ${index}.`
+                );
+            }
 
-        })
+            return {
+
+                start:
+                    original.start,
+
+                end:
+                    original.end,
+
+                text:
+                    translated
+            };
+        }
     );
-
 }
 
 
 /* =========================================================
-   TRADUCIR TODO
+   TRANSLATE ALL
    ========================================================= */
 
 async function translateAll(
@@ -1027,9 +903,7 @@ async function translateAll(
     apiKey
 ) {
 
-    const output =
-        [];
-
+    const output = [];
 
     for (
         let i = 0;
@@ -1043,7 +917,6 @@ async function translateAll(
                 i + 45
             );
 
-
         const translated =
             await translateBatch(
                 batch,
@@ -1051,21 +924,17 @@ async function translateAll(
                 apiKey
             );
 
-
         output.push(
             ...translated
         );
-
     }
 
-
     return output;
-
 }
 
 
 /* =========================================================
-   SIGNED URL
+   SIGN URL
    ========================================================= */
 
 async function signUrl(
@@ -1079,31 +948,22 @@ async function signUrl(
         error
     } =
         await supabase.storage
-            .from(
-                BUCKET
-            )
+            .from(BUCKET)
             .createSignedUrl(
                 storagePath,
                 seconds
             );
 
-
-    if (
-        error
-    ) {
-
+    if (error) {
         throw error;
-
     }
 
-
     return data.signedUrl;
-
 }
 
 
 /* =========================================================
-   CONVERTIR NASHEED PRIVADO
+   PRIVATE TRACK
    ========================================================= */
 
 async function privateTrack(
@@ -1111,17 +971,14 @@ async function privateTrack(
     row
 ) {
 
-    const subtitles =
-        {};
-
+    const subtitles = {};
 
     for (
         const [
             language,
             storagePath
         ] of Object.entries(
-            row.subtitles ||
-            {}
+            row.subtitles || {}
         )
     ) {
 
@@ -1130,30 +987,29 @@ async function privateTrack(
                 "__"
             )
         ) {
-
             continue;
-
         }
 
+        if (
+            typeof storagePath !==
+                "string" ||
+            !storagePath
+        ) {
+            continue;
+        }
 
-        subtitles[
-            language
-        ] =
+        subtitles[language] =
             await signUrl(
                 supabase,
                 storagePath,
                 86400
             );
-
     }
-
 
     return {
 
         id:
-            Number(
-                row.id
-            ),
+            Number(row.id),
 
         title:
             row.title,
@@ -1167,13 +1023,11 @@ async function privateTrack(
 
         cover:
             row.cover_path
-
                 ? await signUrl(
                     supabase,
                     row.cover_path,
                     86400
                 )
-
                 : "",
 
         subtitles,
@@ -1189,29 +1043,23 @@ async function privateTrack(
 
         created_at:
             row.created_at
-
     };
-
 }
 
 
 /* =========================================================
-   RUTAS
+   ROUTES
    ========================================================= */
 
 function registerUserNasheedRoutes({
-
     app,
-
     supabase,
-
     groqApiKey
-
 }) {
 
 
     /* =====================================================
-       MIS NASHEEDS
+       LISTA DEL USUARIO
        ===================================================== */
 
     app.get(
@@ -1227,24 +1075,14 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
-
-            if (
-                !currentUser
-            ) {
-
+            if (!currentUser) {
                 return res
-                    .status(
-                        401
-                    )
+                    .status(401)
                     .json({
-
                         error:
                             "Debes iniciar sesión."
-
                     });
-
             }
-
 
             try {
 
@@ -1271,25 +1109,17 @@ function registerUserNasheedRoutes({
                             }
                         );
 
-
-                if (
-                    error
-                ) {
-
+                if (error) {
                     throw error;
-
                 }
-
 
                 return res.json({
 
                     nasheeds:
                         (
-                            data ||
-                            []
+                            data || []
                         ).map(
                             item => ({
-
                                 id:
                                     Number(
                                         item.id
@@ -1310,35 +1140,24 @@ function registerUserNasheedRoutes({
 
                                 upload_day:
                                     item.upload_day
-
                             })
                         )
-
                 });
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 console.error(
                     "[USER NASHEEDS LIST]",
                     error
                 );
 
-
                 return res
-                    .status(
-                        500
-                    )
+                    .status(500)
                     .json({
-
                         error:
                             "No se pudieron cargar tus nasheeds."
-
                     });
-
             }
-
         }
     );
 
@@ -1360,184 +1179,118 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
-
-            if (
-                !currentUser
-            ) {
-
+            if (!currentUser) {
                 return res
-                    .status(
-                        401
-                    )
+                    .status(401)
                     .json({
-
                         error:
                             "Debes iniciar sesión."
-
                     });
-
             }
 
-
-            let uploadId =
-                null;
-
+            let uploadId = null;
 
             try {
 
                 const title =
                     String(
-                        req.body?.title ||
-                        ""
+                        req.body?.title || ""
                     ).trim();
 
-
                 const audio =
-                    req.body?.audio ||
-                    {};
-
+                    req.body?.audio || {};
 
                 const cover =
-                    req.body?.cover ||
-                    null;
-
+                    req.body?.cover || null;
 
                 const translations =
                     normalizeLanguages(
                         req.body?.translations
                     );
 
-
                 const audioSize =
                     Number(
                         audio.size
                     );
 
-
                 const audioType =
                     String(
-                        audio.type ||
-                        ""
+                        audio.type || ""
                     );
-
 
                 if (
                     !title ||
-                    title.length >
-                        120
+                    title.length > 120
                 ) {
-
                     return res
-                        .status(
-                            400
-                        )
+                        .status(400)
                         .json({
-
                             error:
                                 "El título es obligatorio y debe tener como máximo 120 caracteres."
-
                         });
-
                 }
-
 
                 if (
                     !Number.isFinite(
                         audioSize
                     ) ||
-                    audioSize <=
-                        0 ||
-                    audioSize >
-                        MAX_AUDIO
+                    audioSize <= 0 ||
+                    audioSize > MAX_AUDIO
                 ) {
-
                     return res
-                        .status(
-                            400
-                        )
+                        .status(400)
                         .json({
-
                             error:
                                 "El audio debe pesar como máximo 25 MB."
-
                         });
-
                 }
-
 
                 if (
                     !AUDIO_TYPES.has(
                         audioType
                     )
                 ) {
-
                     return res
-                        .status(
-                            400
-                        )
+                        .status(400)
                         .json({
-
                             error:
                                 "Formato de audio no compatible."
-
                         });
-
                 }
 
-
-                if (
-                    cover
-                ) {
+                if (cover) {
 
                     const coverSize =
                         Number(
                             cover.size
                         );
 
-
                     const coverType =
                         String(
-                            cover.type ||
-                            ""
+                            cover.type || ""
                         );
-
 
                     if (
                         !Number.isFinite(
                             coverSize
                         ) ||
-                        coverSize <=
-                            0 ||
-                        coverSize >
-                            MAX_COVER ||
+                        coverSize <= 0 ||
+                        coverSize > MAX_COVER ||
                         !COVER_TYPES.has(
                             coverType
                         )
                     ) {
-
                         return res
-                            .status(
-                                400
-                            )
+                            .status(400)
                             .json({
-
                                 error:
                                     "La portada debe ser JPG, PNG o WebP y pesar como máximo 5 MB."
-
                             });
-
                     }
-
                 }
-
 
                 const uploadDay =
                     day();
-
-
-                /* =========================================
-                   COMPROBAR SUBIDA DIARIA
-                   ========================================= */
 
                 const existing =
                     await supabase
@@ -1545,7 +1298,7 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .select(
-                            "id,status,title,audio_path,cover_path,subtitles"
+                            "id,status,title"
                         )
                         .eq(
                             "user_id",
@@ -1557,20 +1310,16 @@ function registerUserNasheedRoutes({
                         )
                         .maybeSingle();
 
-
-                if (
-                    existing.error
-                ) {
-
+                if (existing.error) {
                     throw existing.error;
-
                 }
 
-
                 /*
-                 * PROCESSING y READY bloquean.
+                 * processing/ready:
+                 * la subida del día ya está consumida.
                  *
-                 * ERROR se puede reintentar.
+                 * error:
+                 * permitimos volver a intentarla.
                  */
 
                 if (
@@ -1578,18 +1327,14 @@ function registerUserNasheedRoutes({
                     (
                         existing.data.status ===
                             "processing" ||
-
                         existing.data.status ===
                             "ready"
                     )
                 ) {
 
                     return res
-                        .status(
-                            409
-                        )
+                        .status(409)
                         .json({
-
                             error:
                                 "Ya tienes una subida para hoy.",
 
@@ -1600,15 +1345,12 @@ function registerUserNasheedRoutes({
 
                             status:
                                 existing.data.status
-
                         });
-
                 }
 
-
-                /* =========================================
-                   REUTILIZAR ERROR
-                   ========================================= */
+                /*
+                 * Reutilizamos un registro que falló.
+                 */
 
                 if (
                     existing.data &&
@@ -1621,16 +1363,13 @@ function registerUserNasheedRoutes({
                             existing.data.id
                         );
 
-
                     const reset =
                         await supabase
                             .from(
                                 "user_nasheeds"
                             )
                             .update({
-
-                                title:
-                                    title,
+                                title,
 
                                 audio_path:
                                     "",
@@ -1639,10 +1378,8 @@ function registerUserNasheedRoutes({
                                     null,
 
                                 subtitles: {
-
                                     __requested:
                                         translations
-
                                 },
 
                                 status:
@@ -1650,7 +1387,6 @@ function registerUserNasheedRoutes({
 
                                 error_message:
                                     null
-
                             })
                             .eq(
                                 "id",
@@ -1661,25 +1397,16 @@ function registerUserNasheedRoutes({
                                 currentUser.id
                             );
 
-
-                    if (
-                        reset.error
-                    ) {
-
+                    if (reset.error) {
                         throw reset.error;
-
                     }
-
                 }
 
+                /*
+                 * Registro nuevo.
+                 */
 
-                /* =========================================
-                   CREAR REGISTRO
-                   ========================================= */
-
-                if (
-                    !uploadId
-                ) {
+                if (!uploadId) {
 
                     const inserted =
                         await supabase
@@ -1687,12 +1414,10 @@ function registerUserNasheedRoutes({
                                 "user_nasheeds"
                             )
                             .insert({
-
                                 user_id:
                                     currentUser.id,
 
-                                title:
-                                    title,
+                                title,
 
                                 audio_path:
                                     "",
@@ -1701,10 +1426,8 @@ function registerUserNasheedRoutes({
                                     null,
 
                                 subtitles: {
-
                                     __requested:
                                         translations
-
                                 },
 
                                 status:
@@ -1715,38 +1438,22 @@ function registerUserNasheedRoutes({
 
                                 upload_day:
                                     uploadDay
-
                             })
-                            .select(
-                                "id"
-                            )
+                            .select("id")
                             .single();
 
-
-                    if (
-                        inserted.error
-                    ) {
-
+                    if (inserted.error) {
                         throw inserted.error;
-
                     }
-
 
                     uploadId =
                         Number(
                             inserted.data.id
                         );
-
                 }
-
-
-                /* =========================================
-                   PATHS
-                   ========================================= */
 
                 const prefix =
                     `${currentUser.id}/${uploadDay}/${uploadId}-${rnd()}`;
-
 
                 const audioPath =
                     `${prefix}/audio.${ext(
@@ -1754,28 +1461,18 @@ function registerUserNasheedRoutes({
                         audio.name
                     )}`;
 
-
                 const coverPath =
                     cover
-
                         ? `${prefix}/cover.${ext(
                             cover.type,
                             cover.name
                         )}`
-
                         : null;
-
-
-                /* =========================================
-                   AUDIO SIGNED UPLOAD
-                   ========================================= */
 
                 const audioSigned =
                     await supabase
                         .storage
-                        .from(
-                            BUCKET
-                        )
+                        .from(BUCKET)
                         .createSignedUploadUrl(
                             audioPath,
                             {
@@ -1784,34 +1481,18 @@ function registerUserNasheedRoutes({
                             }
                         );
 
-
-                if (
-                    audioSigned.error
-                ) {
-
+                if (audioSigned.error) {
                     throw audioSigned.error;
-
                 }
 
+                let coverSigned = null;
 
-                /* =========================================
-                   COVER SIGNED UPLOAD
-                   ========================================= */
-
-                let coverSigned =
-                    null;
-
-
-                if (
-                    coverPath
-                ) {
+                if (coverPath) {
 
                     coverSigned =
                         await supabase
                             .storage
-                            .from(
-                                BUCKET
-                            )
+                            .from(BUCKET)
                             .createSignedUploadUrl(
                                 coverPath,
                                 {
@@ -1820,21 +1501,12 @@ function registerUserNasheedRoutes({
                                 }
                             );
 
-
                     if (
                         coverSigned.error
                     ) {
-
                         throw coverSigned.error;
-
                     }
-
                 }
-
-
-                /* =========================================
-                   GUARDAR PATHS
-                   ========================================= */
 
                 const updated =
                     await supabase
@@ -1842,13 +1514,11 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .update({
-
                             audio_path:
                                 audioPath,
 
                             cover_path:
                                 coverPath
-
                         })
                         .eq(
                             "id",
@@ -1859,15 +1529,9 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
-
-                if (
-                    updated.error
-                ) {
-
+                if (updated.error) {
                     throw updated.error;
-
                 }
-
 
                 return res.json({
 
@@ -1886,15 +1550,11 @@ function registerUserNasheedRoutes({
                             audioSigned
                                 .data
                                 .token
-
                     },
 
                     cover:
-
                         coverSigned
-
                             ? {
-
                                 path:
                                     coverPath,
 
@@ -1902,33 +1562,24 @@ function registerUserNasheedRoutes({
                                     coverSigned
                                         .data
                                         .token
-
                             }
-
                             : null
-
                 });
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 console.error(
                     "[USER NASHEED PREPARE]",
                     error
                 );
 
-
-                if (
-                    uploadId
-                ) {
+                if (uploadId) {
 
                     await supabase
                         .from(
                             "user_nasheeds"
                         )
                         .update({
-
                             status:
                                 "error",
 
@@ -1940,7 +1591,6 @@ function registerUserNasheedRoutes({
                                     0,
                                     500
                                 )
-
                         })
                         .eq(
                             "id",
@@ -1950,30 +1600,22 @@ function registerUserNasheedRoutes({
                             "user_id",
                             currentUser.id
                         );
-
                 }
 
-
                 return res
-                    .status(
-                        500
-                    )
+                    .status(500)
                     .json({
-
                         error:
                             error.message ||
                             "No se pudo preparar la subida."
-
                     });
-
             }
-
         }
     );
 
 
     /* =====================================================
-       PROCESAR NASHEED
+       PROCESAR
        ===================================================== */
 
     app.post(
@@ -1989,68 +1631,41 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
-
-            if (
-                !currentUser
-            ) {
-
+            if (!currentUser) {
                 return res
-                    .status(
-                        401
-                    )
+                    .status(401)
                     .json({
-
                         error:
                             "Debes iniciar sesión."
-
                     });
-
             }
 
-
-            if (
-                !groqApiKey
-            ) {
-
+            if (!groqApiKey) {
                 return res
-                    .status(
-                        503
-                    )
+                    .status(503)
                     .json({
-
                         error:
                             "GROQ_API_KEY no está configurada."
-
                     });
-
             }
-
 
             const id =
                 Number(
                     req.params.id
                 );
 
-
             if (
                 !Number.isSafeInteger(
                     id
                 )
             ) {
-
                 return res
-                    .status(
-                        400
-                    )
+                    .status(400)
                     .json({
-
                         error:
                             "ID no válido."
-
                     });
-
             }
-
 
             try {
 
@@ -2059,9 +1674,7 @@ function registerUserNasheedRoutes({
                         .from(
                             "user_nasheeds"
                         )
-                        .select(
-                            "*"
-                        )
+                        .select("*")
                         .eq(
                             "id",
                             id
@@ -2072,76 +1685,47 @@ function registerUserNasheedRoutes({
                         )
                         .single();
 
-
                 if (
                     query.error ||
                     !query.data
                 ) {
-
                     return res
-                        .status(
-                            404
-                        )
+                        .status(404)
                         .json({
-
                             error:
                                 "Nasheed no encontrado."
-
                         });
-
                 }
-
 
                 const row =
                     query.data;
 
-
-                if (
-                    !row.audio_path
-                ) {
-
+                if (!row.audio_path) {
                     return res
-                        .status(
-                            400
-                        )
+                        .status(400)
                         .json({
-
                             error:
                                 "Falta el audio subido."
-
                         });
-
                 }
-
-
-                /* =========================================
-                   SIGNED AUDIO
-                   ========================================= */
 
                 const signedAudio =
                     await supabase
                         .storage
-                        .from(
-                            BUCKET
-                        )
+                        .from(BUCKET)
                         .createSignedUrl(
                             row.audio_path,
                             600
                         );
 
-
-                if (
-                    signedAudio.error
-                ) {
-
+                if (signedAudio.error) {
                     throw signedAudio.error;
-
                 }
 
-
-                /* =========================================
-                   TRANSCRIPCIÓN
-                   ========================================= */
+                console.log(
+                    "[USER NASHEED] Transcribiendo:",
+                    row.title
+                );
 
                 const arabic =
                     await transcribeArabic(
@@ -2151,78 +1735,56 @@ function registerUserNasheedRoutes({
                         groqApiKey
                     );
 
-
-                /* =========================================
-                   PREFIX
-                   ========================================= */
+                console.log(
+                    "[USER NASHEED] Segmentos:",
+                    arabic.length
+                );
 
                 const prefix =
                     row.audio_path
-                        .split(
-                            "/"
-                        )
-                        .slice(
-                            0,
-                            -1
-                        )
-                        .join(
-                            "/"
-                        );
+                        .split("/")
+                        .slice(0, -1)
+                        .join("/");
 
+                const subtitlePaths = {};
 
-                const subtitlePaths =
-                    {};
-
-
-                /* =========================================
-                   ÁRABE
-                   ========================================= */
+                /*
+                 * ÁRABE
+                 */
 
                 const arabicPath =
                     `${prefix}/subtitles/ar.vtt`;
 
-
                 const arabicUpload =
                     await supabase
                         .storage
-                        .from(
-                            BUCKET
-                        )
+                        .from(BUCKET)
                         .upload(
                             arabicPath,
-                            Buffer.from(
-                                makeVTT(
-                                    arabic
-                                )
-                            ),
-                            {
 
+                            Buffer.from(
+                                makeVTT(arabic)
+                            ),
+
+                            {
                                 contentType:
                                     "text/vtt; charset=utf-8",
 
                                 upsert:
                                     true
-
                             }
                         );
 
-
-                if (
-                    arabicUpload.error
-                ) {
-
+                if (arabicUpload.error) {
                     throw arabicUpload.error;
-
                 }
-
 
                 subtitlePaths.ar =
                     arabicPath;
 
-
-                /* =========================================
-                   TRADUCCIONES
-                   ========================================= */
+                /*
+                 * TRADUCCIONES
+                 */
 
                 const requested =
                     normalizeLanguages(
@@ -2230,11 +1792,19 @@ function registerUserNasheedRoutes({
                             ?.__requested
                     );
 
+                console.log(
+                    "[USER NASHEED] Idiomas:",
+                    requested
+                );
 
                 for (
                     const language of
                     requested
                 ) {
+
+                    console.log(
+                        `[USER NASHEED] Traduciendo ${language}`
+                    );
 
                     const translated =
                         await translateAll(
@@ -2243,56 +1813,44 @@ function registerUserNasheedRoutes({
                             groqApiKey
                         );
 
-
                     const translationPath =
                         `${prefix}/subtitles/${language}.vtt`;
-
 
                     const upload =
                         await supabase
                             .storage
-                            .from(
-                                BUCKET
-                            )
+                            .from(BUCKET)
                             .upload(
                                 translationPath,
+
                                 Buffer.from(
                                     makeVTT(
                                         translated
                                     )
                                 ),
-                                {
 
+                                {
                                     contentType:
                                         "text/vtt; charset=utf-8",
 
                                     upsert:
                                         true
-
                                 }
                             );
 
-
-                    if (
-                        upload.error
-                    ) {
-
+                    if (upload.error) {
                         throw upload.error;
-
                     }
-
 
                     subtitlePaths[
                         language
                     ] =
                         translationPath;
-
                 }
 
-
-                /* =========================================
-                   GUARDAR RESULTADO
-                   ========================================= */
+                /*
+                 * READY
+                 */
 
                 const saved =
                     await supabase
@@ -2300,7 +1858,6 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .update({
-
                             subtitles:
                                 subtitlePaths,
 
@@ -2309,7 +1866,6 @@ function registerUserNasheedRoutes({
 
                             error_message:
                                 null
-
                         })
                         .eq(
                             "id",
@@ -2320,15 +1876,9 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
-
-                if (
-                    saved.error
-                ) {
-
+                if (saved.error) {
                     throw saved.error;
-
                 }
-
 
                 return res.json({
 
@@ -2342,25 +1892,20 @@ function registerUserNasheedRoutes({
 
                     status:
                         "ready"
-
                 });
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 console.error(
                     "[USER NASHEED PROCESS]",
                     error
                 );
 
-
                 await supabase
                     .from(
                         "user_nasheeds"
                     )
                     .update({
-
                         status:
                             "error",
 
@@ -2372,7 +1917,6 @@ function registerUserNasheedRoutes({
                                 0,
                                 500
                             )
-
                     })
                     .eq(
                         "id",
@@ -2383,24 +1927,18 @@ function registerUserNasheedRoutes({
                         currentUser.id
                     );
 
-
                 return res
                     .status(
-                        error.status ===
-                            429
+                        error.status === 429
                             ? 429
                             : 500
                     )
                     .json({
-
                         error:
                             error.message ||
                             "No se pudo procesar el nasheed."
-
                     });
-
             }
-
         }
     );
 
@@ -2418,10 +1956,6 @@ function registerUserNasheedRoutes({
 
             try {
 
-                /* =========================================
-                   NASHEEDS PÚBLICOS
-                   ========================================= */
-
                 const publicRows =
                     await supabase
                         .from(
@@ -2438,15 +1972,11 @@ function registerUserNasheedRoutes({
                             }
                         );
 
-
                 if (
                     publicRows.error
                 ) {
-
                     throw publicRows.error;
-
                 }
-
 
                 const publicTracks =
                     (
@@ -2481,14 +2011,8 @@ function registerUserNasheedRoutes({
 
                             private:
                                 false
-
                         })
                     );
-
-
-                /* =========================================
-                   USUARIO
-                   ========================================= */
 
                 const currentUser =
                     await getUser(
@@ -2496,21 +2020,11 @@ function registerUserNasheedRoutes({
                         supabase
                     );
 
-
-                if (
-                    !currentUser
-                ) {
-
+                if (!currentUser) {
                     return res.json(
                         publicTracks
                     );
-
                 }
-
-
-                /* =========================================
-                   NASHEEDS PRIVADOS
-                   ========================================= */
 
                 const privateRows =
                     await supabase
@@ -2536,25 +2050,24 @@ function registerUserNasheedRoutes({
                             }
                         );
 
-
                 if (
                     privateRows.error
                 ) {
-
                     throw privateRows.error;
-
                 }
 
-
-                const privateTracks =
-                    [];
-
+                const privateTracks = [];
 
                 for (
                     const row of
-                    privateRows.data ||
-                    []
+                    privateRows.data || []
                 ) {
+
+                    if (
+                        !row.audio_path
+                    ) {
+                        continue;
+                    }
 
                     privateTracks.push(
                         await privateTrack(
@@ -2562,44 +2075,29 @@ function registerUserNasheedRoutes({
                             row
                         )
                     );
-
                 }
 
-
                 return res.json([
-
                     ...privateTracks,
-
                     ...publicTracks
-
                 ]);
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 console.error(
                     "[NASHEEDS API]",
                     error
                 );
 
-
                 return res
-                    .status(
-                        500
-                    )
+                    .status(500)
                     .json({
-
                         error:
                             "No se pudieron cargar los nasheeds."
-
                     });
-
             }
-
         }
     );
-
 }
 
 
@@ -2608,7 +2106,5 @@ function registerUserNasheedRoutes({
    ========================================================= */
 
 module.exports = {
-
     registerUserNasheedRoutes
-
 };

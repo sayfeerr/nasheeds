@@ -23,9 +23,11 @@
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
         rel="stylesheet">
 
+
     <style>
 
         body {
+
             font-family:
                 'Plus Jakarta Sans',
                 sans-serif;
@@ -35,9 +37,12 @@
 
             color:
                 #f4f4f5;
+
         }
 
+
         .glass-sidebar {
+
             background:
                 rgba(9,9,11,.75);
 
@@ -47,9 +52,12 @@
             border-right:
                 1px solid
                 rgba(255,255,255,.05);
+
         }
 
+
         .glass-panel {
+
             background:
                 rgba(18,18,23,.6);
 
@@ -59,9 +67,12 @@
             border:
                 1px solid
                 rgba(255,255,255,.04);
+
         }
 
+
         .glass-player {
+
             background:
                 rgba(9,9,11,.88);
 
@@ -71,143 +82,291 @@
             border-top:
                 1px solid
                 rgba(255,255,255,.06);
+
         }
 
+
         .section-tab {
-            opacity: 0;
-            transform: translateY(8px);
+
+            opacity:
+                0;
+
+            transform:
+                translateY(8px);
+
             transition:
                 opacity .3s ease,
                 transform .3s ease;
-            position: absolute;
-            width: 100%;
-            pointer-events: none;
-            visibility: hidden;
+
+            position:
+                absolute;
+
+            width:
+                100%;
+
+            pointer-events:
+                none;
+
+            visibility:
+                hidden;
+
         }
+
 
         .section-tab.active {
-            opacity: 1;
-            transform: translateY(0);
-            position: relative;
-            pointer-events: auto;
-            visibility: visible;
+
+            opacity:
+                1;
+
+            transform:
+                translateY(0);
+
+            position:
+                relative;
+
+            pointer-events:
+                auto;
+
+            visibility:
+                visible;
+
         }
 
+
         body.animations-enabled .card-hover {
+
             transition:
                 transform .35s cubic-bezier(.4,0,.2,1),
                 background-color .35s ease,
                 border-color .35s ease,
                 box-shadow .35s ease;
+
         }
 
+
         body.animations-enabled .card-hover:hover {
-            transform: translateY(-6px);
-            background: rgba(24,24,32,.8);
-            border-color: rgba(245,158,11,.3);
+
+            transform:
+                translateY(-6px);
+
+            background:
+                rgba(24,24,32,.8);
+
+            border-color:
+                rgba(245,158,11,.3);
+
             box-shadow:
                 0 20px 30px -10px rgba(0,0,0,.5);
+
         }
+
 
         body.animations-enabled button,
         body.animations-enabled a {
-            transition: all .2s ease;
+
+            transition:
+                all .2s ease;
+
         }
+
 
         body.animations-disabled * {
-            transition: none !important;
-            transform: none !important;
+
+            transition:
+                none !important;
+
+            transform:
+                none !important;
+
         }
+
 
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+
+            width:
+                6px;
+
+            height:
+                6px;
+
         }
+
 
         ::-webkit-scrollbar-track {
-            background: transparent;
+
+            background:
+                transparent;
+
         }
+
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,.1);
-            border-radius: 4px;
+
+            background:
+                rgba(255,255,255,.1);
+
+            border-radius:
+                4px;
+
         }
+
 
         .mobile-bottom-nav {
-            display: none;
+
+            display:
+                none;
+
         }
+
 
         .mobile-logo {
-            display: none;
+
+            display:
+                none;
+
         }
+
 
         .cover-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            object-fit:
+                cover;
+
+            display:
+                block;
+
         }
+
 
         .desktop-menu-icon {
-            width: 32px;
-            height: 32px;
-            flex: 0 0 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 25px;
-            line-height: 1;
+
+            width:
+                32px;
+
+            height:
+                32px;
+
+            flex:
+                0 0 32px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            font-size:
+                25px;
+
+            line-height:
+                1;
+
         }
+
 
         .mobile-menu-icon {
-            width: 29px;
-            height: 29px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 23px;
-            line-height: 1;
+
+            width:
+                29px;
+
+            height:
+                29px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            font-size:
+                23px;
+
+            line-height:
+                1;
+
         }
 
+
         /* =====================================================
-           SUBTITULOS
+           SUBTÍTULOS
            ===================================================== */
 
         #subtitle-overlay {
-            position: fixed;
-            left: 50%;
-            bottom: 108px;
+
+            position:
+                fixed;
+
+            left:
+                50%;
+
+            bottom:
+                108px;
+
             transform:
-                translateX(-50%)
-                translateY(12px);
+                translateX(-50%) translateY(12px);
 
             width:
                 min(760px, calc(100vw - 32px));
 
-            z-index: 29;
-            pointer-events: none;
-            opacity: 0;
-            visibility: hidden;
+            z-index:
+                29;
+
+            pointer-events:
+                none;
+
+            opacity:
+                0;
+
+            visibility:
+                hidden;
 
             transition:
                 opacity .25s ease,
                 transform .25s ease,
                 visibility .25s ease;
+
         }
+
 
         #subtitle-overlay.visible {
-            opacity: 1;
-            visibility: visible;
+
+            opacity:
+                1;
+
+            visibility:
+                visible;
+
             transform:
-                translateX(-50%)
-                translateY(0);
+                translateX(-50%) translateY(0);
+
         }
 
+
         .subtitle-glass {
-            position: relative;
-            overflow: hidden;
-            border-radius: 24px;
-            padding: 18px 24px 20px;
+
+            position:
+                relative;
+
+            overflow:
+                hidden;
+
+            border-radius:
+                24px;
+
+            padding:
+                18px 24px 20px;
 
             background:
                 rgba(8,8,11,.58);
@@ -218,74 +377,162 @@
 
             box-shadow:
                 0 20px 50px rgba(0,0,0,.45),
-                inset 0 1px 0
-                rgba(255,255,255,.06);
+                inset 0 1px 0 rgba(255,255,255,.06);
 
             backdrop-filter:
                 blur(18px);
 
             -webkit-backdrop-filter:
                 blur(18px);
+
         }
+
 
         .subtitle-background {
-            position: absolute;
-            inset: -25px;
-            background-position: center;
-            background-size: cover;
-            filter: blur(22px);
-            transform: scale(1.15);
-            opacity: .42;
-            z-index: 0;
+
+            position:
+                absolute;
+
+            inset:
+                -25px;
+
+            background-position:
+                center;
+
+            background-size:
+                cover;
+
+            filter:
+                blur(22px);
+
+            transform:
+                scale(1.15);
+
+            opacity:
+                .42;
+
+            z-index:
+                0;
+
         }
+
 
         .subtitle-background::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(5,5,8,.60);
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            background:
+                rgba(5,5,8,.60);
+
         }
+
 
         .subtitle-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
+
+            position:
+                relative;
+
+            z-index:
+                2;
+
+            text-align:
+                center;
+
         }
 
+
         .subtitle-arabic {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;
-            font-family: 'Amiri', serif;
-            font-size: clamp(25px,3vw,38px);
-            line-height: 1.55;
-            font-weight: 700;
-            direction: rtl;
-            text-align: right;
-            unicode-bidi: plaintext;
-            color: rgba(255,255,255,.92);
+
+            position:
+                relative;
+
+            display:
+                inline-block;
+
+            max-width:
+                100%;
+
+            font-family:
+                'Amiri',
+                serif;
+
+            font-size:
+                clamp(25px,3vw,38px);
+
+            line-height:
+                1.55;
+
+            font-weight:
+                700;
+
+            direction:
+                rtl;
+
+            text-align:
+                right;
+
+            unicode-bidi:
+                plaintext;
+
+            color:
+                rgba(255,255,255,.92);
 
             text-shadow:
                 0 2px 8px rgba(0,0,0,.75),
                 0 0 24px rgba(0,0,0,.35);
+
         }
+
 
         .subtitle-base {
-            position: relative;
-            z-index: 1;
-            color: rgba(255,255,255,.88);
+
+            position:
+                relative;
+
+            z-index:
+                1;
+
+            color:
+                rgba(255,255,255,.88);
+
         }
 
+
         .subtitle-highlight {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            color: #fbbf24;
-            overflow: hidden;
-            white-space: nowrap;
-            direction: rtl;
-            text-align: right;
-            unicode-bidi: plaintext;
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            z-index:
+                2;
+
+            color:
+                #fbbf24;
+
+            overflow:
+                hidden;
+
+            white-space:
+                nowrap;
+
+            direction:
+                rtl;
+
+            text-align:
+                right;
+
+            unicode-bidi:
+                plaintext;
 
             text-shadow:
                 0 2px 10px rgba(0,0,0,.75),
@@ -296,12 +543,20 @@
 
             transition:
                 clip-path .08s linear;
+
         }
 
+
         .subtitle-secondary {
-            position: relative;
-            z-index: 3;
-            margin-top: 4px;
+
+            position:
+                relative;
+
+            z-index:
+                3;
+
+            margin-top:
+                4px;
 
             font-family:
                 'Plus Jakarta Sans',
@@ -310,28 +565,63 @@
             font-size:
                 clamp(11px,1.5vw,16px);
 
-            line-height: 1.4;
-            font-weight: 500;
-            color: rgba(255,255,255,.68);
-            direction: ltr;
-            text-align: center;
-            min-height: 0;
+            line-height:
+                1.4;
+
+            font-weight:
+                500;
+
+            color:
+                rgba(255,255,255,.68);
+
+            direction:
+                ltr;
+
+            text-align:
+                center;
+
+            min-height:
+                0;
+
         }
+
 
         .subtitle-progress {
-            position: relative;
-            z-index: 3;
-            height: 2px;
-            width: min(280px,60%);
-            margin: 8px auto 0;
-            border-radius: 999px;
-            background: rgba(255,255,255,.08);
-            overflow: hidden;
+
+            position:
+                relative;
+
+            z-index:
+                3;
+
+            height:
+                2px;
+
+            width:
+                min(280px,60%);
+
+            margin:
+                8px auto 0;
+
+            border-radius:
+                999px;
+
+            background:
+                rgba(255,255,255,.08);
+
+            overflow:
+                hidden;
+
         }
 
+
         .subtitle-progress-bar {
-            width: 0%;
-            height: 100%;
+
+            width:
+                0%;
+
+            height:
+                100%;
 
             background:
                 linear-gradient(
@@ -340,55 +630,104 @@
                     rgba(251,191,36,.95)
                 );
 
-            border-radius: inherit;
+            border-radius:
+                inherit;
+
         }
 
+
         /* =====================================================
-           SUBTITLE MENU
+           MENÚ SUBTÍTULOS
            ===================================================== */
 
         .subtitle-menu-wrapper {
-            position: relative;
+
+            position:
+                relative;
+
         }
 
+
         .subtitle-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 7px 10px;
-            border-radius: 10px;
+
+            display:
+                inline-flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                6px;
+
+            padding:
+                7px 10px;
+
+            border-radius:
+                10px;
 
             border:
                 1px solid
                 rgba(255,255,255,.08);
 
-            background: rgba(255,255,255,.04);
-            color: rgb(161,161,170);
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
+            background:
+                rgba(255,255,255,.04);
+
+            color:
+                rgb(161,161,170);
+
+            font-size:
+                10px;
+
+            font-weight:
+                700;
+
+            cursor:
+                pointer;
+
         }
+
 
         .subtitle-button:hover,
         .subtitle-button.active {
-            color: #fbbf24;
-            background: rgba(245,158,11,.10);
-            border-color: rgba(245,158,11,.25);
+
+            color:
+                #fbbf24;
+
+            background:
+                rgba(245,158,11,.10);
+
+            border-color:
+                rgba(245,158,11,.25);
+
         }
 
+
         .subtitle-menu {
-            position: absolute;
-            right: 0;
-            bottom: calc(100% + 9px);
-            width: 190px;
-            padding: 8px;
+
+            position:
+                absolute;
+
+            right:
+                0;
+
+            bottom:
+                calc(100% + 9px);
+
+            width:
+                190px;
+
+            padding:
+                8px;
 
             border:
                 1px solid
                 rgba(255,255,255,.08);
 
-            border-radius: 16px;
+            border-radius:
+                16px;
 
             background:
                 rgba(12,12,15,.96);
@@ -399,81 +738,178 @@
             box-shadow:
                 0 20px 40px rgba(0,0,0,.35);
 
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(5px);
+            opacity:
+                0;
+
+            visibility:
+                hidden;
+
+            transform:
+                translateY(5px);
 
             transition:
                 opacity .2s ease,
                 transform .2s ease,
                 visibility .2s ease;
 
-            z-index: 80;
+            z-index:
+                80;
+
         }
+
 
         .subtitle-menu.open {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
+
+            opacity:
+                1;
+
+            visibility:
+                visible;
+
+            transform:
+                translateY(0);
+
         }
+
 
         .subtitle-menu-title {
-            padding: 6px 8px 8px;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            color: rgba(255,255,255,.38);
+
+            padding:
+                6px 8px 8px;
+
+            font-size:
+                9px;
+
+            font-weight:
+                800;
+
+            text-transform:
+                uppercase;
+
+            letter-spacing:
+                .08em;
+
+            color:
+                rgba(255,255,255,.38);
+
         }
+
 
         .subtitle-option {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 9px 10px;
-            border-radius: 10px;
-            background: transparent;
-            color: rgb(161,161,170);
-            font-size: 10px;
-            font-weight: 600;
-            text-align: left;
-            cursor: pointer;
+
+            width:
+                100%;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            padding:
+                9px 10px;
+
+            border-radius:
+                10px;
+
+            background:
+                transparent;
+
+            color:
+                rgb(161,161,170);
+
+            font-size:
+                10px;
+
+            font-weight:
+                600;
+
+            text-align:
+                left;
+
+            cursor:
+                pointer;
+
         }
+
 
         .subtitle-option:hover {
-            background: rgba(255,255,255,.05);
-            color: #f4f4f5;
+
+            background:
+                rgba(255,255,255,.05);
+
+            color:
+                #f4f4f5;
+
         }
+
 
         .subtitle-option.selected {
-            background: rgba(245,158,11,.10);
-            color: #fbbf24;
+
+            background:
+                rgba(245,158,11,.10);
+
+            color:
+                #fbbf24;
+
         }
 
+
         .subtitle-none {
-            padding: 12px 10px;
-            text-align: center;
-            color: rgb(113,113,122);
-            font-size: 10px;
-            line-height: 1.4;
+
+            padding:
+                12px 10px;
+
+            text-align:
+                center;
+
+            color:
+                rgb(113,113,122);
+
+            font-size:
+                10px;
+
+            line-height:
+                1.4;
+
         }
+
 
         /* =====================================================
            IDIOMA
            ===================================================== */
 
         .ui-language-switcher {
-            position: fixed;
-            top: 14px;
-            right: 16px;
-            z-index: 90;
 
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            padding: 3px;
-            border-radius: 12px;
+            position:
+                fixed;
+
+            top:
+                14px;
+
+            right:
+                16px;
+
+            z-index:
+                90;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                3px;
+
+            padding:
+                3px;
+
+            border-radius:
+                12px;
 
             background:
                 rgba(12,12,15,.86);
@@ -484,428 +920,104 @@
 
             backdrop-filter:
                 blur(15px);
+
         }
+
 
         .ui-language-button {
-            border: 0;
-            background: transparent;
-            color: rgb(113,113,122);
-            padding: 5px 8px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 800;
-            cursor: pointer;
+
+            border:
+                0;
+
+            background:
+                transparent;
+
+            color:
+                rgb(113,113,122);
+
+            padding:
+                5px 8px;
+
+            border-radius:
+                8px;
+
+            font-size:
+                9px;
+
+            font-weight:
+                800;
+
+            cursor:
+                pointer;
+
         }
+
 
         .ui-language-button.active {
-            background: rgba(245,158,11,.12);
-            color: #fbbf24;
-        }
-
-        /* =====================================================
-           CUENTA
-           ===================================================== */
-
-        .nushud-account-button {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 8px;
-            border-radius: 14px;
-            border: 1px solid transparent;
-            background: transparent;
-            color: #a1a1aa;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        .nushud-account-button:hover {
-            background: rgba(255,255,255,.04);
-            border-color: rgba(255,255,255,.06);
-        }
-
-        .nushud-account-avatar {
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            border-radius: 50%;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            background: rgba(245,158,11,.10);
-            border: 1px solid rgba(245,158,11,.20);
-            color: #fbbf24;
-            font-size: 11px;
-            font-weight: 900;
-        }
-
-        .nushud-account-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .nushud-account-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: #e4e4e7;
-            font-size: 10px;
-            font-weight: 800;
-        }
-
-        .nushud-account-status {
-            margin-top: 3px;
-            color: #71717a;
-            font-size: 9px;
-        }
-
-        .nushud-account-arrow {
-            color: #52525b;
-            font-size: 12px;
-        }
-
-        .nushud-account-menu {
-            position: fixed;
-            z-index: 10001;
-            display: none;
-            width: 220px;
-            padding: 9px;
-            border-radius: 17px;
 
             background:
-                rgba(14,14,18,.97);
-
-            border:
-                1px solid
-                rgba(255,255,255,.08);
-
-            backdrop-filter:
-                blur(18px);
-
-            box-shadow:
-                0 25px 60px rgba(0,0,0,.55);
-        }
-
-        .nushud-account-menu.open {
-            display: block;
-        }
-
-        .nushud-account-menu-email {
-            padding: 8px;
-            color: #71717a;
-            font-size: 9px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .nushud-account-menu-button {
-            width: 100%;
-            padding: 9px 10px;
-            border: 0;
-            border-radius: 10px;
-            background: transparent;
-            color: #a1a1aa;
-            text-align: left;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .nushud-account-menu-button:hover {
-            background: rgba(255,255,255,.05);
-            color: #f4f4f5;
-        }
-
-        .nushud-account-menu-button.danger:hover {
-            color: #f87171;
-            background: rgba(239,68,68,.07);
-        }
-
-        /* =====================================================
-           UPLOAD
-           ===================================================== */
-
-        #section-upload {
-            max-width: 720px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .nushud-upload-shell {
-            width: 100%;
-        }
-
-        .nushud-upload-card {
-            border-radius: 26px;
-            overflow: hidden;
-
-            background:
-                rgba(18,18,23,.62);
-
-            border:
-                1px solid
                 rgba(245,158,11,.12);
 
-            box-shadow:
-                0 20px 60px rgba(0,0,0,.20);
+            color:
+                #fbbf24;
+
         }
 
-        .nushud-upload-header {
-            padding: 22px;
-            border-bottom:
-                1px solid
-                rgba(255,255,255,.05);
-        }
-
-        .nushud-upload-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: #f4f4f5;
-        }
-
-        .nushud-upload-description {
-            margin-top: 5px;
-            font-size: 10px;
-            color: #71717a;
-            line-height: 1.5;
-        }
-
-        .nushud-upload-body {
-            padding: 22px;
-        }
-
-        .nushud-upload-field {
-            margin-bottom: 16px;
-        }
-
-        .nushud-upload-label {
-            display: block;
-            margin-bottom: 7px;
-            font-size: 10px;
-            font-weight: 800;
-            color: #a1a1aa;
-        }
-
-        .nushud-upload-input {
-            width: 100%;
-            padding: 12px 13px;
-            border-radius: 13px;
-
-            background:
-                rgba(6,6,8,.75);
-
-            border:
-                1px solid
-                rgba(255,255,255,.08);
-
-            color: #f4f4f5;
-            outline: none;
-            font-size: 11px;
-        }
-
-        .nushud-upload-input:focus {
-            border-color:
-                rgba(245,158,11,.55);
-
-            box-shadow:
-                0 0 0 3px
-                rgba(245,158,11,.08);
-        }
-
-        .nushud-upload-file {
-            width: 100%;
-            padding: 12px;
-            border-radius: 13px;
-
-            background:
-                rgba(6,6,8,.75);
-
-            border:
-                1px solid
-                rgba(255,255,255,.08);
-
-            color: #a1a1aa;
-            font-size: 10px;
-        }
-
-        .nushud-upload-language-grid {
-            display: grid;
-            grid-template-columns:
-                repeat(3, minmax(0,1fr));
-            gap: 8px;
-        }
-
-        .nushud-upload-language {
-            position: relative;
-        }
-
-        .nushud-upload-language input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .nushud-upload-language label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 42px;
-            padding: 8px 10px;
-            border-radius: 12px;
-
-            background:
-                rgba(255,255,255,.03);
-
-            border:
-                1px solid
-                rgba(255,255,255,.07);
-
-            color: #71717a;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .nushud-upload-language input:checked + label {
-            background:
-                rgba(245,158,11,.10);
-
-            border-color:
-                rgba(245,158,11,.28);
-
-            color: #fbbf24;
-        }
-
-        .nushud-upload-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .nushud-upload-button {
-            border: 1px solid transparent;
-            border-radius: 13px;
-            padding: 11px 18px;
-            background: #f59e0b;
-            color: #18181b;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-        }
-
-        .nushud-upload-button:hover {
-            background: #fbbf24;
-        }
-
-        .nushud-upload-button:disabled {
-            opacity: .55;
-            cursor: not-allowed;
-        }
-
-        .nushud-upload-secondary {
-            border:
-                1px solid
-                rgba(255,255,255,.08);
-
-            border-radius: 13px;
-            padding: 11px 18px;
-            background:
-                rgba(255,255,255,.035);
-
-            color: #a1a1aa;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .nushud-upload-status {
-            min-height: 17px;
-            margin-top: 12px;
-            text-align: center;
-            font-size: 10px;
-            line-height: 1.5;
-        }
-
-        .nushud-upload-status.error {
-            color: #f87171;
-        }
-
-        .nushud-upload-status.success {
-            color: #fbbf24;
-        }
-
-        .nushud-private-list {
-            margin-top: 18px;
-            display: grid;
-            gap: 8px;
-        }
-
-        .nushud-private-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 12px 13px;
-            border-radius: 14px;
-
-            background:
-                rgba(255,255,255,.025);
-
-            border:
-                1px solid
-                rgba(255,255,255,.06);
-        }
-
-        .nushud-private-item-title {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 10px;
-            font-weight: 800;
-            color: #e4e4e7;
-        }
-
-        .nushud-private-item-status {
-            flex-shrink: 0;
-            font-size: 8px;
-            font-weight: 800;
-            color: #71717a;
-        }
 
         /* =====================================================
-           WARNING
+           ADVERTENCIA
            ===================================================== */
 
         .warning-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+
+            position:
+                fixed;
+
+            inset:
+                0;
+
+            z-index:
+                100;
+
+            display:
+                none;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            padding:
+                20px;
 
             background:
                 rgba(0,0,0,.48);
 
             backdrop-filter:
                 blur(10px);
+
         }
+
 
         .warning-modal-backdrop.open {
-            display: flex;
+
+            display:
+                flex;
+
         }
 
+
         .warning-modal {
-            width: min(500px,100%);
-            padding: 25px;
-            border-radius: 27px;
+
+            width:
+                min(500px,100%);
+
+            padding:
+                25px;
+
+            border-radius:
+                27px;
 
             background:
                 rgba(17,17,21,.68);
@@ -913,23 +1025,41 @@
             backdrop-filter:
                 blur(25px);
 
+            -webkit-backdrop-filter:
+                blur(25px);
+
             border:
                 1px solid
                 rgba(245,158,11,.25);
 
             box-shadow:
-                0 30px 80px rgba(0,0,0,.60),
+                0 30px 80px
+                rgba(0,0,0,.60),
                 inset 0 1px 0
                 rgba(255,255,255,.06);
+
         }
 
+
         .warning-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+            width:
+                50px;
+
+            height:
+                50px;
+
+            border-radius:
+                16px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
 
             background:
                 rgba(245,158,11,.10);
@@ -938,91 +1068,236 @@
                 1px solid
                 rgba(245,158,11,.20);
 
-            color: #fbbf24;
-            font-size: 22px;
+            color:
+                #fbbf24;
+
+            font-size:
+                22px;
+
         }
 
+
         .warning-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 22px;
+
+            display:
+                flex;
+
+            gap:
+                10px;
+
+            margin-top:
+                22px;
+
         }
+
 
         .warning-cancel,
         .warning-continue {
-            flex: 1;
-            padding: 11px 14px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 800;
-            cursor: pointer;
+
+            flex:
+                1;
+
+            padding:
+                11px 14px;
+
+            border-radius:
+                12px;
+
+            font-size:
+                11px;
+
+            font-weight:
+                800;
+
+            cursor:
+                pointer;
+
         }
+
 
         .warning-cancel {
-            background: rgba(255,255,255,.04);
-            color: #a1a1aa;
-            border: 1px solid rgba(255,255,255,.08);
+
+            background:
+                rgba(255,255,255,.04);
+
+            color:
+                #a1a1aa;
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
         }
+
 
         .warning-continue {
-            background: #f59e0b;
-            color: #18181b;
-            border: 1px solid transparent;
+
+            background:
+                #f59e0b;
+
+            color:
+                #18181b;
+
+            border:
+                1px solid
+                transparent;
+
         }
+
 
         .warning-continue:hover {
-            background: #fbbf24;
+
+            background:
+                #fbbf24;
+
         }
 
-        @media (max-width: 767px) {
+
+        /* =====================================================
+           PRIVADO
+           ===================================================== */
+
+        .private-badge {
+
+            position:
+                absolute;
+
+            top:
+                8px;
+
+            left:
+                8px;
+
+            z-index:
+                5;
+
+            padding:
+                4px 7px;
+
+            border-radius:
+                8px;
+
+            background:
+                rgba(5,5,8,.78);
+
+            border:
+                1px solid
+                rgba(245,158,11,.15);
+
+            color:
+                rgba(251,191,36,.85);
+
+            font-size:
+                7px;
+
+            line-height:
+                1;
+
+            font-weight:
+                800;
+
+            letter-spacing:
+                .08em;
+
+            backdrop-filter:
+                blur(8px);
+
+        }
+
+
+        /* =====================================================
+           MÓVIL
+           ===================================================== */
+
+        @media (max-width:767px) {
 
             :root {
-                --mobile-nav-height: 64px;
-                --mobile-player-gap: 10px;
+
+                --mobile-nav-height:
+                    64px;
+
+                --mobile-player-gap:
+                    10px;
+
             }
+
 
             .ui-language-switcher {
-                top: 10px;
-                right: 10px;
+
+                top:
+                    10px;
+
+                right:
+                    10px;
+
             }
 
+
             #mobile-audio-player {
+
                 bottom:
                     calc(
                         var(--mobile-nav-height) +
                         env(safe-area-inset-bottom)
                     ) !important;
 
-                z-index: 45 !important;
+                z-index:
+                    45 !important;
+
             }
 
+
             #subtitle-overlay {
+
                 bottom:
                     calc(
                         var(--mobile-subtitle-bottom, 210px) +
                         env(safe-area-inset-bottom)
                     );
 
-                z-index: 35;
+                z-index:
+                    35;
+
             }
+
 
             .subtitle-glass {
-                padding: 12px 13px 13px;
-                border-radius: 19px;
+
+                padding:
+                    12px 13px 13px;
+
+                border-radius:
+                    19px;
+
             }
+
 
             .subtitle-arabic {
-                font-size: clamp(23px,7vw,31px);
-                line-height: 1.5;
+
+                font-size:
+                    clamp(23px,7vw,31px);
+
+                line-height:
+                    1.5;
+
             }
+
 
             .subtitle-secondary {
-                font-size: clamp(10px,3.2vw,14px);
+
+                font-size:
+                    clamp(10px,3.2vw,14px);
+
             }
 
+
             .subtitle-menu {
-                position: fixed;
-                right: 10px;
+
+                position:
+                    fixed;
+
+                right:
+                    10px;
 
                 bottom:
                     calc(
@@ -1030,24 +1305,49 @@
                         112px +
                         env(safe-area-inset-bottom)
                     );
+
             }
+
 
             .mobile-logo {
-                display: flex;
-                margin: 0 0 12px;
-                height: 42px;
-                align-items: center;
-                gap: 10px;
+
+                display:
+                    flex;
+
+                margin:
+                    0 0 12px;
+
+                height:
+                    42px;
+
+                align-items:
+                    center;
+
+                gap:
+                    10px;
+
             }
 
-            .mobile-logo-mark {
-                width: 40px;
-                height: 40px;
-                border-radius: 15px;
 
-                display: flex;
-                align-items: center;
-                justify-content: center;
+            .mobile-logo-mark {
+
+                width:
+                    40px;
+
+                height:
+                    40px;
+
+                border-radius:
+                    15px;
+
+                display:
+                    flex;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
 
                 background:
                     linear-gradient(
@@ -1060,27 +1360,57 @@
                 box-shadow:
                     0 8px 22px
                     rgba(245,158,11,.15);
+
             }
+
 
             .mobile-logo-mark svg {
-                width: 21px;
-                height: 21px;
+
+                width:
+                    21px;
+
+                height:
+                    21px;
+
             }
+
 
             .mobile-logo-title {
-                font-size: 14px;
-                font-weight: 800;
-                letter-spacing: .14em;
-                color: #f59e0b;
+
+                font-size:
+                    14px;
+
+                font-weight:
+                    800;
+
+                letter-spacing:
+                    .14em;
+
+                color:
+                    #f59e0b;
+
             }
 
+
             .mobile-bottom-nav {
-                display: grid;
-                grid-template-columns: repeat(4,1fr);
-                position: fixed;
-                left: 0;
-                right: 0;
-                bottom: 0;
+
+                display:
+                    grid;
+
+                grid-template-columns:
+                    repeat(4,1fr);
+
+                position:
+                    fixed;
+
+                left:
+                    0;
+
+                right:
+                    0;
+
+                bottom:
+                    0;
 
                 min-height:
                     var(--mobile-nav-height);
@@ -1101,54 +1431,123 @@
                 backdrop-filter:
                     blur(20px);
 
+                -webkit-backdrop-filter:
+                    blur(20px);
+
                 border-top:
                     1px solid
                     rgba(255,255,255,.06);
 
-                z-index: 50;
+                z-index:
+                    50;
+
             }
+
 
             .mobile-bottom-nav button {
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 3px;
-                border: 1px solid transparent;
-                border-radius: 12px;
-                color: rgb(161 161 170);
-                background: transparent;
-                cursor: pointer;
-                -webkit-tap-highlight-color: transparent;
+
+                min-width:
+                    0;
+
+                display:
+                    flex;
+
+                flex-direction:
+                    column;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
+
+                gap:
+                    3px;
+
+                border:
+                    1px solid transparent;
+
+                border-radius:
+                    12px;
+
+                color:
+                    rgb(161 161 170);
+
+                background:
+                    transparent;
+
+                cursor:
+                    pointer;
+
+                -webkit-tap-highlight-color:
+                    transparent;
+
             }
+
 
             .mobile-bottom-nav button.active {
-                color: rgb(251 191 36);
-                background: rgba(245,158,11,.10);
-                border-color: rgba(245,158,11,.20);
+
+                color:
+                    rgb(251 191 36);
+
+                background:
+                    rgba(245,158,11,.10);
+
+                border-color:
+                    rgba(245,158,11,.20);
+
             }
 
+
             .mobile-bottom-nav span {
-                font-size: 10px;
-                line-height: 1;
-                font-weight: 700;
+
+                font-size:
+                    10px;
+
+                line-height:
+                    1;
+
+                font-weight:
+                    700;
+
             }
+
 
             .mobile-bottom-nav
             button > span:first-child {
-                width: 29px;
-                height: 29px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 23px;
-                line-height: 1;
+
+                width:
+                    29px;
+
+                height:
+                    29px;
+
+                display:
+                    flex;
+
+                align-items:
+                    center;
+
+                justify-content:
+                    center;
+
+                font-size:
+                    23px;
+
+                line-height:
+                    1;
+
             }
 
+
             .mobile-player {
-                padding: 8px 10px !important;
-                gap: 6px !important;
+
+                padding:
+                    8px 10px !important;
+
+                gap:
+                    6px !important;
+
                 border-top:
                     1px solid
                     rgba(255,255,255,.08);
@@ -1160,43 +1559,73 @@
                 box-shadow:
                     0 -12px 35px
                     rgba(0,0,0,.28);
+
             }
+
 
             .mobile-main {
-                padding-bottom: 15rem !important;
-                padding-left: 14px !important;
-                padding-right: 14px !important;
-                padding-top: 12px !important;
+
+                padding-bottom:
+                    15rem !important;
+
+                padding-left:
+                    14px !important;
+
+                padding-right:
+                    14px !important;
+
+                padding-top:
+                    12px !important;
+
             }
 
+
             .mobile-main .grid {
-                gap: 8px;
+
+                gap:
+                    8px;
+
             }
+
 
             .mobile-player-info,
             .mobile-player-controls {
-                width: 100% !important;
+
+                width:
+                    100% !important;
+
             }
+
 
             .mobile-player-quality {
-                display: none !important;
+
+                display:
+                    none !important;
+
             }
+
 
             .mobile-progress {
-                width: 100%;
+
+                width:
+                    100%;
+
             }
 
-            .nushud-upload-language-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
     </style>
 
 </head>
 
+
 <body
     class="min-h-screen flex flex-col selection:bg-amber-500 selection:text-zinc-950 overflow-x-hidden animations-enabled">
+
+
+<!-- =========================================================
+     IDIOMA
+     ========================================================= -->
 
 <div
     class="ui-language-switcher"
@@ -1206,32 +1635,48 @@
         id="ui-lang-es"
         class="ui-language-button active"
         onclick="setInterfaceLanguage('es')">
+
         ES
+
     </button>
+
 
     <button
         id="ui-lang-en"
         class="ui-language-button"
         onclick="setInterfaceLanguage('en')">
+
         EN
+
     </button>
 
 </div>
 
 
-<div class="flex flex-1 overflow-hidden relative">
+<div
+    class="flex flex-1 overflow-hidden relative">
+
+
+    <!-- =====================================================
+         SIDEBAR
+         ===================================================== -->
 
     <aside
         class="w-64 glass-sidebar hidden md:flex flex-col justify-between p-6 select-none shrink-0 z-20">
 
-        <div class="space-y-8">
+
+        <div
+            class="space-y-8">
+
 
             <div
                 class="flex items-center space-x-3 cursor-pointer group"
                 onclick="switchTab('home')">
 
+
                 <div
                     class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-500/15 group-hover:scale-105">
+
 
                     <svg
                         class="w-5 h-5 text-zinc-950"
@@ -1252,6 +1697,7 @@
 
                 </div>
 
+
                 <h1
                     class="font-extrabold text-sm tracking-widest text-amber-500">
 
@@ -1261,142 +1707,185 @@
 
             </div>
 
-            <nav class="space-y-1.5">
+
+            <nav
+                class="space-y-1.5">
+
 
                 <button
                     onclick="switchTab('home')"
                     id="nav-home"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
 
-                    <span class="desktop-menu-icon">
+                    <span
+                        class="desktop-menu-icon">
+
                         ⌂
+
                     </span>
 
-                    <span data-i18n="home">
+                    <span
+                        data-i18n="home">
+
                         Inicio
+
                     </span>
 
                 </button>
+
 
                 <button
                     onclick="switchTab('library')"
                     id="nav-library"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                    <span class="desktop-menu-icon">
+                    <span
+                        class="desktop-menu-icon">
+
                         ▣
+
                     </span>
 
-                    <span data-i18n="library">
+                    <span
+                        data-i18n="library">
+
                         Biblioteca
+
                     </span>
 
                 </button>
+
 
                 <button
                     onclick="switchTab('favorites')"
                     id="nav-favorites"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                    <span class="desktop-menu-icon">
+                    <span
+                        class="desktop-menu-icon">
+
                         ★
+
                     </span>
 
-                    <span data-i18n="favorites">
+                    <span
+                        data-i18n="favorites">
+
                         Favoritos
+
                     </span>
 
                 </button>
+
 
                 <button
                     onclick="switchTab('upload')"
                     id="nav-upload"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                    <span class="desktop-menu-icon">
+                    <span
+                        class="desktop-menu-icon">
+
                         ↑
+
                     </span>
 
-                    <span data-i18n="upload">
+                    <span
+                        data-i18n="upload">
+
                         Subir nasheed
+
                     </span>
 
                 </button>
+
 
                 <button
                     onclick="switchTab('settings')"
                     id="nav-settings"
                     class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                    <span class="desktop-menu-icon">
+                    <span
+                        class="desktop-menu-icon">
+
                         ⚙
+
                     </span>
 
-                    <span data-i18n="settings">
+                    <span
+                        data-i18n="settings">
+
                         Ajustes / Rendimiento
+
                     </span>
 
                 </button>
+
 
             </nav>
 
         </div>
 
+
         <div
-            class="pt-4 border-t border-white/5"
-            id="nushud-account">
+            class="pt-4 border-t border-white/5">
 
-            <button
-                type="button"
-                class="nushud-account-button"
-                id="nushud-account-button">
 
-                <div
-                    class="nushud-account-avatar"
-                    id="nushud-account-avatar">
+            <div
+                class="flex items-center space-x-3 px-2 py-2 text-zinc-400 text-xs">
 
-                    N
-
-                </div>
 
                 <div
-                    class="nushud-account-info">
+                    class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
 
-                    <div
-                        class="nushud-account-name"
-                        id="nushud-account-name">
-
-                        Iniciar sesión
-
-                    </div>
-
-                    <div
-                        class="nushud-account-status"
-                        id="nushud-account-status">
-
-                        Cuenta Nushud
-
-                    </div>
+                    ◉
 
                 </div>
 
-                <div class="nushud-account-arrow">
-                    ›
+
+                <div
+                    class="truncate">
+
+
+                    <p
+                        class="font-bold text-zinc-200 leading-none"
+                        data-i18n="securePlatform">
+
+                        Plataforma Segura
+
+                    </p>
+
+
+                    <span
+                        id="perf-status-label"
+                        class="text-[10px] text-zinc-500">
+
+                        Animaciones activas
+
+                    </span>
+
                 </div>
 
-            </button>
+            </div>
 
         </div>
 
     </aside>
 
 
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
     <main
         class="flex-1 overflow-y-auto pb-36 pt-8 px-6 md:px-12 max-w-7xl mx-auto relative mobile-main">
 
-        <div class="mobile-logo select-none">
 
-            <div class="mobile-logo-mark">
+        <div
+            class="mobile-logo select-none">
+
+            <div
+                class="mobile-logo-mark">
 
                 <svg
                     viewBox="0 0 24 24"
@@ -1416,30 +1905,45 @@
 
             </div>
 
-            <span class="mobile-logo-title">
+
+            <span
+                class="mobile-logo-title">
+
                 NASHEED
+
             </span>
 
         </div>
 
 
+        <!-- =================================================
+             HOME
+             ================================================= -->
+
         <div
             id="section-home"
             class="section-tab active space-y-8">
 
+
             <div
                 class="glass-panel rounded-3xl p-6 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden shadow-2xl border border-amber-500/15">
 
-                <div class="space-y-3 max-w-xl z-10">
+
+                <div
+                    class="space-y-3 max-w-xl z-10">
+
 
                     <div
                         class="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-widest">
 
                         <span>
+
                             NASHEED AUDIO PRO
+
                         </span>
 
                     </div>
+
 
                     <h2
                         class="text-2xl md:text-4xl font-extrabold text-zinc-100 tracking-tight"
@@ -1448,6 +1952,7 @@
                         Explora tu espiritualidad a través del arte acústico
 
                     </h2>
+
 
                     <p
                         class="text-xs md:text-sm text-zinc-400 font-medium leading-relaxed"
@@ -1458,6 +1963,7 @@
                     </p>
 
                 </div>
+
 
                 <button
                     onclick="switchTab('library')"
@@ -1470,9 +1976,14 @@
 
             </div>
 
-            <div class="space-y-4">
 
-                <div class="flex justify-between items-center">
+            <div
+                class="space-y-4">
+
+
+                <div
+                    class="flex justify-between items-center">
+
 
                     <h3
                         class="text-xs font-extrabold tracking-widest uppercase text-zinc-400"
@@ -1481,6 +1992,7 @@
                         Recomendado para ti
 
                     </h3>
+
 
                     <span
                         id="home-count"
@@ -1491,6 +2003,7 @@
                     </span>
 
                 </div>
+
 
                 <div
                     id="home-grid"
@@ -1503,11 +2016,18 @@
         </div>
 
 
+        <!-- =================================================
+             LIBRARY
+             ================================================= -->
+
         <div
             id="section-library"
             class="section-tab space-y-6">
 
-            <div class="flex justify-between items-center">
+
+            <div
+                class="flex justify-between items-center">
+
 
                 <div>
 
@@ -1519,6 +2039,7 @@
 
                     </h2>
 
+
                     <p
                         class="text-xs text-zinc-500"
                         data-i18n="libraryDescription">
@@ -1528,6 +2049,7 @@
                     </p>
 
                 </div>
+
 
                 <span
                     id="lib-count"
@@ -1539,6 +2061,7 @@
 
             </div>
 
+
             <div
                 id="library-grid"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -1548,9 +2071,14 @@
         </div>
 
 
+        <!-- =================================================
+             FAVORITES
+             ================================================= -->
+
         <div
             id="section-favorites"
             class="section-tab space-y-6">
+
 
             <div>
 
@@ -1564,6 +2092,7 @@
 
             </div>
 
+
             <div
                 id="favorites-grid"
                 class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -1573,50 +2102,35 @@
         </div>
 
 
+        <!-- =================================================
+             UPLOAD
+             ================================================= -->
+
         <div
             id="section-upload"
-            class="section-tab max-w-xl mx-auto space-y-5">
+            class="section-tab space-y-6">
 
-            <div class="flex items-center justify-between">
 
-                <div>
-
-                    <h2
-                        class="text-xl font-extrabold tracking-wide text-zinc-100">
-
-                        Subir nasheed
-
-                    </h2>
-
-                    <p
-                        class="text-xs text-zinc-500 mt-1">
-
-                        Tu espacio personal de nasheeds.
-
-                    </p>
-
-                </div>
-
-                <span
-                    class="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/15 text-[8px] font-bold text-amber-400 uppercase tracking-wider">
-
-                    1 al día
-
-                </span>
+            <div
+                id="upload-container">
 
             </div>
 
-            <div id="nushud-upload-content"></div>
-
         </div>
 
+
+        <!-- =================================================
+             SETTINGS
+             ================================================= -->
 
         <div
             id="section-settings"
             class="section-tab max-w-xl mx-auto space-y-6 glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl">
 
+
             <div
                 class="flex items-center space-x-3 pb-4 border-b border-white/5">
+
 
                 <div>
 
@@ -1627,6 +2141,7 @@
                         Ajustes de Rendimiento
 
                     </h3>
+
 
                     <p
                         class="text-[11px] text-zinc-500"
@@ -1640,8 +2155,10 @@
 
             </div>
 
+
             <div
                 class="flex items-center justify-between p-4 glass-panel rounded-2xl border border-white/5">
+
 
                 <div>
 
@@ -1654,6 +2171,7 @@
                     </h4>
 
                 </div>
+
 
                 <button
                     onclick="toggleAnimations()"
@@ -1673,44 +2191,68 @@
 </div>
 
 
+<!-- =========================================================
+     WARNING MODAL
+     ========================================================= -->
+
 <div
     id="warning-modal"
     class="warning-modal-backdrop">
 
-    <div class="warning-modal">
 
-        <div class="flex items-start gap-4">
+    <div
+        class="warning-modal">
 
-            <div class="warning-icon">
+
+        <div
+            class="flex items-start gap-4">
+
+
+            <div
+                class="warning-icon">
+
                 ⚠
+
             </div>
 
-            <div class="min-w-0 flex-1">
+
+            <div
+                class="min-w-0 flex-1">
+
 
                 <h2
                     id="warning-title"
                     class="text-sm md:text-base font-extrabold text-zinc-100">
+
                 </h2>
+
 
                 <p
                     id="warning-text"
                     class="mt-2 text-xs md:text-sm text-zinc-400 leading-relaxed">
+
                 </p>
 
             </div>
 
         </div>
 
-        <div class="warning-actions">
+
+        <div
+            class="warning-actions">
+
 
             <button
                 id="warning-cancel"
                 class="warning-cancel">
+
             </button>
+
 
             <button
                 id="warning-continue"
                 class="warning-continue">
+
             </button>
 
         </div>
@@ -1720,35 +2262,53 @@
 </div>
 
 
+<!-- =========================================================
+     SUBTÍTULOS
+     ========================================================= -->
+
 <div
     id="subtitle-overlay"
     aria-live="polite">
 
-    <div class="subtitle-glass">
+
+    <div
+        class="subtitle-glass">
+
 
         <div
             id="subtitle-background"
             class="subtitle-background">
+
         </div>
 
-        <div class="subtitle-content">
+
+        <div
+            class="subtitle-content">
+
 
             <div
                 id="subtitle-text"
                 class="subtitle-arabic">
+
             </div>
+
 
             <div
                 id="subtitle-secondary"
                 class="subtitle-secondary"
                 style="display:none;">
+
             </div>
 
-            <div class="subtitle-progress">
+
+            <div
+                class="subtitle-progress">
+
 
                 <div
                     id="subtitle-progress-bar"
                     class="subtitle-progress-bar">
+
                 </div>
 
             </div>
@@ -1760,28 +2320,40 @@
 </div>
 
 
+<!-- =========================================================
+     PLAYER
+     ========================================================= -->
+
 <div
     id="mobile-audio-player"
     class="fixed bottom-0 left-0 right-0 glass-player mobile-player px-6 py-4 z-30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
 
+
     <div
         class="flex items-center space-x-3.5 w-full md:w-1/4 mobile-player-info">
+
 
         <div
             id="player-cover"
             class="w-12 h-12 glass-panel rounded-xl flex items-center justify-center text-amber-400 shrink-0 border border-white/10 overflow-hidden">
 
             <span>
+
                 ♫
+
             </span>
 
         </div>
 
-        <div class="overflow-hidden">
+
+        <div
+            class="overflow-hidden">
+
 
             <h4
                 id="player-title"
                 class="text-xs font-bold text-zinc-100 truncate">
+
 
                 <span
                     id="player-title-text"
@@ -1793,38 +2365,57 @@
 
             </h4>
 
-            <p class="text-[10px] text-zinc-500 truncate">
+
+            <p
+                class="text-[10px] text-zinc-500 truncate">
+
                 NASHEED Audio Engine
+
             </p>
 
         </div>
 
     </div>
 
+
     <div
         class="flex flex-col items-center w-full md:w-2/4 space-y-1.5 mobile-player-controls">
 
-        <div class="flex items-center space-x-4">
+
+        <div
+            class="flex items-center space-x-4">
+
 
             <button
                 onclick="prevTrack()"
                 class="text-zinc-400 hover:text-white cursor-pointer">
+
                 ◀
+
             </button>
+
 
             <button
                 id="main-play-btn"
                 class="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 flex items-center justify-center shadow-lg cursor-pointer">
+
                 ▶
+
             </button>
+
 
             <button
                 onclick="nextTrack()"
                 class="text-zinc-400 hover:text-white cursor-pointer">
+
                 ▶
+
             </button>
 
-            <div class="subtitle-menu-wrapper">
+
+            <div
+                class="subtitle-menu-wrapper">
+
 
                 <button
                     id="subtitle-button"
@@ -1833,19 +2424,28 @@
                     aria-haspopup="true"
                     aria-expanded="false">
 
+
                     <span>
+
                         CC
+
                     </span>
 
-                    <span data-i18n="subtitles">
+
+                    <span
+                        data-i18n="subtitles">
+
                         Subtítulos
+
                     </span>
 
                 </button>
 
+
                 <div
                     id="subtitle-menu"
                     class="subtitle-menu">
+
 
                     <div
                         class="subtitle-menu-title"
@@ -1855,7 +2455,11 @@
 
                     </div>
 
-                    <div id="subtitle-options"></div>
+
+                    <div
+                        id="subtitle-options">
+
+                    </div>
 
                 </div>
 
@@ -1863,34 +2467,48 @@
 
         </div>
 
+
         <div
             class="w-full flex items-center space-x-3 text-[10px] text-zinc-500 mobile-progress">
 
-            <span id="current-time">
+
+            <span
+                id="current-time">
+
                 0:00
+
             </span>
+
 
             <div
                 id="progress-container"
                 class="flex-1 bg-white/5 h-1.5 rounded-full overflow-hidden cursor-pointer border border-white/5">
 
+
                 <div
                     id="progress-bar"
                     class="bg-amber-500 w-0 h-full">
+
                 </div>
 
             </div>
 
-            <span id="duration">
+
+            <span
+                id="duration">
+
                 0:00
+
             </span>
 
         </div>
 
     </div>
 
+
     <div
         class="hidden md:flex items-center justify-end space-x-3 w-1/4 mobile-player-quality">
+
 
         <span
             class="text-[10px] bg-amber-500/10 text-amber-400 px-3 py-1 rounded-full font-semibold border border-amber-500/20"
@@ -1905,63 +2523,103 @@
 </div>
 
 
+<!-- =========================================================
+     MOBILE NAV
+     ========================================================= -->
+
 <nav
     id="mobile-bottom-nav"
     class="mobile-bottom-nav">
+
 
     <button
         onclick="switchTab('home')"
         id="mobile-nav-home"
         class="active">
 
-        <span class="mobile-menu-icon">
+
+        <span
+            class="mobile-menu-icon">
+
             ⌂
+
         </span>
 
-        <span data-i18n="home">
+
+        <span
+            data-i18n="home">
+
             Inicio
+
         </span>
 
     </button>
+
 
     <button
         onclick="switchTab('library')"
         id="mobile-nav-library">
 
-        <span class="mobile-menu-icon">
+
+        <span
+            class="mobile-menu-icon">
+
             ▣
+
         </span>
 
-        <span data-i18n="library">
+
+        <span
+            data-i18n="library">
+
             Biblioteca
+
         </span>
 
     </button>
+
 
     <button
         onclick="switchTab('favorites')"
         id="mobile-nav-favorites">
 
-        <span class="mobile-menu-icon">
+
+        <span
+            class="mobile-menu-icon">
+
             ★
+
         </span>
 
-        <span data-i18n="favorites">
+
+        <span
+            data-i18n="favorites">
+
             Favoritos
+
         </span>
 
     </button>
+
 
     <button
         onclick="switchTab('settings')"
         id="mobile-nav-settings">
 
-        <span class="mobile-menu-icon">
+
+        <span
+            class="mobile-menu-icon">
+
             ⚙
+
         </span>
 
-        <span data-i18n="settingsMobile">
+
+        <span
+            data-i18n="settingsMobile">
+
             Ajustes
+
         </span>
 
     </button>
@@ -1975,120 +2633,256 @@
 </audio>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/auth.js"></script>
-<script src="/user-upload.js"></script>
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+</script>
+
+<script
+    src="/auth.js">
+</script>
+
+<script
+    src="/user-upload.js">
+</script>
+
 
 <script>
 
 "use strict";
 
+
+/* =========================================================
+   ELEMENTOS
+   ========================================================= */
+
 const audio =
-    document.getElementById("audio-player");
+    document.getElementById(
+        "audio-player"
+    );
+
 
 const mainPlayBtn =
-    document.getElementById("main-play-btn");
+    document.getElementById(
+        "main-play-btn"
+    );
+
 
 const progressBar =
-    document.getElementById("progress-bar");
+    document.getElementById(
+        "progress-bar"
+    );
+
 
 const progressContainer =
-    document.getElementById("progress-container");
+    document.getElementById(
+        "progress-container"
+    );
+
 
 const currentTimeEl =
-    document.getElementById("current-time");
+    document.getElementById(
+        "current-time"
+    );
+
 
 const durationEl =
-    document.getElementById("duration");
+    document.getElementById(
+        "duration"
+    );
+
 
 const playerTitleText =
-    document.getElementById("player-title-text");
+    document.getElementById(
+        "player-title-text"
+    );
+
 
 const playerCover =
-    document.getElementById("player-cover");
+    document.getElementById(
+        "player-cover"
+    );
+
 
 const subtitleOverlay =
-    document.getElementById("subtitle-overlay");
+    document.getElementById(
+        "subtitle-overlay"
+    );
+
 
 const subtitleBackground =
-    document.getElementById("subtitle-background");
+    document.getElementById(
+        "subtitle-background"
+    );
+
 
 const subtitleText =
-    document.getElementById("subtitle-text");
+    document.getElementById(
+        "subtitle-text"
+    );
+
 
 const subtitleSecondary =
-    document.getElementById("subtitle-secondary");
+    document.getElementById(
+        "subtitle-secondary"
+    );
+
 
 const subtitleProgressBar =
-    document.getElementById("subtitle-progress-bar");
+    document.getElementById(
+        "subtitle-progress-bar"
+    );
+
 
 const subtitleButton =
-    document.getElementById("subtitle-button");
+    document.getElementById(
+        "subtitle-button"
+    );
+
 
 const subtitleMenu =
-    document.getElementById("subtitle-menu");
+    document.getElementById(
+        "subtitle-menu"
+    );
+
 
 const subtitleOptions =
-    document.getElementById("subtitle-options");
+    document.getElementById(
+        "subtitle-options"
+    );
+
 
 const warningModal =
-    document.getElementById("warning-modal");
+    document.getElementById(
+        "warning-modal"
+    );
+
 
 const warningTitle =
-    document.getElementById("warning-title");
+    document.getElementById(
+        "warning-title"
+    );
+
 
 const warningText =
-    document.getElementById("warning-text");
+    document.getElementById(
+        "warning-text"
+    );
+
 
 const warningCancel =
-    document.getElementById("warning-cancel");
+    document.getElementById(
+        "warning-cancel"
+    );
+
 
 const warningContinue =
-    document.getElementById("warning-continue");
+    document.getElementById(
+        "warning-continue"
+    );
+
 
 const mobileAudioPlayer =
-    document.getElementById("mobile-audio-player");
+    document.getElementById(
+        "mobile-audio-player"
+    );
 
 
-let allNasheeds = [];
-let currentTrackIndex = -1;
+/* =========================================================
+   ESTADO
+   ========================================================= */
 
-let currentSubtitles = [];
-let currentSubtitleIndex = -1;
+let allNasheeds =
+    [];
 
-let currentSecondarySubtitles = [];
-let currentSecondarySubtitleIndex = -1;
 
-let currentSubtitleLanguages = {};
-let pendingTrackIndex = -1;
+let currentTrackIndex =
+    -1;
 
-let favorites = [];
-let favoritesLoading = false;
+
+let currentSubtitles =
+    [];
+
+
+let currentSubtitleIndex =
+    -1;
+
+
+let currentSecondarySubtitles =
+    [];
+
+
+let currentSecondarySubtitleIndex =
+    -1;
+
+
+let currentSubtitleLanguages =
+    {};
+
+
+let pendingTrackIndex =
+    -1;
+
 
 let selectedSubtitleLanguage =
-    localStorage.getItem("nasheed_subtitle_language") ||
-    localStorage.getItem("nushud_subtitle_language") ||
+    localStorage.getItem(
+        "nasheed_subtitle_language"
+    ) ||
+    localStorage.getItem(
+        "nushud_subtitle_language"
+    ) ||
     "";
 
+
 let interfaceLanguage =
-    localStorage.getItem("nasheed_interface_language") ||
-    localStorage.getItem("nushud_interface_language") ||
+    localStorage.getItem(
+        "nasheed_interface_language"
+    ) ||
+    localStorage.getItem(
+        "nushud_interface_language"
+    ) ||
     "es";
 
-let animationsActive =
-    localStorage.getItem("nasheed_animations") !== "false";
 
+let animationsActive =
+    localStorage.getItem(
+        "nasheed_animations"
+    ) !==
+    "false";
+
+
+let favorites =
+    [];
+
+
+let favoritesLoading =
+    false;
+
+
+/* =========================================================
+   TRADUCCIONES
+   ========================================================= */
 
 const translations = {
 
     es: {
 
-        home: "Inicio",
-        library: "Biblioteca",
-        favorites: "Favoritos",
-        upload: "Subir nasheed",
-        settings: "Ajustes / Rendimiento",
-        settingsMobile: "Ajustes",
+        home:
+            "Inicio",
+
+        library:
+            "Biblioteca",
+
+        favorites:
+            "Favoritos",
+
+        upload:
+            "Subir nasheed",
+
+        settings:
+            "Ajustes / Rendimiento",
+
+        settingsMobile:
+            "Ajustes",
 
         securePlatform:
             "Plataforma Segura",
@@ -2176,14 +2970,26 @@ const translations = {
 
     },
 
+
     en: {
 
-        home: "Home",
-        library: "Library",
-        favorites: "Favorites",
-        upload: "Upload nasheed",
-        settings: "Settings / Performance",
-        settingsMobile: "Settings",
+        home:
+            "Home",
+
+        library:
+            "Library",
+
+        favorites:
+            "Favorites",
+
+        upload:
+            "Upload nasheed",
+
+        settings:
+            "Settings / Performance",
+
+        settingsMobile:
+            "Settings",
 
         securePlatform:
             "Secure Platform",
@@ -2274,92 +3080,159 @@ const translations = {
 };
 
 
-function t(key) {
+function t(
+    key
+) {
 
     return (
         translations[
             interfaceLanguage
-        ]?.[key] ||
-        translations.es[key] ||
+        ]?.[
+            key
+        ] ||
+        translations.es[
+            key
+        ] ||
         key
     );
+
 }
 
 
-function setInterfaceLanguage(language) {
+/* =========================================================
+   IDIOMA
+   ========================================================= */
+
+function setInterfaceLanguage(
+    language
+) {
 
     interfaceLanguage =
-        language === "en"
+        language ===
+            "en"
             ? "en"
             : "es";
+
 
     localStorage.setItem(
         "nasheed_interface_language",
         interfaceLanguage
     );
 
+
     document.documentElement.lang =
         interfaceLanguage;
 
+
     document
-        .querySelectorAll("[data-i18n]")
-        .forEach(element => {
+        .querySelectorAll(
+            "[data-i18n]"
+        )
+        .forEach(
+            element => {
 
-            element.textContent =
-                t(
-                    element.dataset.i18n
-                );
+                element.textContent =
+                    t(
+                        element.dataset.i18n
+                    );
 
-        });
+            }
+        );
 
-    document.getElementById(
-        "ui-lang-es"
-    )?.classList.toggle(
-        "active",
-        interfaceLanguage === "es"
-    );
 
-    document.getElementById(
-        "ui-lang-en"
-    )?.classList.toggle(
-        "active",
-        interfaceLanguage === "en"
-    );
+    document
+        .getElementById(
+            "ui-lang-es"
+        )
+        ?.classList.toggle(
+            "active",
+            interfaceLanguage ===
+                "es"
+        );
 
-    if (currentTrackIndex === -1) {
+
+    document
+        .getElementById(
+            "ui-lang-en"
+        )
+        ?.classList.toggle(
+            "active",
+            interfaceLanguage ===
+                "en"
+        );
+
+
+    if (
+        currentTrackIndex ===
+        -1
+    ) {
 
         playerTitleText.textContent =
-            t("noTrack");
+            t(
+                "noTrack"
+            );
 
     }
 
+
     updateWarningTexts();
+
     renderSubtitleOptions();
+
     updateCountTexts();
+
     applyAnimationsPreference();
+
+    window.dispatchEvent(
+        new CustomEvent(
+            "nushud-language-changed"
+        )
+    );
+
 }
 
+
+/* =========================================================
+   WARNING TEXTS
+   ========================================================= */
 
 function updateWarningTexts() {
 
     warningTitle.textContent =
-        t("warningTitle");
+        t(
+            "warningTitle"
+        );
+
 
     warningText.textContent =
-        t("warningText");
+        t(
+            "warningText"
+        );
+
 
     warningCancel.textContent =
-        t("warningCancel");
+        t(
+            "warningCancel"
+        );
+
 
     warningContinue.textContent =
-        t("warningContinue");
+        t(
+            "warningContinue"
+        );
+
 }
 
+
+/* =========================================================
+   ANIMACIONES
+   ========================================================= */
 
 function toggleAnimations() {
 
     animationsActive =
         !animationsActive;
+
 
     localStorage.setItem(
         "nasheed_animations",
@@ -2368,7 +3241,9 @@ function toggleAnimations() {
             : "false"
     );
 
+
     applyAnimationsPreference();
+
 }
 
 
@@ -2379,381 +3254,674 @@ function applyAnimationsPreference() {
             "anim-toggle-btn"
         );
 
+
     const status =
         document.getElementById(
             "perf-status-label"
         );
+
 
     document.body.classList.toggle(
         "animations-enabled",
         animationsActive
     );
 
+
     document.body.classList.toggle(
         "animations-disabled",
         !animationsActive
     );
 
-    if (button) {
+
+    if (
+        button
+    ) {
 
         button.textContent =
             animationsActive
-                ? t("animationsOn")
-                : t("animationsOff");
+                ? t(
+                    "animationsOn"
+                )
+                : t(
+                    "animationsOff"
+                );
 
     }
 
-    if (status) {
+
+    if (
+        status
+    ) {
 
         status.textContent =
             animationsActive
                 ? (
-                    interfaceLanguage === "en"
+                    interfaceLanguage ===
+                    "en"
                         ? "Animations active"
                         : "Animaciones activas"
                 )
                 : (
-                    interfaceLanguage === "en"
+                    interfaceLanguage ===
+                    "en"
                         ? "Optimized mode"
                         : "Modo optimizado"
                 );
 
     }
+
 }
 
 
-function switchTab(tab) {
+/* =========================================================
+   NAVEGACIÓN
+   ========================================================= */
+
+function switchTab(
+    tab
+) {
 
     const tabs = [
+
         "home",
         "library",
         "favorites",
         "upload",
         "settings"
+
     ];
 
-    if (!tabs.includes(tab)) {
+
+    if (
+        !tabs.includes(
+            tab
+        )
+    ) {
+
         return;
+
     }
 
-    tabs.forEach(current => {
 
-        const section =
-            document.getElementById(
-                "section-" + current
-            );
+    tabs.forEach(
+        current => {
 
-        if (section) {
+            const section =
+                document.getElementById(
+                    "section-" +
+                    current
+                );
 
-            section.classList.toggle(
-                "active",
-                current === tab
-            );
+
+            if (
+                section
+            ) {
+
+                section.classList.toggle(
+                    "active",
+                    current ===
+                        tab
+                );
+
+            }
+
+
+            const nav =
+                document.getElementById(
+                    "nav-" +
+                    current
+                );
+
+
+            if (
+                nav
+            ) {
+
+                nav.classList.toggle(
+                    "bg-amber-500/10",
+                    current ===
+                        tab
+                );
+
+
+                nav.classList.toggle(
+                    "text-amber-400",
+                    current ===
+                        tab
+                );
+
+
+                nav.classList.toggle(
+                    "border-amber-500/20",
+                    current ===
+                        tab
+                );
+
+
+                nav.classList.toggle(
+                    "text-zinc-400",
+                    current !==
+                        tab
+                );
+
+
+                nav.classList.toggle(
+                    "border-transparent",
+                    current !==
+                        tab
+                );
+
+            }
+
+
+            const mobile =
+                document.getElementById(
+                    "mobile-nav-" +
+                    current
+                );
+
+
+            if (
+                mobile
+            ) {
+
+                mobile.classList.toggle(
+                    "active",
+                    current ===
+                        tab
+                );
+
+            }
 
         }
+    );
 
-        const nav =
-            document.getElementById(
-                "nav-" + current
-            );
 
-        if (nav) {
+    if (
+        tab ===
+        "favorites"
+    ) {
 
-            nav.classList.toggle(
-                "bg-amber-500/10",
-                current === tab
-            );
-
-            nav.classList.toggle(
-                "text-amber-400",
-                current === tab
-            );
-
-            nav.classList.toggle(
-                "border-amber-500/20",
-                current === tab
-            );
-
-            nav.classList.toggle(
-                "text-zinc-400",
-                current !== tab
-            );
-
-            nav.classList.toggle(
-                "border-transparent",
-                current !== tab
-            );
-
-        }
-
-        const mobile =
-            document.getElementById(
-                "mobile-nav-" + current
-            );
-
-        if (mobile) {
-
-            mobile.classList.toggle(
-                "active",
-                current === tab
-            );
-
-        }
-
-    });
-
-    if (tab === "favorites") {
         renderFavorites();
+
     }
 
-    if (tab === "upload") {
+
+    if (
+        tab ===
+        "upload"
+    ) {
 
         if (
             window.NushudUserUpload &&
-            typeof
-                window.NushudUserUpload.refresh ===
+            typeof window.NushudUserUpload.render ===
                 "function"
         ) {
 
-            window.NushudUserUpload.refresh();
+            window.NushudUserUpload.render();
 
         }
 
     }
+
 }
 
 
-async function getAccessToken() {
+/* =========================================================
+   AUTH SYNC
+   ========================================================= */
 
-    try {
+window.addEventListener(
+    "nushud-auth-changed",
+    async function (
+        event
+    ) {
+
+        const user =
+            event.detail &&
+            event.detail.user
+                ? event.detail.user
+                : null;
+
+
+        favorites =
+            [];
+
 
         if (
-            window.NushudUserApi &&
-            typeof
-                window.NushudUserApi.getAccessToken ===
-                "function"
+            user
         ) {
 
-            return await
-                window.NushudUserApi.getAccessToken();
+            await fetchNasheeds();
+
+            await loadFavoritesFromSupabase();
+
+        } else {
+
+            await fetchNasheeds();
+
+            renderFavorites();
 
         }
 
+
         if (
-            window.supabase &&
-            typeof
-                window.supabase.createClient ===
+            window.NushudUserUpload &&
+            typeof window.NushudUserUpload.render ===
                 "function"
         ) {
 
-            const response =
-                await fetch(
-                    "/api/public-config",
-                    {
-                        cache:
-                            "no-store",
-                        credentials:
-                            "same-origin"
-                    }
-                );
-
-            if (!response.ok) {
-                return "";
-            }
-
-            const config =
-                await response.json();
-
-            if (
-                !config.supabaseUrl ||
-                !config.supabasePublishableKey
-            ) {
-                return "";
-            }
-
-            if (!window.NushudClient) {
-
-                window.NushudClient =
-                    window.supabase.createClient(
-                        config.supabaseUrl,
-                        config.supabasePublishableKey,
-                        {
-                            auth: {
-                                persistSession:
-                                    true,
-                                autoRefreshToken:
-                                    true,
-                                detectSessionInUrl:
-                                    true,
-                                flowType:
-                                    "pkce"
-                            }
-                        }
-                    );
-
-            }
-
-            const {
-                data
-            } =
-                await
-                window.NushudClient
-                    .auth
-                    .getSession();
-
-            return (
-                data?.session?.access_token ||
-                ""
-            );
+            window.NushudUserUpload.render();
 
         }
-
-    } catch (error) {
-
-        console.error(
-            "[NUSHUD TOKEN]",
-            error
-        );
 
     }
+);
 
-    return "";
-}
 
+/* =========================================================
+   FETCH NASHEEDS
+   ========================================================= */
 
 async function fetchNasheeds() {
 
     try {
 
         const headers = {
-            Accept:
+
+            "Accept":
                 "application/json"
+
         };
 
-        const token =
-            await getAccessToken();
 
-        if (token) {
+        /* =====================================================
+           OBTENER TOKEN
+           ===================================================== */
+
+        let token =
+            "";
+
+
+        if (
+            window.supabase &&
+            typeof window.supabase.createClient ===
+                "function"
+        ) {
+
+            const configResponse =
+                await fetch(
+                    "/api/public-config",
+                    {
+
+                        method:
+                            "GET",
+
+                        credentials:
+                            "same-origin",
+
+                        cache:
+                            "no-store"
+
+                    }
+                );
+
+
+            if (
+                configResponse.ok
+            ) {
+
+                const config =
+                    await configResponse.json();
+
+
+                if (
+                    config.supabaseUrl &&
+                    config.supabasePublishableKey
+                ) {
+
+                    const client =
+                        window.supabase.createClient(
+                            config.supabaseUrl,
+                            config.supabasePublishableKey,
+                            {
+
+                                auth: {
+
+                                    persistSession:
+                                        true,
+
+                                    autoRefreshToken:
+                                        true,
+
+                                    detectSessionInUrl:
+                                        true
+
+                                }
+
+                            }
+                        );
+
+
+                    const sessionResult =
+                        await client.auth.getSession();
+
+
+                    token =
+                        sessionResult
+                            ?.data
+                            ?.session
+                            ?.access_token ||
+                        "";
+
+                }
+
+            }
+
+        }
+
+
+        if (
+            token
+        ) {
 
             headers.Authorization =
                 `Bearer ${token}`;
 
         }
 
+
+        console.log(
+            "[NUSHUD] cargando biblioteca. Token:",
+            Boolean(token)
+        );
+
+
+        /* =====================================================
+           API
+           ===================================================== */
+
         const response =
             await fetch(
                 "/api/nasheeds",
                 {
-                    method: "GET",
+
+                    method:
+                        "GET",
+
                     credentials:
                         "same-origin",
+
                     cache:
                         "no-store",
+
                     headers
+
                 }
             );
 
-        if (!response.ok) {
+
+        if (
+            !response.ok
+        ) {
 
             throw new Error(
-                `HTTP ${response.status}`
+                "HTTP " +
+                response.status
             );
 
         }
+
 
         const data =
             await response.json();
 
-        allNasheeds =
-            Array.isArray(data)
-                ? data
-                    .map(
-                        normalizeNasheed
-                    )
-                    .filter(Boolean)
-                : [];
-
-        renderGrids();
 
         if (
-            document
-                .getElementById(
-                    "section-favorites"
-                )
-                ?.classList
-                .contains("active")
+            !Array.isArray(
+                data
+            )
         ) {
 
-            renderFavorites();
+            throw new Error(
+                "La API no devolvió una lista válida."
+            );
 
         }
 
-    } catch (error) {
+
+        /* =====================================================
+           NORMALIZAR
+           ===================================================== */
+
+        const normalized =
+            data
+                .map(
+                    normalizeNasheed
+                )
+                .filter(
+                    Boolean
+                );
+
+
+        /* =====================================================
+           SEPARAR PRIVADOS / PÚBLICOS
+           ===================================================== */
+
+        const privateTracks =
+            normalized.filter(
+                track =>
+                    track.private ===
+                    true
+            );
+
+
+        const publicTracks =
+            normalized.filter(
+                track =>
+                    track.private !==
+                    true
+            );
+
+
+        /*
+         * En caso de que una petición antigua
+         * haya dejado privados en memoria,
+         * los conservamos si la petición actual
+         * no trae privados.
+         */
+
+        const previousPrivate =
+            Array.isArray(
+                allNasheeds
+            )
+                ? allNasheeds.filter(
+                    track =>
+                        track &&
+                        track.private ===
+                            true
+                )
+                : [];
+
+
+        const finalPrivate =
+            privateTracks.length
+                ? privateTracks
+                : previousPrivate;
+
+
+        allNasheeds = [
+
+            ...finalPrivate,
+
+            ...publicTracks
+
+        ];
+
+
+        console.log(
+            "[NUSHUD] biblioteca final:",
+            allNasheeds
+        );
+
+
+        console.table(
+            allNasheeds.map(
+                track => ({
+
+                    id:
+                        track.id,
+
+                    title:
+                        track.title,
+
+                    private:
+                        Boolean(
+                            track.private
+                        ),
+
+                    file:
+                        Boolean(
+                            track.file
+                        ),
+
+                    cover:
+                        Boolean(
+                            track.cover
+                        ),
+
+                    ar:
+                        Boolean(
+                            track.subtitles?.ar
+                        ),
+
+                    es:
+                        Boolean(
+                            track.subtitles?.es
+                        ),
+
+                    en:
+                        Boolean(
+                            track.subtitles?.en
+                        ),
+
+                    ru:
+                        Boolean(
+                            track.subtitles?.ru
+                        )
+
+                })
+            )
+        );
+
+
+        renderGrids();
+
+        renderFavorites();
+
+
+    } catch (
+        error
+    ) {
 
         console.error(
-            "[NUSHUD NASHEEDS]",
+            "[NUSHUD] Error cargando nasheeds:",
             error
         );
 
-        allNasheeds = [];
 
-        showMessage(
-            document.getElementById(
-                "home-grid"
-            ),
-            t("noTracksServer")
-        );
+        if (
+            !Array.isArray(
+                allNasheeds
+            )
+        ) {
 
-        showMessage(
-            document.getElementById(
-                "library-grid"
-            ),
-            t("noTracksServer")
-        );
+            allNasheeds =
+                [];
+
+        }
+
+
+        renderGrids();
+
+        renderFavorites();
 
     }
 
 }
 
 
-function normalizeNasheed(item) {
+/*
+ * IMPORTANTE:
+ * user-upload.js utiliza esta función.
+ */
+
+window.fetchNasheeds =
+    fetchNasheeds;
+
+
+/* =========================================================
+   NORMALIZAR NASHEED
+   ========================================================= */
+
+function normalizeNasheed(
+    item
+) {
 
     if (
         !item ||
-        typeof item !== "object"
+        typeof item !==
+            "object"
     ) {
 
         return null;
 
     }
+
 
     const id =
-        Number(item.id);
+        Number(
+            item.id
+        );
+
 
     if (
-        !Number.isSafeInteger(id)
+        !Number.isSafeInteger(
+            id
+        )
     ) {
 
         return null;
 
     }
 
-    const subtitles = {};
+
+    const subtitles =
+        {};
+
 
     if (
         item.subtitles &&
         typeof item.subtitles ===
             "object" &&
-        !Array.isArray(item.subtitles)
+        !Array.isArray(
+            item.subtitles
+        )
     ) {
 
         Object.entries(
             item.subtitles
         ).forEach(
-            ([language, url]) => {
+            (
+                [
+                    language,
+                    url
+                ]
+            ) => {
 
                 if (
-                    typeof url === "string" &&
+                    typeof url ===
+                        "string" &&
                     url.trim()
                 ) {
 
@@ -2762,13 +3930,19 @@ function normalizeNasheed(item) {
                             url
                         );
 
-                    if (safe) {
+
+                    if (
+                        safe
+                    ) {
 
                         subtitles[
                             String(
                                 language
-                            ).toLowerCase()
-                        ] = safe;
+                            )
+                                .trim()
+                                .toLowerCase()
+                        ] =
+                            safe;
 
                     }
 
@@ -2778,6 +3952,7 @@ function normalizeNasheed(item) {
         );
 
     }
+
 
     return {
 
@@ -2812,23 +3987,38 @@ function normalizeNasheed(item) {
             ),
 
         private:
-            Boolean(
-                item.private
-            ),
+            item.private ===
+            true,
 
         status:
-            item.status || ""
+            item.status ||
+            "ready",
+
+        created_at:
+            item.created_at ||
+            null
 
     };
 
 }
 
 
-function safeMediaUrl(value) {
+/* =========================================================
+   SAFE URL
+   ========================================================= */
 
-    if (!value) {
+function safeMediaUrl(
+    value
+) {
+
+    if (
+        !value
+    ) {
+
         return "";
+
     }
+
 
     try {
 
@@ -2838,17 +4028,22 @@ function safeMediaUrl(value) {
                 window.location.origin
             );
 
+
         const allowedSupabaseOrigin =
             "https://cqvpjmnziorbqbtsmcvy.supabase.co";
 
+
         if (
-            url.protocol !== "http:" &&
-            url.protocol !== "https:"
+            url.protocol !==
+                "http:" &&
+            url.protocol !==
+                "https:"
         ) {
 
             return "";
 
         }
+
 
         if (
             url.origin !==
@@ -2861,6 +4056,7 @@ function safeMediaUrl(value) {
 
         }
 
+
         return url.href;
 
     } catch {
@@ -2872,6 +4068,10 @@ function safeMediaUrl(value) {
 }
 
 
+/* =========================================================
+   RENDER GRIDS
+   ========================================================= */
+
 function renderGrids() {
 
     const homeGrid =
@@ -2879,38 +4079,61 @@ function renderGrids() {
             "home-grid"
         );
 
+
     const libraryGrid =
         document.getElementById(
             "library-grid"
         );
 
-    if (!homeGrid || !libraryGrid) {
+
+    if (
+        !homeGrid ||
+        !libraryGrid
+    ) {
+
         return;
+
     }
 
+
     homeGrid.replaceChildren();
+
     libraryGrid.replaceChildren();
+
 
     updateCountTexts();
 
-    if (!allNasheeds.length) {
+
+    if (
+        !allNasheeds.length
+    ) {
 
         showMessage(
             homeGrid,
-            t("noTracksServer")
+            t(
+                "noTracksServer"
+            )
         );
+
 
         showMessage(
             libraryGrid,
-            t("noTracksServer")
+            t(
+                "noTracksServer"
+            )
         );
+
 
         return;
 
     }
 
+
     allNasheeds.forEach(
-        (track, index) => {
+        (
+            track,
+            index
+        ) => {
 
             homeGrid.appendChild(
                 createTrackCard(
@@ -2918,6 +4141,7 @@ function renderGrids() {
                     index
                 )
             );
+
 
             libraryGrid.appendChild(
                 createTrackCard(
@@ -2928,40 +4152,68 @@ function renderGrids() {
 
         }
     );
+
 }
 
+
+/* =========================================================
+   CONTADORES
+   ========================================================= */
 
 function updateCountTexts() {
 
     const count =
         allNasheeds.length;
 
+
     const label =
-        count === 1
-            ? t("tracksOne")
-            : t("tracksMany");
+        count ===
+            1
+            ? t(
+                "tracksOne"
+            )
+            : t(
+                "tracksMany"
+            );
+
 
     const homeCount =
         document.getElementById(
             "home-count"
         );
 
+
     const libCount =
         document.getElementById(
             "lib-count"
         );
 
-    if (homeCount) {
+
+    if (
+        homeCount
+    ) {
+
         homeCount.textContent =
             `${count} ${label}`;
+
     }
 
-    if (libCount) {
+
+    if (
+        libCount
+    ) {
+
         libCount.textContent =
             `${count} ${label}`;
+
     }
+
 }
 
+
+/* =========================================================
+   TARJETA
+   ========================================================= */
 
 function createTrackCard(
     track,
@@ -2973,52 +4225,95 @@ function createTrackCard(
             "div"
         );
 
+
     card.className =
         "glass-panel rounded-2xl p-3.5 card-hover flex flex-col justify-between group border border-white/5";
+
 
     const coverContainer =
         document.createElement(
             "div"
         );
 
+
     coverContainer.className =
         "relative aspect-square rounded-xl bg-zinc-950/80 overflow-hidden flex items-center justify-center mb-3 border border-white/5";
 
-    if (track.cover) {
+
+    if (
+        track.private
+    ) {
+
+        const privateBadge =
+            document.createElement(
+                "div"
+            );
+
+
+        privateBadge.className =
+            "private-badge";
+
+
+        privateBadge.textContent =
+            interfaceLanguage ===
+                "en"
+                ? "PRIVATE"
+                : "PRIVADO";
+
+
+        coverContainer.appendChild(
+            privateBadge
+        );
+
+    }
+
+
+    if (
+        track.cover
+    ) {
 
         const image =
             document.createElement(
                 "img"
             );
 
+
         image.className =
             "cover-image";
+
 
         image.src =
             track.cover;
 
+
         image.alt =
             track.title;
+
 
         image.loading =
             "lazy";
 
+
         image.decoding =
             "async";
 
+
         image.referrerPolicy =
             "no-referrer";
+
 
         image.onerror =
             () => {
 
                 image.remove();
 
+
                 addMusicIcon(
                     coverContainer
                 );
 
             };
+
 
         coverContainer.appendChild(
             image
@@ -3032,16 +4327,20 @@ function createTrackCard(
 
     }
 
+
     const playButton =
         document.createElement(
             "button"
         );
 
+
     playButton.type =
         "button";
 
+
     playButton.className =
         "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer";
+
 
     playButton.addEventListener(
         "click",
@@ -3051,85 +4350,111 @@ function createTrackCard(
             )
     );
 
+
     const playCircle =
         document.createElement(
             "span"
         );
 
+
     playCircle.className =
         "w-10 h-10 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-sm shadow-lg";
 
+
     playCircle.textContent =
         "▶";
+
 
     playButton.appendChild(
         playCircle
     );
 
+
     coverContainer.appendChild(
         playButton
     );
+
 
     const info =
         document.createElement(
             "div"
         );
 
+
     info.className =
         "space-y-1 mb-3";
+
 
     const title =
         document.createElement(
             "h4"
         );
 
+
     title.className =
         "text-xs font-bold text-zinc-100 truncate";
 
+
     title.textContent =
         track.title;
+
 
     const artist =
         document.createElement(
             "p"
         );
 
+
     artist.className =
         "text-[10px] text-zinc-500";
 
+
     artist.textContent =
         track.private
-            ? "Tu nasheed privado"
+            ? (
+                interfaceLanguage ===
+                    "en"
+                    ? "Private nasheed"
+                    : "Nasheed privado"
+            )
             : "NASHEED Audio";
+
 
     info.appendChild(
         title
     );
 
+
     info.appendChild(
         artist
     );
+
 
     const footer =
         document.createElement(
             "div"
         );
 
+
     footer.className =
         "flex items-center justify-between pt-2.5 border-t border-white/5";
+
 
     const favoriteButton =
         document.createElement(
             "button"
         );
 
+
     favoriteButton.type =
         "button";
+
 
     updateFavoriteButton(
         favoriteButton,
         track.id
     );
+
 
     favoriteButton.addEventListener(
         "click",
@@ -3139,70 +4464,100 @@ function createTrackCard(
             )
     );
 
+
     footer.appendChild(
         favoriteButton
     );
+
 
     card.appendChild(
         coverContainer
     );
 
+
     card.appendChild(
         info
     );
+
 
     card.appendChild(
         footer
     );
 
+
     return card;
+
 }
 
 
-function addMusicIcon(container) {
+/* =========================================================
+   ICONO MUSICAL
+   ========================================================= */
+
+function addMusicIcon(
+    container
+) {
 
     const icon =
         document.createElement(
             "div"
         );
 
+
     icon.className =
         "text-amber-500/40 text-4xl";
+
 
     icon.textContent =
         "♫";
 
+
     container.appendChild(
         icon
     );
+
 }
 
+
+/* =========================================================
+   MENSAJE
+   ========================================================= */
 
 function showMessage(
     container,
     message
 ) {
 
-    if (!container) {
+    if (
+        !container
+    ) {
+
         return;
+
     }
 
+
     container.replaceChildren();
+
 
     const box =
         document.createElement(
             "div"
         );
 
+
     box.className =
         "col-span-full py-12 text-center text-xs text-zinc-500 glass-panel rounded-2xl";
+
 
     box.textContent =
         message;
 
+
     container.appendChild(
         box
     );
+
 }
 
 
@@ -3210,113 +4565,112 @@ function showMessage(
    FAVORITOS
    ========================================================= */
 
-async function getFavoritesClient() {
-
-    if (
-        window.NushudFavoritesClient
-    ) {
-
-        return
-            window.NushudFavoritesClient;
-
-    }
-
-    const response =
-        await fetch(
-            "/api/public-config",
-            {
-                cache:
-                    "no-store",
-                credentials:
-                    "same-origin"
-            }
-        );
-
-    if (!response.ok) {
-
-        throw new Error(
-            "No se pudo cargar la configuración de Supabase."
-        );
-
-    }
-
-    const config =
-        await response.json();
-
-    if (
-        !config.supabaseUrl ||
-        !config.supabasePublishableKey
-    ) {
-
-        throw new Error(
-            "Configuración pública de Supabase incompleta."
-        );
-
-    }
-
-    window.NushudFavoritesClient =
-        window.supabase.createClient(
-            config.supabaseUrl,
-            config.supabasePublishableKey,
-            {
-                auth: {
-                    persistSession:
-                        true,
-                    autoRefreshToken:
-                        true,
-                    detectSessionInUrl:
-                        true
-                }
-            }
-        );
-
-    return
-        window.NushudFavoritesClient;
-}
-
-
 async function loadFavoritesFromSupabase() {
 
-    favoritesLoading = true;
+    favoritesLoading =
+        true;
+
 
     try {
 
-        const token =
-            await getAccessToken();
+        const authUser =
+            window.NushudAuth &&
+            typeof window.NushudAuth.getUser ===
+                "function"
 
-        if (!token) {
+                ? window.NushudAuth.getUser()
 
-            favorites = [];
+                : null;
 
-            renderGrids();
+
+        if (
+            !authUser
+        ) {
+
+            favorites =
+                [];
+
             renderFavorites();
 
             return;
 
         }
 
-        const client =
-            await getFavoritesClient();
 
-        const {
-            data: {
-                user
-            }
-        } =
-            await client.auth.getUser(
-                token
+        if (
+            !window.supabase ||
+            typeof window.supabase.createClient !==
+                "function"
+        ) {
+
+            throw new Error(
+                "Supabase JS no está disponible."
             );
 
-        if (!user) {
+        }
 
-            favorites = [];
 
-            renderGrids();
-            renderFavorites();
+        const configResponse =
+            await fetch(
+                "/api/public-config",
+                {
 
-            return;
+                    cache:
+                        "no-store",
+
+                    credentials:
+                        "same-origin"
+
+                }
+            );
+
+
+        if (
+            !configResponse.ok
+        ) {
+
+            throw new Error(
+                "No se pudo cargar la configuración de Supabase."
+            );
 
         }
+
+
+        const config =
+            await configResponse.json();
+
+
+        if (
+            !config.supabaseUrl ||
+            !config.supabasePublishableKey
+        ) {
+
+            throw new Error(
+                "Configuración pública de Supabase incompleta."
+            );
+
+        }
+
+
+        const client =
+            window.supabase.createClient(
+                config.supabaseUrl,
+                config.supabasePublishableKey,
+                {
+
+                    auth: {
+
+                        persistSession:
+                            true,
+
+                        autoRefreshToken:
+                            true
+
+                    }
+
+                }
+            );
+
 
         const result =
             await client
@@ -3328,15 +4682,24 @@ async function loadFavoritesFromSupabase() {
                 )
                 .eq(
                     "user_id",
-                    user.id
+                    authUser.id
                 );
 
-        if (result.error) {
+
+        if (
+            result.error
+        ) {
+
             throw result.error;
+
         }
 
+
         favorites =
-            (result.data || [])
+            (
+                result.data ||
+                []
+            )
                 .map(
                     row =>
                         Number(
@@ -3347,19 +4710,25 @@ async function loadFavoritesFromSupabase() {
                     Number.isSafeInteger
                 );
 
+
         renderGrids();
+
         renderFavorites();
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             "[NUSHUD FAVORITES LOAD]",
             error
         );
 
-        favorites = [];
 
-        renderGrids();
+        favorites =
+            [];
+
         renderFavorites();
 
     } finally {
@@ -3368,20 +4737,118 @@ async function loadFavoritesFromSupabase() {
             false;
 
     }
+
 }
 
 
-async function toggleFavorite(id) {
+/* =========================================================
+   CLIENTE FAVORITOS
+   ========================================================= */
 
-    const token =
-        await getAccessToken();
+async function getFavoritesSupabaseClient() {
 
-    if (!token) {
+    if (
+        window.NushudFavoritesClient
+    ) {
+
+        return window.NushudFavoritesClient;
+
+    }
+
+
+    if (
+        !window.supabase ||
+        typeof window.supabase.createClient !==
+            "function"
+    ) {
+
+        throw new Error(
+            "Supabase JS no está disponible."
+        );
+
+    }
+
+
+    const response =
+        await fetch(
+            "/api/public-config",
+            {
+
+                cache:
+                    "no-store",
+
+                credentials:
+                    "same-origin"
+
+            }
+        );
+
+
+    if (
+        !response.ok
+    ) {
+
+        throw new Error(
+            "No se pudo cargar la configuración de Supabase."
+        );
+
+    }
+
+
+    const config =
+        await response.json();
+
+
+    window.NushudFavoritesClient =
+        window.supabase.createClient(
+            config.supabaseUrl,
+            config.supabasePublishableKey,
+            {
+
+                auth: {
+
+                    persistSession:
+                        true,
+
+                    autoRefreshToken:
+                        true
+
+                }
+
+            }
+        );
+
+
+    return window.NushudFavoritesClient;
+
+}
+
+
+/* =========================================================
+   TOGGLE FAVORITO
+   ========================================================= */
+
+async function toggleFavorite(
+    id
+) {
+
+    const authUser =
+        window.NushudAuth &&
+        typeof window.NushudAuth.getUser ===
+            "function"
+
+            ? window.NushudAuth.getUser()
+
+            : null;
+
+
+    if (
+        !authUser
+    ) {
 
         if (
             window.NushudAuth &&
-            typeof
-                window.NushudAuth.open ===
+            typeof window.NushudAuth.open ===
                 "function"
         ) {
 
@@ -3392,23 +4859,36 @@ async function toggleFavorite(id) {
         }
 
         return;
+
     }
+
 
     const numberId =
-        Number(id);
+        Number(
+            id
+        );
+
 
     if (
-        !Number.isSafeInteger(numberId)
+        !Number.isSafeInteger(
+            numberId
+        )
     ) {
+
         return;
+
     }
+
 
     const wasFavorite =
         favorites.includes(
             numberId
         );
 
-    if (wasFavorite) {
+
+    if (
+        wasFavorite
+    ) {
 
         favorites =
             favorites.filter(
@@ -3425,30 +4905,21 @@ async function toggleFavorite(id) {
 
     }
 
+
     renderGrids();
+
     renderFavorites();
+
 
     try {
 
         const client =
-            await getFavoritesClient();
+            await getFavoritesSupabaseClient();
 
-        const {
-            data: {
-                user
-            }
-        } =
-            await client.auth.getUser(
-                token
-            );
 
-        if (!user) {
-            throw new Error(
-                "Sesión no disponible."
-            );
-        }
-
-        if (wasFavorite) {
+        if (
+            wasFavorite
+        ) {
 
             const result =
                 await client
@@ -3458,15 +4929,20 @@ async function toggleFavorite(id) {
                     .delete()
                     .eq(
                         "user_id",
-                        user.id
+                        authUser.id
                     )
                     .eq(
                         "nasheed_id",
                         numberId
                     );
 
-            if (result.error) {
+
+            if (
+                result.error
+            ) {
+
                 throw result.error;
+
             }
 
         } else {
@@ -3478,25 +4954,37 @@ async function toggleFavorite(id) {
                     )
                     .insert({
                         user_id:
-                            user.id,
+                            authUser.id,
+
                         nasheed_id:
                             numberId
+
                     });
 
-            if (result.error) {
+
+            if (
+                result.error
+            ) {
+
                 throw result.error;
+
             }
 
         }
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "[NUSHUD FAVORITES SAVE]",
             error
         );
 
-        if (wasFavorite) {
+
+        if (
+            wasFavorite
+        ) {
 
             favorites.push(
                 numberId
@@ -3513,18 +5001,29 @@ async function toggleFavorite(id) {
 
         }
 
+
         renderGrids();
+
         renderFavorites();
 
+
         alert(
-            interfaceLanguage === "en"
+            interfaceLanguage ===
+                "en"
+
                 ? "The favorite could not be saved."
+
                 : "No se pudo guardar el favorito."
         );
 
     }
+
 }
 
+
+/* =========================================================
+   BOTÓN FAVORITO
+   ========================================================= */
 
 function updateFavoriteButton(
     button,
@@ -3533,20 +5032,31 @@ function updateFavoriteButton(
 
     const active =
         favorites.includes(
-            Number(id)
+            Number(
+                id
+            )
         );
+
 
     button.textContent =
         active
             ? "★"
             : "☆";
 
+
     button.className =
         active
+
             ? "text-xs cursor-pointer text-amber-400"
+
             : "text-xs cursor-pointer text-zinc-500 hover:text-zinc-300";
+
 }
 
+
+/* =========================================================
+   FAVORITOS RENDER
+   ========================================================= */
 
 function renderFavorites() {
 
@@ -3555,30 +5065,46 @@ function renderFavorites() {
             "favorites-grid"
         );
 
-    if (!container) {
+
+    if (
+        !container
+    ) {
+
         return;
+
     }
+
 
     const favoriteTracks =
         allNasheeds.filter(
             track =>
                 favorites.includes(
-                    Number(track.id)
+                    Number(
+                        track.id
+                    )
                 )
         );
 
+
     container.replaceChildren();
 
-    if (!favoriteTracks.length) {
+
+    if (
+        !favoriteTracks.length
+    ) {
 
         showMessage(
             container,
-            t("noFavorites")
+            t(
+                "noFavorites"
+            )
         );
+
 
         return;
 
     }
+
 
     favoriteTracks.forEach(
         track => {
@@ -3594,6 +5120,17 @@ function renderFavorites() {
                         )
                 );
 
+
+            if (
+                index <
+                0
+            ) {
+
+                return;
+
+            }
+
+
             container.appendChild(
                 createTrackCard(
                     track,
@@ -3603,76 +5140,52 @@ function renderFavorites() {
 
         }
     );
+
 }
 
 
 /* =========================================================
-   AUTH
+   ADVERTENCIA
    ========================================================= */
 
-window.addEventListener(
-    "nushud-auth-changed",
-    async event => {
-
-        const user =
-            event.detail?.user ||
-            null;
-
-        if (user) {
-
-            await fetchNasheeds();
-
-            await loadFavoritesFromSupabase();
-
-        } else {
-
-            favorites = [];
-
-            renderGrids();
-            renderFavorites();
-
-        }
-
-        if (
-            window.NushudUserUpload &&
-            typeof
-                window.NushudUserUpload.refresh ===
-                "function"
-        ) {
-
-            window.NushudUserUpload.refresh();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   WARNING
-   ========================================================= */
-
-function requestPlayTrack(index) {
+function requestPlayTrack(
+    index
+) {
 
     const track =
-        allNasheeds[index];
+        allNasheeds[
+            index
+        ];
 
-    if (!track) {
+
+    if (
+        !track
+    ) {
+
         return;
+
     }
 
-    if (!track.warning) {
 
-        playTrack(index);
+    if (
+        !track.warning
+    ) {
+
+        playTrack(
+            index
+        );
 
         return;
 
     }
+
 
     pendingTrackIndex =
         index;
 
+
     showWarning();
+
 }
 
 
@@ -3680,9 +5193,11 @@ function showWarning() {
 
     updateWarningTexts();
 
+
     warningModal.classList.add(
         "open"
     );
+
 }
 
 
@@ -3691,6 +5206,7 @@ function closeWarning() {
     warningModal.classList.remove(
         "open"
     );
+
 }
 
 
@@ -3700,6 +5216,7 @@ warningCancel.addEventListener(
 
         pendingTrackIndex =
             -1;
+
 
         closeWarning();
 
@@ -3714,13 +5231,23 @@ warningContinue.addEventListener(
         const index =
             pendingTrackIndex;
 
+
         pendingTrackIndex =
             -1;
 
+
         closeWarning();
 
-        if (index >= 0) {
-            playTrack(index);
+
+        if (
+            index >=
+            0
+        ) {
+
+            playTrack(
+                index
+            );
+
         }
 
     }
@@ -3739,6 +5266,7 @@ warningModal.addEventListener(
             pendingTrackIndex =
                 -1;
 
+
             closeWarning();
 
         }
@@ -3748,13 +5276,16 @@ warningModal.addEventListener(
 
 
 /* =========================================================
-   PLAYER
+   REPRODUCTOR
    ========================================================= */
 
-function playTrack(index) {
+async function playTrack(
+    index
+) {
 
     if (
-        index < 0 ||
+        index <
+            0 ||
         index >=
             allNasheeds.length
     ) {
@@ -3763,8 +5294,12 @@ function playTrack(index) {
 
     }
 
+
     const track =
-        allNasheeds[index];
+        allNasheeds[
+            index
+        ];
+
 
     if (
         !track ||
@@ -3772,36 +5307,47 @@ function playTrack(index) {
     ) {
 
         console.error(
-            "La pista no tiene un archivo de audio válido."
+            "[NUSHUD PLAYER] La pista no tiene audio.",
+            track
         );
 
         return;
 
     }
 
+
     currentTrackIndex =
         index;
+
 
     playerTitleText.textContent =
         track.title;
 
+
     playerCover.replaceChildren();
 
-    if (track.cover) {
+
+    if (
+        track.cover
+    ) {
 
         const image =
             document.createElement(
                 "img"
             );
 
+
         image.className =
             "cover-image";
+
 
         image.src =
             track.cover;
 
+
         image.alt =
             track.title;
+
 
         image.onerror =
             () => {
@@ -3813,6 +5359,7 @@ function playTrack(index) {
                 );
 
             };
+
 
         playerCover.appendChild(
             image
@@ -3826,38 +5373,101 @@ function playTrack(index) {
 
     }
 
-    audio.src =
-        track.file;
-
-    audio.load();
 
     currentSubtitleLanguages =
         {
             ...(track.subtitles || {})
         };
 
+
     setupTrackSubtitleLanguage(
         track
     );
 
+
     renderSubtitleOptions();
 
-    loadArabicAndSecondarySubtitles(
+
+    audio.pause();
+
+    audio.removeAttribute(
+        "src"
+    );
+
+    audio.load();
+
+
+    currentSubtitles =
+        [];
+
+    currentSecondarySubtitles =
+        [];
+
+    currentSubtitleIndex =
+        -1;
+
+    currentSecondarySubtitleIndex =
+        -1;
+
+
+    hideSubtitleOverlay();
+
+
+    if (
+        subtitleBackground
+    ) {
+
+        subtitleBackground.style.backgroundImage =
+            track.cover
+                ? `url("${track.cover.replace(
+                    /"/g,
+                    '\\"'
+                )}")`
+                : "none";
+
+    }
+
+
+    /*
+     * Cargamos VTT y audio antes de reproducir.
+     */
+
+    await loadArabicAndSecondarySubtitles(
         track
     );
 
-    audio.play().catch(
-        error =>
-            console.error(
-                "Error al reproducir:",
-                error
-            )
-    );
+
+    audio.src =
+        track.file;
+
+
+    audio.load();
+
+
+    try {
+
+        await audio.play();
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "[NUSHUD PLAYER]",
+            error
+        );
+
+    }
+
 
     updateSubtitleMobilePosition();
 
 }
 
+
+/* =========================================================
+   IDIOMA DE SUBTÍTULOS DEL TRACK
+   ========================================================= */
 
 function setupTrackSubtitleLanguage(
     track
@@ -3867,12 +5477,17 @@ function setupTrackSubtitleLanguage(
         Object.keys(
             track.subtitles ||
             {}
-        ).filter(
-            language =>
-                language !== "ar"
-        );
+        )
+            .filter(
+                language =>
+                    language !==
+                    "ar"
+            );
 
-    if (!languages.length) {
+
+    if (
+        !languages.length
+    ) {
 
         selectedSubtitleLanguage =
             "";
@@ -3881,14 +5496,29 @@ function setupTrackSubtitleLanguage(
 
     }
 
+
     if (
         !languages.includes(
             selectedSubtitleLanguage
         )
     ) {
 
-        selectedSubtitleLanguage =
-            languages[0];
+        if (
+            languages.includes(
+                interfaceLanguage
+            )
+        ) {
+
+            selectedSubtitleLanguage =
+                interfaceLanguage;
+
+        } else {
+
+            selectedSubtitleLanguage =
+                languages[0];
+
+        }
+
 
         localStorage.setItem(
             "nasheed_subtitle_language",
@@ -3896,11 +5526,12 @@ function setupTrackSubtitleLanguage(
         );
 
     }
+
 }
 
 
 /* =========================================================
-   SUBTITLE MENU
+   MENÚ SUBTÍTULOS
    ========================================================= */
 
 function toggleSubtitleMenu() {
@@ -3910,15 +5541,20 @@ function toggleSubtitleMenu() {
             "open"
         );
 
+
     subtitleButton.classList.toggle(
         "active",
         open
     );
 
+
     subtitleButton.setAttribute(
         "aria-expanded",
-        String(open)
+        String(
+            open
+        )
     );
+
 }
 
 
@@ -3928,49 +5564,38 @@ function closeSubtitleMenu() {
         "open"
     );
 
+
     subtitleButton.classList.remove(
         "active"
     );
+
 
     subtitleButton.setAttribute(
         "aria-expanded",
         "false"
     );
+
 }
 
 
-document.addEventListener(
-    "click",
-    event => {
-
-        if (
-            subtitleMenu.classList.contains(
-                "open"
-            ) &&
-            !subtitleMenu.contains(
-                event.target
-            ) &&
-            !subtitleButton.contains(
-                event.target
-            )
-        ) {
-
-            closeSubtitleMenu();
-
-        }
-
-    }
-);
-
-
 /* =========================================================
-   SUBTITLE OPTIONS
+   OPCIONES SUBTÍTULOS
    ========================================================= */
 
 function renderSubtitleOptions() {
 
+    if (
+        !subtitleOptions
+    ) {
+
+        return;
+
+    }
+
+
     subtitleOptions.innerHTML =
         "";
+
 
     if (
         currentTrackIndex ===
@@ -3982,53 +5607,73 @@ function renderSubtitleOptions() {
                 "div"
             );
 
+
         empty.className =
             "subtitle-none";
 
+
         empty.textContent =
-            t("noNasheedPlaying");
+            t(
+                "noNasheedPlaying"
+            );
+
 
         subtitleOptions.appendChild(
             empty
         );
 
+
         return;
+
     }
+
 
     const languages =
         Object.keys(
             currentSubtitleLanguages
-        ).filter(
-            language =>
-                language !==
-                "ar"
-        );
+        )
+            .filter(
+                language =>
+                    language !==
+                    "ar"
+            );
 
-    if (!languages.length) {
+
+    if (
+        !languages.length
+    ) {
 
         const empty =
             document.createElement(
                 "div"
             );
 
+
         empty.className =
             "subtitle-none";
 
+
         empty.textContent =
             currentSubtitleLanguages.ar
+
                 ? t(
                     "noOtherLanguages"
                 )
+
                 : t(
                     "noSubtitles"
                 );
+
 
         subtitleOptions.appendChild(
             empty
         );
 
+
         return;
+
     }
+
 
     languages.forEach(
         language => {
@@ -4038,11 +5683,14 @@ function renderSubtitleOptions() {
                     "button"
                 );
 
+
             button.type =
                 "button";
 
+
             button.className =
                 "subtitle-option";
+
 
             if (
                 language ===
@@ -4055,38 +5703,26 @@ function renderSubtitleOptions() {
 
             }
 
-            const label =
-                document.createElement(
-                    "span"
-                );
 
-            label.textContent =
-                getLanguageName(
-                    language
-                );
+            button.innerHTML = `
+                <span>
+                    ${escapeHtml(
+                        getLanguageName(
+                            language
+                        )
+                    )}
+                </span>
 
-            button.appendChild(
-                label
-            );
+                ${
+                    language ===
+                    selectedSubtitleLanguage
 
-            if (
-                language ===
-                selectedSubtitleLanguage
-            ) {
+                        ? "<span>✓</span>"
 
-                const check =
-                    document.createElement(
-                        "span"
-                    );
+                        : ""
+                }
+            `;
 
-                check.textContent =
-                    "✓";
-
-                button.appendChild(
-                    check
-                );
-
-            }
 
             button.addEventListener(
                 "click",
@@ -4095,22 +5731,27 @@ function renderSubtitleOptions() {
                     selectedSubtitleLanguage =
                         language;
 
+
                     localStorage.setItem(
                         "nasheed_subtitle_language",
                         selectedSubtitleLanguage
                     );
 
-                    await
-                        loadSecondarySubtitles();
+
+                    await loadSecondarySubtitles();
+
 
                     renderSubtitleOptions();
 
+
                     updateSubtitle();
+
 
                     closeSubtitleMenu();
 
                 }
             );
+
 
             subtitleOptions.appendChild(
                 button
@@ -4118,68 +5759,122 @@ function renderSubtitleOptions() {
 
         }
     );
+
 }
 
 
-function getLanguageName(code) {
+/* =========================================================
+   NOMBRE IDIOMAS
+   ========================================================= */
+
+function getLanguageName(
+    code
+) {
 
     const names = {
 
         es:
-            interfaceLanguage === "en"
+            interfaceLanguage ===
+                "en"
                 ? "Spanish"
                 : "Español",
 
         en:
             "English",
 
-        ru:
-            "Русский",
-
         fr:
-            interfaceLanguage === "en"
+            interfaceLanguage ===
+                "en"
                 ? "French"
                 : "Français",
 
         de:
-            interfaceLanguage === "en"
+            interfaceLanguage ===
+                "en"
                 ? "German"
                 : "Deutsch",
 
         tr:
-            interfaceLanguage === "en"
+            interfaceLanguage ===
+                "en"
                 ? "Turkish"
                 : "Türkçe",
 
         ur:
-            "Urdu"
+            "Urdu",
+
+        id:
+            interfaceLanguage ===
+                "en"
+                ? "Indonesian"
+                : "Bahasa Indonesia",
+
+        pt:
+            interfaceLanguage ===
+                "en"
+                ? "Portuguese"
+                : "Português",
+
+        it:
+            interfaceLanguage ===
+                "en"
+                ? "Italian"
+                : "Italiano",
+
+        nl:
+            interfaceLanguage ===
+                "en"
+                ? "Dutch"
+                : "Nederlands",
+
+        ru:
+            interfaceLanguage ===
+                "en"
+                ? "Russian"
+                : "Русский"
 
     };
 
+
     return (
-        names[code] ||
-        String(code).toUpperCase()
+        names[
+            code
+        ] ||
+        String(
+            code
+        ).toUpperCase()
     );
+
 }
 
 
 /* =========================================================
-   SUBTITULOS
+   CARGA DE SUBTÍTULOS
    ========================================================= */
 
 async function loadArabicAndSecondarySubtitles(
     track
 ) {
 
-    currentSubtitles = [];
-    currentSecondarySubtitles = [];
+    currentSubtitles =
+        [];
 
-    currentSubtitleIndex = -1;
-    currentSecondarySubtitleIndex = -1;
+    currentSecondarySubtitles =
+        [];
+
+    currentSubtitleIndex =
+        -1;
+
+    currentSecondarySubtitleIndex =
+        -1;
+
 
     hideSubtitleOverlay();
 
-    if (subtitleBackground) {
+
+    if (
+        subtitleBackground
+    ) {
 
         subtitleBackground.style.backgroundImage =
             track.cover
@@ -4191,12 +5886,16 @@ async function loadArabicAndSecondarySubtitles(
 
     }
 
+
     const arabicUrl =
         safeMediaUrl(
             currentSubtitleLanguages.ar
         );
 
-    if (arabicUrl) {
+
+    if (
+        arabicUrl
+    ) {
 
         try {
 
@@ -4209,7 +5908,10 @@ async function loadArabicAndSecondarySubtitles(
                     }
                 );
 
-            if (response.ok) {
+
+            if (
+                response.ok
+            ) {
 
                 currentSubtitles =
                     parseVTT(
@@ -4218,10 +5920,12 @@ async function loadArabicAndSecondarySubtitles(
 
             }
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
-                "Error cargando árabe:",
+                "[NUSHUD SUBTITLE AR]",
                 error
             );
 
@@ -4229,20 +5933,36 @@ async function loadArabicAndSecondarySubtitles(
 
     }
 
+
     await loadSecondarySubtitles();
 
+
     updateSubtitle();
+
 }
 
 
+/* =========================================================
+   SEGUNDO IDIOMA
+   ========================================================= */
+
 async function loadSecondarySubtitles() {
 
-    currentSecondarySubtitles = [];
-    currentSecondarySubtitleIndex = -1;
+    currentSecondarySubtitles =
+        [];
 
-    if (!selectedSubtitleLanguage) {
+    currentSecondarySubtitleIndex =
+        -1;
+
+
+    if (
+        !selectedSubtitleLanguage
+    ) {
+
         return;
+
     }
+
 
     const url =
         safeMediaUrl(
@@ -4251,9 +5971,15 @@ async function loadSecondarySubtitles() {
             ]
         );
 
-    if (!url) {
+
+    if (
+        !url
+    ) {
+
         return;
+
     }
+
 
     try {
 
@@ -4266,31 +5992,43 @@ async function loadSecondarySubtitles() {
                 }
             );
 
-        if (!response.ok) {
+
+        if (
+            !response.ok
+        ) {
+
             return;
+
         }
+
 
         currentSecondarySubtitles =
             parseVTT(
                 await response.text()
             );
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
-            "Error cargando traducción:",
+            "[NUSHUD SUBTITLE SECONDARY]",
             error
         );
 
     }
+
 }
 
 
 /* =========================================================
-   VTT
+   PARSER VTT
    ========================================================= */
 
-function parseVTT(vttText) {
+function parseVTT(
+    vttText
+) {
 
     if (
         typeof vttText !==
@@ -4300,6 +6038,7 @@ function parseVTT(vttText) {
         return [];
 
     }
+
 
     const normalized =
         vttText
@@ -4316,39 +6055,50 @@ function parseVTT(vttText) {
                 "\n"
             );
 
+
     const blocks =
         normalized.split(
             /\n{2,}/
         );
 
-    const cues = [];
+
+    const cues =
+        [];
+
 
     for (
-        const block of
-        blocks
+        const block of blocks
     ) {
 
         const lines =
             block
-                .split("\n")
+                .split(
+                    "\n"
+                )
                 .map(
                     line =>
                         line.trimEnd()
                 );
 
+
         const timeLineIndex =
             lines.findIndex(
                 line =>
-                    line.includes("-->")
+                    line.includes(
+                        "-->"
+                    )
             );
 
+
         if (
-            timeLineIndex === -1
+            timeLineIndex ===
+            -1
         ) {
 
             continue;
 
         }
+
 
         const match =
             lines[
@@ -4357,9 +6107,15 @@ function parseVTT(vttText) {
                 /(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[.,](\d{3})/
             );
 
-        if (!match) {
+
+        if (
+            !match
+        ) {
+
             continue;
+
         }
+
 
         const start =
             parseVTTTime(
@@ -4369,6 +6125,7 @@ function parseVTT(vttText) {
                 match[4]
             );
 
+
         const end =
             parseVTTTime(
                 match[5],
@@ -4377,48 +6134,79 @@ function parseVTT(vttText) {
                 match[8]
             );
 
+
         if (
-            !Number.isFinite(start) ||
-            !Number.isFinite(end) ||
-            end <= start
+            !Number.isFinite(
+                start
+            ) ||
+            !Number.isFinite(
+                end
+            ) ||
+            end <=
+                start
         ) {
 
             continue;
 
         }
 
+
         const rawText =
             lines
                 .slice(
-                    timeLineIndex + 1
+                    timeLineIndex +
+                    1
                 )
-                .join("\n")
+                .join(
+                    "\n"
+                )
                 .trim();
+
 
         const clean =
             cleanSubtitleText(
                 rawText
             );
 
-        if (!clean) {
+
+        if (
+            !clean
+        ) {
+
             continue;
+
         }
 
+
         cues.push({
+
             start,
+
             end,
-            text: clean
+
+            text:
+                clean
+
         });
 
     }
 
+
     return cues.sort(
-        (a,b) =>
+        (
+            a,
+            b
+        ) =>
             a.start -
             b.start
     );
+
 }
 
+
+/* =========================================================
+   PARSE TIME
+   ========================================================= */
 
 function parseVTTTime(
     hours,
@@ -4428,18 +6216,39 @@ function parseVTTTime(
 ) {
 
     return (
-        Number(hours || 0) *
-            3600 +
-        Number(minutes) *
-            60 +
-        Number(seconds) +
-        Number(milliseconds) /
-            1000
+
+        Number(
+            hours ||
+            0
+        ) *
+        3600 +
+
+        Number(
+            minutes
+        ) *
+        60 +
+
+        Number(
+            seconds
+        ) +
+
+        Number(
+            milliseconds
+        ) /
+        1000
+
     );
+
 }
 
 
-function cleanSubtitleText(text) {
+/* =========================================================
+   CLEAN SUBTITLE
+   ========================================================= */
+
+function cleanSubtitleText(
+    text
+) {
 
     if (
         typeof text !==
@@ -4450,7 +6259,33 @@ function cleanSubtitleText(text) {
 
     }
 
+
     return text
+
+        .replace(
+            /\(\s*Transcrito por TurboScribe\.\s*Actualizar a Ilimitado para eliminar este mensaje\.\s*\)/gi,
+            ""
+        )
+
+        .replace(
+            /Transcrito por TurboScribe\.\s*Actualizar a Ilimitado para eliminar este mensaje\./gi,
+            ""
+        )
+
+        .replace(
+            /\(\s*Transcribed by TurboScribe\.\s*Upgrade to Unlimited to remove this message\.\s*\)/gi,
+            ""
+        )
+
+        .replace(
+            /Transcribed by TurboScribe\.\s*Upgrade to Unlimited to remove this message\./gi,
+            ""
+        )
+
+        .replace(
+            /\(\s*\)/g,
+            ""
+        )
 
         .replace(
             /<v[^>]*>/gi,
@@ -4469,6 +6304,16 @@ function cleanSubtitleText(text) {
 
         .replace(
             /<\/c>/gi,
+            ""
+        )
+
+        .replace(
+            /<lang[^>]*>/gi,
+            ""
+        )
+
+        .replace(
+            /<\/lang>/gi,
             ""
         )
 
@@ -4502,19 +6347,20 @@ function cleanSubtitleText(text) {
             '"'
         )
 
-        .replace(
-            /\s+/g,
-            " "
-        )
-
         .trim();
+
 }
 
+
+/* =========================================================
+   ACTUALIZAR SUBTÍTULO
+   ========================================================= */
 
 function updateSubtitle() {
 
     if (
-        currentTrackIndex === -1 ||
+        currentTrackIndex ===
+            -1 ||
         !audio.src
     ) {
 
@@ -4524,8 +6370,10 @@ function updateSubtitle() {
 
     }
 
+
     const time =
         audio.currentTime;
+
 
     currentSubtitleIndex =
         findSubtitleIndex(
@@ -4533,25 +6381,35 @@ function updateSubtitle() {
             time
         );
 
+
     currentSecondarySubtitleIndex =
         findSubtitleIndex(
             currentSecondarySubtitles,
             time
         );
 
+
     const arabicCue =
-        currentSubtitleIndex >= 0
+        currentSubtitleIndex >=
+            0
+
             ? currentSubtitles[
                 currentSubtitleIndex
             ]
+
             : null;
 
+
     const secondaryCue =
-        currentSecondarySubtitleIndex >= 0
+        currentSecondarySubtitleIndex >=
+            0
+
             ? currentSecondarySubtitles[
                 currentSecondarySubtitleIndex
             ]
+
             : null;
+
 
     if (
         !arabicCue &&
@@ -4564,9 +6422,14 @@ function updateSubtitle() {
 
     }
 
-    let progress = 0;
 
-    if (arabicCue) {
+    let progress =
+        0;
+
+
+    if (
+        arabicCue
+    ) {
 
         progress =
             Math.max(
@@ -4586,6 +6449,7 @@ function updateSubtitle() {
 
     }
 
+
     showSubtitle(
         arabicCue
             ? arabicCue.text
@@ -4595,44 +6459,78 @@ function updateSubtitle() {
             : "",
         progress
     );
+
 }
 
+
+/* =========================================================
+   BUSCAR CUE
+   ========================================================= */
 
 function findSubtitleIndex(
     cues,
     time
 ) {
 
-    let low = 0;
+    if (
+        !Array.isArray(cues) ||
+        !cues.length ||
+        !Number.isFinite(time)
+    ) {
+
+        return -1;
+
+    }
+
+
+    /*
+     * Primero buscamos un segmento
+     * exactamente activo.
+     */
+
+    let low =
+        0;
 
     let high =
-        cues.length - 1;
+        cues.length -
+        1;
+
 
     while (
-        low <= high
+        low <=
+        high
     ) {
 
         const mid =
             Math.floor(
-                (low + high) / 2
+                (
+                    low +
+                    high
+                ) / 2
             );
+
 
         const cue =
             cues[mid];
 
+
         if (
-            time < cue.start
+            time <
+            cue.start
         ) {
 
             high =
-                mid - 1;
+                mid -
+                1;
 
         } else if (
-            time >= cue.end
+            time >=
+            cue.end
         ) {
 
             low =
-                mid + 1;
+                mid +
+                1;
 
         } else {
 
@@ -4642,9 +6540,78 @@ function findSubtitleIndex(
 
     }
 
-    return -1;
-}
 
+    /*
+     * Si estamos en un pequeño hueco entre
+     * dos segmentos, mantenemos el anterior.
+     *
+     * Esto evita que el subtítulo desaparezca
+     * durante pequeños silencios de Whisper.
+     */
+
+    const previousIndex =
+        high;
+
+
+    if (
+        previousIndex >=
+            0 &&
+        previousIndex <
+            cues.length
+    ) {
+
+        const previous =
+            cues[
+                previousIndex
+            ];
+
+
+        const next =
+            cues[
+                previousIndex +
+                1
+            ];
+
+
+        if (
+            next &&
+            time >=
+                previous.end &&
+            time <
+                next.start
+        ) {
+
+            const gap =
+                next.start -
+                previous.end;
+
+
+            /*
+             * Solo rellenamos huecos pequeños.
+             * No queremos mantener una frase
+             * durante un silencio largo.
+             */
+
+            if (
+                gap <=
+                0.85
+            ) {
+
+                return previousIndex;
+
+            }
+
+        }
+
+    }
+
+
+    return -1;
+
+}
+/* =========================================================
+   MOSTRAR SUBTÍTULO
+   ========================================================= */
 
 function showSubtitle(
     arabicText,
@@ -4652,43 +6619,56 @@ function showSubtitle(
     progress
 ) {
 
-    subtitleText.replaceChildren();
+    subtitleText.innerHTML =
+        "";
 
-    if (arabicText) {
+
+    if (
+        arabicText
+    ) {
 
         const base =
             document.createElement(
                 "span"
             );
 
+
         base.className =
             "subtitle-base";
 
+
         base.textContent =
             arabicText;
+
 
         const highlight =
             document.createElement(
                 "span"
             );
 
+
         highlight.className =
             "subtitle-highlight";
 
+
         highlight.textContent =
             arabicText;
+
 
         highlight.style.clipPath =
             `inset(0 0 0 ${
                 100 -
                 Math.round(
-                    progress * 100
+                    progress *
+                    100
                 )
             }%)`;
+
 
         subtitleText.appendChild(
             base
         );
+
 
         subtitleText.appendChild(
             highlight
@@ -4696,24 +6676,36 @@ function showSubtitle(
 
     }
 
+
     subtitleSecondary.textContent =
-        secondaryText || "";
+        secondaryText ||
+        "";
+
 
     subtitleSecondary.style.display =
         secondaryText
             ? "block"
             : "none";
 
+
     subtitleProgressBar.style.width =
-        `${Math.round(
-            progress * 100
-        )}%`;
+        Math.round(
+            progress *
+            100
+        ) +
+        "%";
+
 
     subtitleOverlay.classList.add(
         "visible"
     );
+
 }
 
+
+/* =========================================================
+   OCULTAR SUBTÍTULO
+   ========================================================= */
 
 function hideSubtitleOverlay() {
 
@@ -4721,22 +6713,27 @@ function hideSubtitleOverlay() {
         "visible"
     );
 
+
     subtitleText.textContent =
         "";
+
 
     subtitleSecondary.textContent =
         "";
 
+
     subtitleSecondary.style.display =
         "none";
 
+
     subtitleProgressBar.style.width =
         "0%";
+
 }
 
 
 /* =========================================================
-   PLAY
+   PLAY / PAUSE
    ========================================================= */
 
 mainPlayBtn.addEventListener(
@@ -4744,12 +6741,17 @@ mainPlayBtn.addEventListener(
     () => {
 
         if (
-            currentTrackIndex === -1
+            currentTrackIndex ===
+            -1
         ) {
 
-            if (allNasheeds.length) {
+            if (
+                allNasheeds.length
+            ) {
 
-                requestPlayTrack(0);
+                requestPlayTrack(
+                    0
+                );
 
             }
 
@@ -4757,11 +6759,20 @@ mainPlayBtn.addEventListener(
 
         }
 
-        if (audio.paused) {
 
-            audio.play().catch(
-                console.error
-            );
+        if (
+            audio.paused
+        ) {
+
+            audio
+                .play()
+                .catch(
+                    error =>
+                        console.error(
+                            "[NUSHUD PLAYER]",
+                            error
+                        )
+                );
 
         } else {
 
@@ -4804,6 +6815,7 @@ audio.addEventListener(
                 audio.duration
             );
 
+
         updateSubtitleMobilePosition();
 
     }
@@ -4824,17 +6836,22 @@ audio.addEventListener(
                 (
                     audio.currentTime /
                     audio.duration
-                ) * 100;
+                ) *
+                100;
+
 
             progressBar.style.width =
-                `${percentage}%`;
+                percentage +
+                "%";
 
         }
+
 
         currentTimeEl.textContent =
             formatTime(
                 audio.currentTime
             );
+
 
         updateSubtitle();
 
@@ -4854,6 +6871,10 @@ audio.addEventListener(
 );
 
 
+/* =========================================================
+   PROGRESO
+   ========================================================= */
+
 progressContainer.addEventListener(
     "click",
     event => {
@@ -4868,9 +6889,10 @@ progressContainer.addEventListener(
 
         }
 
+
         const rect =
-            progressContainer
-                .getBoundingClientRect();
+            progressContainer.getBoundingClientRect();
+
 
         const ratio =
             (
@@ -4878,6 +6900,7 @@ progressContainer.addEventListener(
                 rect.left
             ) /
             rect.width;
+
 
         audio.currentTime =
             Math.max(
@@ -4893,6 +6916,10 @@ progressContainer.addEventListener(
 );
 
 
+/* =========================================================
+   NEXT
+   ========================================================= */
+
 function nextTrack() {
 
     if (
@@ -4903,6 +6930,7 @@ function nextTrack() {
 
     }
 
+
     const nextIndex =
         (
             currentTrackIndex +
@@ -4910,11 +6938,17 @@ function nextTrack() {
         ) %
         allNasheeds.length;
 
+
     requestPlayTrack(
         nextIndex
     );
+
 }
 
+
+/* =========================================================
+   PREVIOUS
+   ========================================================= */
 
 function prevTrack() {
 
@@ -4926,38 +6960,59 @@ function prevTrack() {
 
     }
 
+
     const previousIndex =
-        currentTrackIndex <= 0
-            ? allNasheeds.length - 1
-            : currentTrackIndex - 1;
+        currentTrackIndex <=
+            0
+
+            ? allNasheeds.length -
+                1
+
+            : currentTrackIndex -
+                1;
+
 
     requestPlayTrack(
         previousIndex
     );
+
 }
 
 
+/* =========================================================
+   POSICIÓN MÓVIL
+   ========================================================= */
+
 function updateSubtitleMobilePosition() {
 
-    if (!mobileAudioPlayer) {
-        return;
-    }
-
-    if (window.innerWidth > 767) {
-
-        document.documentElement
-            .style
-            .removeProperty(
-                "--mobile-subtitle-bottom"
-            );
+    if (
+        !mobileAudioPlayer
+    ) {
 
         return;
+
     }
+
+
+    if (
+        window.innerWidth >
+        767
+    ) {
+
+        document.documentElement.style.removeProperty(
+            "--mobile-subtitle-bottom"
+        );
+
+        return;
+
+    }
+
 
     const playerHeight =
         mobileAudioPlayer
             .getBoundingClientRect()
             .height;
+
 
     const navHeight =
         parseFloat(
@@ -4967,19 +7022,21 @@ function updateSubtitleMobilePosition() {
                 .getPropertyValue(
                     "--mobile-nav-height"
                 )
-        ) || 64;
+        ) ||
+        64;
+
 
     const bottom =
         navHeight +
         playerHeight +
         18;
 
-    document.documentElement
-        .style
-        .setProperty(
-            "--mobile-subtitle-bottom",
-            `${bottom}px`
-        );
+
+    document.documentElement.style.setProperty(
+        "--mobile-subtitle-bottom",
+        `${bottom}px`
+    );
+
 }
 
 
@@ -4987,6 +7044,7 @@ window.addEventListener(
     "resize",
     updateSubtitleMobilePosition
 );
+
 
 window.addEventListener(
     "orientationchange",
@@ -5006,123 +7064,171 @@ if (
     "undefined"
 ) {
 
-    const observer =
+    const playerObserver =
         new ResizeObserver(
-            updateSubtitleMobilePosition
+            () => {
+
+                updateSubtitleMobilePosition();
+
+            }
         );
 
-    observer.observe(
+
+    playerObserver.observe(
         mobileAudioPlayer
     );
 
 }
 
 
-function formatTime(seconds) {
+function updateMobileLayout() {
+
+    updateSubtitleMobilePosition();
+
+}
+
+
+/* =========================================================
+   FORMAT TIME
+   ========================================================= */
+
+function formatTime(
+    seconds
+) {
 
     if (
-        !Number.isFinite(seconds)
+        !Number.isFinite(
+            seconds
+        )
     ) {
 
         return "0:00";
 
     }
 
+
     const mins =
         Math.floor(
-            seconds / 60
+            seconds /
+            60
         );
+
 
     const secs =
         Math.floor(
-            seconds % 60
+            seconds %
+            60
         );
+
 
     return (
         `${mins}:` +
         (
-            secs < 10
+            secs <
+            10
                 ? "0"
                 : ""
         ) +
         secs
     );
+
 }
 
 
-function escapeHtml(value) {
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function escapeHtml(
+    value
+) {
 
     const div =
         document.createElement(
             "div"
         );
 
+
     div.textContent =
         String(
-            value ?? ""
+            value ??
+            ""
         );
 
+
     return div.innerHTML;
+
 }
 
 
 /* =========================================================
-   INIT
+   ARRANQUE ÚNICO
    ========================================================= */
 
-async function initializeNushud() {
+document.addEventListener(
+    "DOMContentLoaded",
+    async function () {
 
-    updateSubtitleMobilePosition();
+        updateMobileLayout();
 
-    applyAnimationsPreference();
+        applyAnimationsPreference();
 
-    setInterfaceLanguage(
-        interfaceLanguage
-    );
+        updateWarningTexts();
 
-    renderSubtitleOptions();
+        setInterfaceLanguage(
+            interfaceLanguage
+        );
 
-    await fetchNasheeds();
+        renderSubtitleOptions();
 
-    await loadFavoritesFromSupabase();
+        await fetchNasheeds();
 
-    if (
-        window.NushudUserUpload &&
-        typeof
-            window.NushudUserUpload.refresh ===
-            "function"
-    ) {
+        const user =
+            window.NushudAuth &&
+            typeof window.NushudAuth.getUser ===
+                "function"
 
-        window.NushudUserUpload.refresh();
+                ? window.NushudAuth.getUser()
 
-    }
-
-}
+                : null;
 
 
-if (
-    document.readyState ===
-    "loading"
-) {
+        if (
+            user
+        ) {
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        initializeNushud,
-        {
-            once: true
+            await loadFavoritesFromSupabase();
+
         }
-    );
 
-} else {
 
-    initializeNushud();
+        if (
+            window.NushudUserUpload &&
+            typeof window.NushudUserUpload.render ===
+                "function"
+        ) {
 
-}
+            window.NushudUserUpload.render();
 
+        }
+
+    },
+    {
+        once:
+            true
+    }
+);
+
+
+/* =========================================================
+   POSICIÓN INICIAL
+   ========================================================= */
 
 updateSubtitleMobilePosition();
 
 </script>
 
+
 </body>
+
 </html>

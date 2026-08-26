@@ -2802,41 +2802,8 @@ let animationsActive =
     "false";
 
 
-let favorites =
-    [];
-
-
-try {
-
-    favorites =
-        JSON.parse(
-            localStorage.getItem(
-                "nasheed_favorites"
-            ) ||
-            localStorage.getItem(
-                "nushud_favorites"
-            ) ||
-            "[]"
-        );
-
-
-    if (
-        !Array.isArray(
-            favorites
-        )
-    ) {
-
-        favorites =
-            [];
-
-    }
-
-} catch {
-
-    favorites =
-        [];
-
-}
+let favorites = [];
+let favoritesLoading = false;
 
 
 /* =========================================================
@@ -3406,6 +3373,33 @@ function switchTab(
     }
 
 }
+/* =========================================================
+   SINCRONIZACIÓN CON AUTENTICACIÓN
+   ========================================================= */
+
+window.addEventListener(
+    "nushud-auth-changed",
+    async function (event) {
+
+        var user =
+            event.detail &&
+            event.detail.user
+                ? event.detail.user
+                : null;
+
+        if (user) {
+
+            await loadFavoritesFromSupabase();
+
+        } else {
+
+            favorites = [];
+
+            renderGrids();
+            renderFavorites();
+        }
+    }
+);
 
 
 /* =========================================================
@@ -4130,47 +4124,322 @@ function showMessage(
    FAVORITOS
    ========================================================= */
 
-function toggleFavorite(
-    id
-) {
+async function loadFavoritesFromSupabase() {
 
-    const index =
-        favorites.indexOf(
-            id
+    favoritesLoading = true;
+
+    try {
+
+        var authUser =
+            window.NushudAuth &&
+            typeof window.NushudAuth.getUser === "function"
+                ? window.NushudAuth.getUser()
+                : null;
+
+        if (!authUser) {
+            favorites = [];
+            renderGrids();
+            renderFavorites();
+            return;
+        }
+
+        if (
+            !window.supabase ||
+            typeof window.supabase.createClient !==
+                "function"
+        ) {
+            console.error(
+                "Supabase JS no está disponible."
+            );
+            return;
+        }
+
+        var configResponse =
+            await fetch(
+                "/api/public-config",
+                {
+                    cache: "no-store",
+                    credentials: "same-origin"
+                }
+            );
+
+        if (!configResponse.ok) {
+            throw new Error(
+                "No se pudo cargar la configuración de Supabase."
+            );
+        }
+
+        var config =
+            await configResponse.json();
+
+        if (
+            !config.supabaseUrl ||
+            !config.supabasePublishableKey
+        ) {
+            throw new Error(
+                "Configuración pública de Supabase incompleta."
+            );
+        }
+
+        var client =
+            window.supabase.createClient(
+                config.supabaseUrl,
+                config.supabasePublishableKey,
+                {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true
+                    }
+                }
+            );
+
+        var result =
+            await client
+                .from("user_favorites")
+                .select("nasheed_id")
+                .eq(
+                    "user_id",
+                    authUser.id
+                );
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        favorites =
+            (result.data || [])
+                .map(
+                    row =>
+                        Number(
+                            row.nasheed_id
+                        )
+                );
+
+        renderGrids();
+        renderFavorites();
+
+    } catch (error) {
+
+        console.error(
+            "[NUSHUD FAVORITES LOAD]",
+            error
         );
 
+        favorites = [];
+
+        renderGrids();
+        renderFavorites();
+
+    } finally {
+
+        favoritesLoading = false;
+    }
+}
+
+
+async function getFavoritesSupabaseClient() {
 
     if (
-        index >=
-        0
+        window.NushudFavoritesClient
     ) {
+        return window.NushudFavoritesClient;
+    }
 
-        favorites.splice(
-            index,
-            1
+    if (
+        !window.supabase ||
+        typeof window.supabase.createClient !==
+            "function"
+    ) {
+        throw new Error(
+            "Supabase JS no está disponible."
         );
+    }
+
+    var response =
+        await fetch(
+            "/api/public-config",
+            {
+                cache: "no-store",
+                credentials: "same-origin"
+            }
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            "No se pudo cargar la configuración de Supabase."
+        );
+    }
+
+    var config =
+        await response.json();
+
+    window.NushudFavoritesClient =
+        window.supabase.createClient(
+            config.supabaseUrl,
+            config.supabasePublishableKey,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true
+                }
+            }
+        );
+
+    return window.NushudFavoritesClient;
+}
+
+
+async function toggleFavorite(id) {
+
+    var authUser =
+        window.NushudAuth &&
+        typeof window.NushudAuth.getUser ===
+            "function"
+            ? window.NushudAuth.getUser()
+            : null;
+
+    if (!authUser) {
+
+        if (
+            window.NushudAuth &&
+            typeof window.NushudAuth.open ===
+                "function"
+        ) {
+            window.NushudAuth.open(
+                "login"
+            );
+        }
+
+        return;
+    }
+
+    var numberId =
+        Number(id);
+
+    if (
+        !Number.isSafeInteger(
+            numberId
+        )
+    ) {
+        return;
+    }
+
+    var wasFavorite =
+        favorites.includes(
+            numberId
+        );
+
+
+    /*
+     * Actualización optimista de la interfaz.
+     */
+    if (wasFavorite) {
+
+        favorites =
+            favorites.filter(
+                favoriteId =>
+                    favoriteId !==
+                    numberId
+            );
 
     } else {
 
         favorites.push(
-            id
+            numberId
         );
-
     }
 
-
-    localStorage.setItem(
-        "nasheed_favorites",
-        JSON.stringify(
-            favorites
-        )
-    );
-
-
     renderGrids();
-
     renderFavorites();
 
+
+    try {
+
+        var client =
+            await getFavoritesSupabaseClient();
+
+        if (wasFavorite) {
+
+            var deleteResult =
+                await client
+                    .from(
+                        "user_favorites"
+                    )
+                    .delete()
+                    .eq(
+                        "user_id",
+                        authUser.id
+                    )
+                    .eq(
+                        "nasheed_id",
+                        numberId
+                    );
+
+            if (
+                deleteResult.error
+            ) {
+                throw deleteResult.error;
+            }
+
+        } else {
+
+            var insertResult =
+                await client
+                    .from(
+                        "user_favorites"
+                    )
+                    .insert({
+                        user_id:
+                            authUser.id,
+                        nasheed_id:
+                            numberId
+                    });
+
+            if (
+                insertResult.error
+            ) {
+                throw insertResult.error;
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "[NUSHUD FAVORITES SAVE]",
+            error
+        );
+
+
+        /*
+         * Si Supabase falla,
+         * recuperamos el estado anterior.
+         */
+        if (wasFavorite) {
+
+            favorites.push(
+                numberId
+            );
+
+        } else {
+
+            favorites =
+                favorites.filter(
+                    favoriteId =>
+                        favoriteId !==
+                        numberId
+                );
+        }
+
+        renderGrids();
+        renderFavorites();
+
+        alert(
+            interfaceLanguage ===
+                "en"
+                ? "The favorite could not be saved."
+                : "No se pudo guardar el favorito."
+        );
+    }
 }
 
 
@@ -4179,45 +4448,43 @@ function updateFavoriteButton(
     id
 ) {
 
-    const active =
+    var active =
         favorites.includes(
-            id
+            Number(id)
         );
-
 
     button.textContent =
         active
             ? "★"
             : "☆";
 
-
     button.className =
         active
             ? "text-xs cursor-pointer text-amber-400"
             : "text-xs cursor-pointer text-zinc-500 hover:text-zinc-300";
-
 }
 
 
 function renderFavorites() {
 
-    const container =
+    var container =
         document.getElementById(
             "favorites-grid"
         );
 
+    if (!container) {
+        return;
+    }
 
-    const favoriteTracks =
+    var favoriteTracks =
         allNasheeds.filter(
             track =>
                 favorites.includes(
-                    track.id
+                    Number(track.id)
                 )
         );
 
-
     container.replaceChildren();
-
 
     if (
         !favoriteTracks.length
@@ -4230,35 +4497,187 @@ function renderFavorites() {
             )
         );
 
-
         return;
-
     }
 
-
     favoriteTracks.forEach(
-        track => {
+        function (track) {
 
-            const index =
-                allNasheeds.findIndex(
-                    item =>
-                        item.id ===
-                        track.id
+            var card =
+                document.createElement(
+                    "div"
                 );
 
+            card.className =
+                "glass-panel rounded-2xl p-3.5 card-hover flex flex-col justify-between group border border-white/5";
 
-            container.appendChild(
-                createTrackCard(
-                    track,
-                    index
-                )
+            var cover =
+                document.createElement(
+                    "div"
+                );
+
+            cover.className =
+                "relative aspect-square rounded-xl bg-zinc-950/80 overflow-hidden flex items-center justify-center mb-3 border border-white/5";
+
+            if (
+                track.cover
+            ) {
+
+                var image =
+                    document.createElement(
+                        "img"
+                    );
+
+                image.src =
+                    track.cover;
+
+                image.alt =
+                    track.title;
+
+                image.className =
+                    "w-full h-full object-cover";
+
+                cover.appendChild(
+                    image
+                );
+
+            } else {
+
+                addMusicIcon(
+                    cover
+                );
+            }
+
+            var playButton =
+                document.createElement(
+                    "button"
+                );
+
+            playButton.className =
+                "absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer";
+
+            playButton.innerHTML =
+                '<span class="w-10 h-10 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-bold text-sm shadow-lg">▶</span>';
+
+            playButton.addEventListener(
+                "click",
+                function () {
+
+                    var index =
+                        allNasheeds.findIndex(
+                            item =>
+                                Number(
+                                    item.id
+                                ) ===
+                                Number(
+                                    track.id
+                                )
+                        );
+
+                    if (
+                        index >= 0
+                    ) {
+                        playTrack(
+                            index
+                        );
+                    }
+                }
             );
 
+            cover.appendChild(
+                playButton
+            );
+
+            var info =
+                document.createElement(
+                    "div"
+                );
+
+            info.className =
+                "space-y-1 mb-3";
+
+            var title =
+                document.createElement(
+                    "h4"
+                );
+
+            title.className =
+                "text-xs font-bold text-zinc-100 truncate";
+
+            title.textContent =
+                track.title;
+
+            info.appendChild(
+                title
+            );
+
+            var subtitle =
+                document.createElement(
+                    "p"
+                );
+
+            subtitle.className =
+                "text-[10px] text-zinc-500";
+
+            subtitle.textContent =
+                "Nushud Audio";
+
+            info.appendChild(
+                subtitle
+            );
+
+            var actions =
+                document.createElement(
+                    "div"
+                );
+
+            actions.className =
+                "flex items-center justify-between pt-2.5 border-t border-white/5";
+
+            var favoriteButton =
+                document.createElement(
+                    "button"
+                );
+
+            favoriteButton.type =
+                "button";
+
+            updateFavoriteButton(
+                favoriteButton,
+                track.id
+            );
+
+            favoriteButton.addEventListener(
+                "click",
+                function () {
+                    toggleFavorite(
+                        track.id
+                    );
+                }
+            );
+
+            actions.appendChild(
+                favoriteButton
+            );
+
+            card.appendChild(
+                cover
+            );
+
+            card.appendChild(
+                info
+            );
+
+            card.appendChild(
+                actions
+            );
+
+            container.appendChild(
+                card
+            );
         }
     );
-
 }
-
 
 /* =========================================================
    ADVERTENCIA
@@ -4628,25 +5047,40 @@ function closeSubtitleMenu() {
 
 }
 
-
 document.addEventListener(
-    "click",
-    event => {
+    "DOMContentLoaded",
+    () => {
 
-        if (
-            !event.target.closest(
-                ".subtitle-menu-wrapper"
-            )
-        ) {
+        updateMobileLayout();
 
-            closeSubtitleMenu();
+        applyAnimationsPreference();
 
-        }
+        setInterfaceLanguage(
+            interfaceLanguage
+        );
+
+        renderSubtitleOptions();
+
+        fetchNasheeds();
+
+        setTimeout(
+            function () {
+
+                if (
+                    window.NushudAuth &&
+                    window.NushudAuth.getUser()
+                ) {
+
+                    loadFavoritesFromSupabase();
+
+                }
+
+            },
+            300
+        );
 
     }
 );
-
-
 /* =========================================================
    OPCIONES SUBTITULOS
    ========================================================= */

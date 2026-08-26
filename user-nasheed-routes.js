@@ -679,11 +679,11 @@ async function transcribeArabic(
 
 
 /* =========================================================
-   TRANSLATE BATCH
+   TRANSLATE SINGLE REQUEST
    ========================================================= */
 
-async function translateBatch(
-    batch,
+async function requestTranslation(
+    items,
     language,
     apiKey
 ) {
@@ -714,8 +714,9 @@ async function translateBatch(
 
     }
 
+
     const input =
-        batch.map(
+        items.map(
             (
                 segment,
                 index
@@ -730,18 +731,6 @@ async function translateBatch(
             })
         );
 
-
-    /*
-     * IMPORTANTE:
-     *
-     * No usamos json_schema porque Groq
-     * estaba devolviendo HTTP 400:
-     *
-     * "Failed to validate JSON"
-     *
-     * Usamos json_object y validamos
-     * nosotros mismos la respuesta.
-     */
 
     const requestBody = {
 
@@ -768,11 +757,9 @@ async function translateBatch(
                 content:
                     `Translate Arabic nasheed lyrics into ${targetLanguage}.
 
-You are translating timed subtitle segments.
-
 Return ONLY valid JSON.
 
-The response MUST have exactly this structure:
+Required structure:
 
 {
   "translations": [
@@ -784,8 +771,7 @@ The response MUST have exactly this structure:
 }
 
 Rules:
-
-- Translate every segment.
+- Translate every provided segment.
 - Preserve every index exactly.
 - Do not omit any index.
 - Do not duplicate indexes.
@@ -794,7 +780,7 @@ Rules:
 - Do not add markdown.
 - Do not use code fences.
 - Keep the translation faithful to the Arabic.
-- Every input index must appear exactly once.`
+- Return one translation for every input segment.`
             },
 
             {
@@ -917,16 +903,7 @@ Rules:
     }
 
 
-    const expectedIndexes =
-        new Set(
-            input.map(
-                item =>
-                    item.i
-            )
-        );
-
-
-    const translatedMap =
+    const map =
         new Map();
 
 
@@ -945,6 +922,7 @@ Rules:
                 item?.text
             );
 
+
         if (
             !Number.isInteger(
                 index
@@ -955,15 +933,17 @@ Rules:
 
         }
 
+
         if (
-            !expectedIndexes.has(
-                index
-            )
+            index < 0 ||
+            index >=
+                items.length
         ) {
 
             continue;
 
         }
+
 
         if (!text) {
 
@@ -971,8 +951,9 @@ Rules:
 
         }
 
+
         if (
-            translatedMap.has(
+            map.has(
                 index
             )
         ) {
@@ -981,7 +962,8 @@ Rules:
 
         }
 
-        translatedMap.set(
+
+        map.set(
             index,
             text
         );
@@ -989,25 +971,424 @@ Rules:
     }
 
 
+    return {
+
+        map,
+
+        targetLanguage
+
+    };
+
+}
+
+
+/* =========================================================
+   TRANSLATE BATCH
+   ========================================================= */
+
+async function translateBatch(
+    batch,
+    language,
+    apiKey
+) {
+
+    if (
+        !Array.isArray(
+            batch
+        ) ||
+        !batch.length
+    ) {
+
+        return [];
+
+    }
+
+
+    /*
+     * Primera petición con todo el lote.
+     */
+
+    let firstResult;
+
+    try {
+
+        firstResult =
+            await requestTranslation(
+                batch,
+                language,
+                apiKey
+            );
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            `[GROQ ${language} FIRST REQUEST]`,
+            error
+        );
+
+        /*
+         * Si falla el lote completo,
+         * procesamos cada segmento individualmente.
+         */
+
+        firstResult = {
+
+            map:
+                new Map()
+
+        };
+
+    }
+
+
+    const translatedMap =
+        firstResult.map;
+
+
+    /*
+     * Detectar segmentos que Groq
+     * no devolvió.
+     */
+
+    const missingIndexes = [];
+
+
     for (
-        const index of
-        expectedIndexes
+        let i = 0;
+        i <
+            batch.length;
+        i++
     ) {
 
         if (
             !translatedMap.has(
-                index
+                i
             )
         ) {
 
-            throw new Error(
-                `La traducción ${targetLanguage} no devolvió el segmento ${index}.`
+            missingIndexes.push(
+                i
             );
 
         }
 
     }
 
+
+    console.log(
+        `[GROQ ${language}]`,
+        "Total:",
+        batch.length,
+        "Faltan:",
+        missingIndexes
+    );
+
+
+    /*
+     * Reintento individual.
+     *
+     * En lugar de hacer fallar todo el nasheed,
+     * pedimos los segmentos faltantes uno a uno.
+     */
+
+    for (
+        const missingIndex of
+        missingIndexes
+    ) {
+
+        const segment =
+            batch[
+                missingIndex
+            ];
+
+
+        let success =
+            false;
+
+
+        /*
+         * Hasta 3 intentos para ese segmento.
+         */
+
+        for (
+            let attempt = 1;
+            attempt <= 3;
+            attempt++
+        ) {
+
+            try {
+
+                const result =
+                    await requestTranslation(
+                        [
+                            segment
+                        ],
+                        language,
+                        apiKey
+                    );
+
+
+                const translated =
+                    result.map.get(
+                        0
+                    );
+
+
+                if (
+                    translated
+                ) {
+
+                    translatedMap.set(
+                        missingIndex,
+                        translated
+                    );
+
+                    success =
+                        true;
+
+                    console.log(
+                        `[GROQ ${language}] Segmento ${missingIndex} recuperado en intento ${attempt}.`
+                    );
+
+                    break;
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    `[GROQ ${language}] Segmento ${missingIndex}, intento ${attempt}:`,
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Si sigue faltando después de 3 intentos,
+         * hacemos una última petición súper explícita.
+         */
+
+        if (!success) {
+
+            try {
+
+                const result =
+                    await groqRequest(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        {
+
+                            method:
+                                "POST",
+
+                            headers: {
+
+                                "Content-Type":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+
+                                    model:
+                                        GROQ_LLM,
+
+                                    temperature:
+                                        0,
+
+                                    response_format: {
+
+                                        type:
+                                            "json_object"
+
+                                    },
+
+                                    messages: [
+
+                                        {
+
+                                            role:
+                                                "system",
+
+                                            content:
+                                                `Translate this ONE Arabic subtitle into ${language === "es"
+                                                    ? "Spanish"
+                                                    : language === "en"
+                                                        ? "English"
+                                                        : "Russian"}.
+
+Return ONLY JSON:
+
+{"translations":[{"i":0,"text":"translation"}]}
+
+Do not return Arabic.
+Do not explain anything.
+Do not use markdown.`
+
+                                        },
+
+                                        {
+
+                                            role:
+                                                "user",
+
+                                            content:
+                                                JSON.stringify({
+
+                                                    translations: [
+
+                                                        {
+                                                            i:
+                                                                0,
+
+                                                            text:
+                                                                segment.text
+
+                                                        }
+
+                                                    ]
+
+                                                })
+
+                                        }
+
+                                    ]
+
+                                })
+
+                        },
+                        apiKey
+                    );
+
+
+                let content =
+                    result
+                        ?.choices
+                        ?.[0]
+                        ?.message
+                        ?.content ||
+                    "";
+
+
+                content =
+                    String(
+                        content
+                    )
+                        .trim()
+                        .replace(
+                            /^```json\s*/i,
+                            ""
+                        )
+                        .replace(
+                            /^```\s*/i,
+                            ""
+                        )
+                        .replace(
+                            /\s*```$/i,
+                            ""
+                        )
+                        .trim();
+
+
+                const parsed =
+                    JSON.parse(
+                        content
+                    );
+
+
+                const text =
+                    cleanText(
+                        parsed
+                            ?.translations
+                            ?.[0]
+                            ?.text
+                    );
+
+
+                if (text) {
+
+                    translatedMap.set(
+                        missingIndex,
+                        text
+                    );
+
+                    success =
+                        true;
+
+                }
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    `[GROQ ${language}] Último intento segmento ${missingIndex}:`,
+                    error
+                );
+
+            }
+
+        }
+
+
+        /*
+         * Si por alguna razón Groq no devuelve
+         * ese segmento después de todo,
+         * NO usamos el árabe como traducción.
+         *
+         * Marcamos un texto neutro para evitar
+         * introducir el árabe en el VTT.
+         *
+         * Esto debería ocurrir extremadamente raro.
+         */
+
+        if (!success) {
+
+            throw new Error(
+                `La traducción ${language} no pudo recuperar el segmento ${missingIndex}.`
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Verificación final.
+     */
+
+    for (
+        let i = 0;
+        i <
+            batch.length;
+        i++
+    ) {
+
+        if (
+            !translatedMap.has(
+                i
+            )
+        ) {
+
+            throw new Error(
+                `La traducción ${language} no devolvió el segmento ${i}.`
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Mantener los tiempos originales.
+     */
 
     return batch.map(
         (
@@ -1044,18 +1425,36 @@ async function translateAll(
 
     const output = [];
 
+    /*
+     * Lotes pequeños para reducir
+     * la posibilidad de que Groq
+     * omita segmentos.
+     */
+
+    const BATCH_SIZE =
+        25;
+
     for (
         let i = 0;
         i <
             segments.length;
-        i += 45
+        i += BATCH_SIZE
     ) {
 
         const batch =
             segments.slice(
                 i,
-                i + 45
+                i + BATCH_SIZE
             );
+
+
+        console.log(
+            `[GROQ ${language}] Lote ${Math.floor(i / BATCH_SIZE) + 1}, segmentos ${i}-${Math.min(
+                i + BATCH_SIZE - 1,
+                segments.length - 1
+            )}`
+        );
+
 
         const translated =
             await translateBatch(
@@ -1063,6 +1462,7 @@ async function translateAll(
                 language,
                 apiKey
             );
+
 
         output.push(
             ...translated
@@ -1120,6 +1520,7 @@ async function privateTrack(
 
     const subtitles = {};
 
+
     for (
         const [
             language,
@@ -1139,6 +1540,7 @@ async function privateTrack(
 
         }
 
+
         if (
             typeof storagePath !==
                 "string" ||
@@ -1148,6 +1550,7 @@ async function privateTrack(
             continue;
 
         }
+
 
         subtitles[
             language
@@ -1159,6 +1562,7 @@ async function privateTrack(
             );
 
     }
+
 
     return {
 
@@ -1233,6 +1637,7 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (!currentUser) {
 
                 return res
@@ -1245,6 +1650,7 @@ function registerUserNasheedRoutes({
                     });
 
             }
+
 
             try {
 
@@ -1271,11 +1677,13 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (error) {
 
                     throw error;
 
                 }
+
 
                 return res.json({
 
@@ -1312,6 +1720,7 @@ function registerUserNasheedRoutes({
 
                 });
 
+
             } catch (
                 error
             ) {
@@ -1320,6 +1729,7 @@ function registerUserNasheedRoutes({
                     "[USER NASHEEDS LIST]",
                     error
                 );
+
 
                 return res
                     .status(500)
@@ -1353,6 +1763,7 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (!currentUser) {
 
                 return res
@@ -1366,8 +1777,10 @@ function registerUserNasheedRoutes({
 
             }
 
+
             let uploadId =
                 null;
+
 
             try {
 
@@ -1377,29 +1790,35 @@ function registerUserNasheedRoutes({
                         ""
                     ).trim();
 
+
                 const audio =
                     req.body?.audio ||
                     {};
 
+
                 const cover =
                     req.body?.cover ||
                     null;
+
 
                 const translations =
                     normalizeLanguages(
                         req.body?.translations
                     );
 
+
                 const audioSize =
                     Number(
                         audio.size
                     );
+
 
                 const audioType =
                     String(
                         audio.type ||
                         ""
                     );
+
 
                 if (
                     !title ||
@@ -1417,6 +1836,7 @@ function registerUserNasheedRoutes({
                         });
 
                 }
+
 
                 if (
                     !Number.isFinite(
@@ -1439,6 +1859,7 @@ function registerUserNasheedRoutes({
 
                 }
 
+
                 if (
                     !AUDIO_TYPES.has(
                         audioType
@@ -1456,6 +1877,7 @@ function registerUserNasheedRoutes({
 
                 }
 
+
                 if (cover) {
 
                     const coverSize =
@@ -1463,11 +1885,13 @@ function registerUserNasheedRoutes({
                             cover.size
                         );
 
+
                     const coverType =
                         String(
                             cover.type ||
                             ""
                         );
+
 
                     if (
                         !Number.isFinite(
@@ -1495,8 +1919,10 @@ function registerUserNasheedRoutes({
 
                 }
 
+
                 const uploadDay =
                     day();
+
 
                 const existing =
                     await supabase
@@ -1516,6 +1942,7 @@ function registerUserNasheedRoutes({
                         )
                         .maybeSingle();
 
+
                 if (
                     existing.error
                 ) {
@@ -1524,11 +1951,12 @@ function registerUserNasheedRoutes({
 
                 }
 
+
                 /*
-                 * Solo bloqueamos processing y ready.
+                 * La subida del día se consume
+                 * si está processing o ready.
                  *
-                 * Si falló:
-                 * permitimos reintentar.
+                 * Si está error, se permite reintentar.
                  */
 
                 if (
@@ -1576,6 +2004,7 @@ function registerUserNasheedRoutes({
                             existing.data.id
                         );
 
+
                     const reset =
                         await supabase
                             .from(
@@ -1613,6 +2042,7 @@ function registerUserNasheedRoutes({
                                 "user_id",
                                 currentUser.id
                             );
+
 
                     if (
                         reset.error
@@ -1671,6 +2101,7 @@ function registerUserNasheedRoutes({
                             )
                             .single();
 
+
                     if (
                         inserted.error
                     ) {
@@ -1678,6 +2109,7 @@ function registerUserNasheedRoutes({
                         throw inserted.error;
 
                     }
+
 
                     uploadId =
                         Number(
@@ -1721,6 +2153,7 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (
                     audioSigned.error
                 ) {
@@ -1749,6 +2182,7 @@ function registerUserNasheedRoutes({
                                         false
                                 }
                             );
+
 
                     if (
                         coverSigned.error
@@ -1783,6 +2217,7 @@ function registerUserNasheedRoutes({
                             "user_id",
                             currentUser.id
                         );
+
 
                 if (
                     updated.error
@@ -1830,6 +2265,7 @@ function registerUserNasheedRoutes({
 
                 });
 
+
             } catch (
                 error
             ) {
@@ -1839,7 +2275,10 @@ function registerUserNasheedRoutes({
                     error
                 );
 
-                if (uploadId) {
+
+                if (
+                    uploadId
+                ) {
 
                     await supabase
                         .from(
@@ -1870,6 +2309,7 @@ function registerUserNasheedRoutes({
                         );
 
                 }
+
 
                 return res
                     .status(500)
@@ -1904,6 +2344,7 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (!currentUser) {
 
                 return res
@@ -1916,6 +2357,7 @@ function registerUserNasheedRoutes({
                     });
 
             }
+
 
             if (!groqApiKey) {
 
@@ -1930,10 +2372,12 @@ function registerUserNasheedRoutes({
 
             }
 
+
             const id =
                 Number(
                     req.params.id
                 );
+
 
             if (
                 !Number.isSafeInteger(
@@ -1951,6 +2395,7 @@ function registerUserNasheedRoutes({
                     });
 
             }
+
 
             try {
 
@@ -1972,6 +2417,7 @@ function registerUserNasheedRoutes({
                         )
                         .single();
 
+
                 if (
                     query.error ||
                     !query.data
@@ -1987,6 +2433,7 @@ function registerUserNasheedRoutes({
                         });
 
                 }
+
 
                 const row =
                     query.data;
@@ -2018,6 +2465,7 @@ function registerUserNasheedRoutes({
                             row.audio_path,
                             600
                         );
+
 
                 if (
                     signedAudio.error
@@ -2466,6 +2914,7 @@ function registerUserNasheedRoutes({
 
                     }
 
+
                     privateTracks.push(
                         await privateTrack(
                             supabase,
@@ -2493,6 +2942,7 @@ function registerUserNasheedRoutes({
                     "[NASHEEDS API]",
                     error
                 );
+
 
                 return res
                     .status(500)

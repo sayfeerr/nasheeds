@@ -6472,9 +6472,24 @@ function findSubtitleIndex(
     time
 ) {
 
+    if (
+        !Array.isArray(cues) ||
+        !cues.length ||
+        !Number.isFinite(time)
+    ) {
+
+        return -1;
+
+    }
+
+
+    /*
+     * Primero buscamos un segmento
+     * exactamente activo.
+     */
+
     let low =
         0;
-
 
     let high =
         cues.length -
@@ -6496,9 +6511,7 @@ function findSubtitleIndex(
 
 
         const cue =
-            cues[
-                mid
-            ];
+            cues[mid];
 
 
         if (
@@ -6528,11 +6541,74 @@ function findSubtitleIndex(
     }
 
 
+    /*
+     * Si estamos en un pequeño hueco entre
+     * dos segmentos, mantenemos el anterior.
+     *
+     * Esto evita que el subtítulo desaparezca
+     * durante pequeños silencios de Whisper.
+     */
+
+    const previousIndex =
+        high;
+
+
+    if (
+        previousIndex >=
+            0 &&
+        previousIndex <
+            cues.length
+    ) {
+
+        const previous =
+            cues[
+                previousIndex
+            ];
+
+
+        const next =
+            cues[
+                previousIndex +
+                1
+            ];
+
+
+        if (
+            next &&
+            time >=
+                previous.end &&
+            time <
+                next.start
+        ) {
+
+            const gap =
+                next.start -
+                previous.end;
+
+
+            /*
+             * Solo rellenamos huecos pequeños.
+             * No queremos mantener una frase
+             * durante un silencio largo.
+             */
+
+            if (
+                gap <=
+                0.85
+            ) {
+
+                return previousIndex;
+
+            }
+
+        }
+
+    }
+
+
     return -1;
 
 }
-
-
 /* =========================================================
    MOSTRAR SUBTÍTULO
    ========================================================= */

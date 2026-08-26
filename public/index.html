@@ -1683,122 +1683,88 @@
 
 
             <nav
-                class="space-y-1.5">
+             <nav class="space-y-1.5">
+
+    <button
+        onclick="switchTab('home')"
+        id="nav-home"
+        class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
+
+        <span class="desktop-menu-icon">
+            ⌂
+        </span>
+
+        <span data-i18n="home">
+            Inicio
+        </span>
+
+    </button>
 
 
-                <button
-                    onclick="switchTab('home')"
-                    id="nav-home"
-                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-400 cursor-pointer border border-amber-500/20">
+    <button
+        onclick="switchTab('library')"
+        id="nav-library"
+        class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
+
+        <span class="desktop-menu-icon">
+            ▣
+        </span>
+
+        <span data-i18n="library">
+            Biblioteca
+        </span>
+
+    </button>
 
 
-                    <span
-                        class="desktop-menu-icon">
+    <button
+        onclick="switchTab('favorites')"
+        id="nav-favorites"
+        class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                        ⌂
+        <span class="desktop-menu-icon">
+            ★
+        </span>
 
-                    </span>
+        <span data-i18n="favorites">
+            Favoritos
+        </span>
 
-
-                    <span
-                        data-i18n="home">
-
-                        Inicio
-
-                    </span>
-
-
-                </button>
+    </button>
 
 
-                <button
-                    onclick="switchTab('library')"
-                    id="nav-library"
-                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
+    <button
+        onclick="switchTab('upload')"
+        id="nav-upload"
+        class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
+
+        <span class="desktop-menu-icon">
+            ↑
+        </span>
+
+        <span>
+            Subir nasheed
+        </span>
+
+    </button>
 
 
-                    <span
-                        class="desktop-menu-icon">
+    <button
+        onclick="switchTab('settings')"
+        id="nav-settings"
+        class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
 
-                        ▣
+        <span class="desktop-menu-icon">
+            ⚙
+        </span>
 
-                    </span>
+        <span data-i18n="settings">
+            Ajustes / Rendimiento
+        </span>
 
+    </button>
 
-                    <span
-                        data-i18n="library">
-
-                        Biblioteca
-
-                    </span>
-
-
-                </button>
-
-
-                <button
-                    onclick="switchTab('favorites')"
-                    id="nav-favorites"
-                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
-<button
-    onclick="switchTab('upload')"
-    id="nav-upload"
-    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
-
-    <span class="desktop-menu-icon">
-        ↑
-    </span>
-
-    <span>
-        Subir nasheed
-    </span>
-
-</button>
-
-                    <span
-                        class="desktop-menu-icon">
-
-                        ★
-
-                    </span>
-
-
-                    <span
-                        data-i18n="favorites">
-
-                        Favoritos
-
-                    </span>
-
-
-                </button>
-
-
-                <button
-                    onclick="switchTab('settings')"
-                    id="nav-settings"
-                    class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-zinc-100 hover:bg-white/5 cursor-pointer border border-transparent">
-
-
-                    <span
-                        class="desktop-menu-icon">
-
-                        ⚙
-
-                    </span>
-
-
-                    <span
-                        data-i18n="settings">
-
-                        Ajustes / Rendimiento
-
-                    </span>
-
-
-                </button>
-
-
+</nav>
             </nav>
 
 
@@ -2142,79 +2108,187 @@
         <!-- SETTINGS -->
 
         <div
-            id="section-settings"
-            class="section-tab max-w-xl mx-auto space-y-6 glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl">
+    id="section-settings"
+    class="section-tab max-w-xl mx-auto space-y-6 glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl">
+
+    <div
+        class="flex items-center space-x-3 pb-4 border-b border-white/5">
+
+        <div>
+
+            <h3
+                class="text-xs font-bold text-zinc-100 uppercase tracking-wider"
+                data-i18n="performanceTitle">
+
+                Ajustes de Rendimiento
+
+            </h3>
+
+            <p
+                class="text-[11px] text-zinc-500"
+                data-i18n="performanceDescription">
+
+                Optimiza la interfaz para dispositivos limitados
+
+            </p>
+
+        </div>
+
+    </div>
 
 
-            <div
-                class="flex items-center space-x-3 pb-4 border-b border-white/5">
+    <div
+        class="flex items-center justify-between p-4 glass-panel rounded-2xl border border-white/5">
+
+        <div>
+
+            <h4
+                class="text-xs font-bold text-zinc-200"
+                data-i18n="animationsTitle">
+
+                Efectos y Animaciones Fluidas
+
+            </h4>
+
+        </div>
+
+        <button
+            onclick="toggleAnimations()"
+            id="anim-toggle-btn"
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-zinc-950 cursor-pointer">
+
+            Activadas
+
+        </button>
+
+    </div>
+
+</div>
+<!-- =====================================================
+     SUBIR NASHEED
+     ===================================================== -->
+
+<div
+    id="section-upload"
+    class="section-tab max-w-xl mx-auto space-y-5">
+
+    <div>
+
+        <h2
+            class="text-xl font-extrabold tracking-wide text-zinc-100">
+
+            Subir nasheed
+
+        </h2>
+
+        <p
+            class="text-xs text-zinc-500 mt-1">
+
+            Tu espacio personal de nasheeds.
+
+        </p>
+
+    </div>
 
 
-                <div>
+    <div
+        class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
 
+        <div
+            class="flex items-center justify-between p-5">
 
-                    <h3
-                        class="text-xs font-bold text-zinc-100 uppercase tracking-wider"
-                        data-i18n="performanceTitle">
+            <div>
 
-                        Ajustes de Rendimiento
+                <p
+                    class="text-xs font-bold text-zinc-200">
 
-                    </h3>
+                    Subida de nasheeds
 
+                </p>
 
-                    <p
-                        class="text-[11px] text-zinc-500"
-                        data-i18n="performanceDescription">
+                <p
+                    class="text-[10px] text-zinc-500 mt-1">
 
-                        Optimiza la interfaz para dispositivos limitados
+                    Esta función todavía está en desarrollo.
 
-                    </p>
-
-
-                </div>
-
+                </p>
 
             </div>
 
 
-            <div
-                class="flex items-center justify-between p-4 glass-panel rounded-2xl border border-white/5">
+            <span
+                class="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-[8px] font-bold text-zinc-500 uppercase tracking-wider">
 
+                Coming soon
 
-                <div>
-
-                    <h4
-                        class="text-xs font-bold text-zinc-200"
-                        data-i18n="animationsTitle">
-
-                        Efectos y Animaciones Fluidas
-
-                    </h4>
-
-                </div>
-
-
-                <button
-                    onclick="toggleAnimations()"
-                    id="anim-toggle-btn"
-                    class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-zinc-950 cursor-pointer">
-
-                    Activadas
-
-                </button>
-
-
-            </div>
-
+            </span>
 
         </div>
 
 
-    </main>
+        <div
+            class="border-t border-white/5 px-5 py-4 space-y-2">
 
+            <div
+                class="flex items-center gap-2 text-[10px] text-zinc-500">
+
+                <span class="text-amber-500">
+                    •
+                </span>
+
+                <span>
+                    1 nasheed por día
+                </span>
+
+            </div>
+
+
+            <div
+                class="flex items-center gap-2 text-[10px] text-zinc-500">
+
+                <span class="text-amber-500">
+                    •
+                </span>
+
+                <span>
+                    Transcripción automática
+                </span>
+
+            </div>
+
+
+            <div
+                class="flex items-center gap-2 text-[10px] text-zinc-500">
+
+                <span class="text-amber-500">
+                    •
+                </span>
+
+                <span>
+                    Subtítulos en árabe
+                </span>
+
+            </div>
+
+
+            <div
+                class="flex items-center gap-2 text-[10px] text-zinc-500">
+
+                <span class="text-amber-500">
+                    •
+                </span>
+
+                <span>
+                    Traducciones ES / EN / RU
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
-
 
 <!-- =========================================================
      WARNING MODAL
@@ -3304,48 +3378,33 @@ function applyAnimationsPreference() {
    NAVEGACION
    ========================================================= */
 
-function switchTab(
-    tab
-) {
+function switchTab(tab) {
 
- const tabs = [
-    "home",
-    "library",
-    "favorites",
-    "upload",
-    "settings"
-];
+    const tabs = [
+        "home",
+        "library",
+        "favorites",
+        "upload",
+        "settings"
+    ];
 
-
-    if (
-        !tabs.includes(
-            tab
-        )
-    ) {
-
+    if (!tabs.includes(tab)) {
         return;
-
     }
-
 
     tabs.forEach(
         current => {
 
             const section =
                 document.getElementById(
-                    "section-" +
-                    current
+                    "section-" + current
                 );
 
-
-            if (
-                section
-            ) {
+            if (section) {
 
                 section.classList.toggle(
                     "active",
-                    current ===
-                        tab
+                    current === tab
                 );
 
             }
@@ -3353,47 +3412,34 @@ function switchTab(
 
             const nav =
                 document.getElementById(
-                    "nav-" +
-                    current
+                    "nav-" + current
                 );
 
-
-            if (
-                nav
-            ) {
+            if (nav) {
 
                 nav.classList.toggle(
                     "bg-amber-500/10",
-                    current ===
-                        tab
+                    current === tab
                 );
-
 
                 nav.classList.toggle(
                     "text-amber-400",
-                    current ===
-                        tab
+                    current === tab
                 );
-
 
                 nav.classList.toggle(
                     "border-amber-500/20",
-                    current ===
-                        tab
+                    current === tab
                 );
-
 
                 nav.classList.toggle(
                     "text-zinc-400",
-                    current !==
-                        tab
+                    current !== tab
                 );
-
 
                 nav.classList.toggle(
                     "border-transparent",
-                    current !==
-                        tab
+                    current !== tab
                 );
 
             }
@@ -3401,19 +3447,14 @@ function switchTab(
 
             const mobile =
                 document.getElementById(
-                    "mobile-nav-" +
-                    current
+                    "mobile-nav-" + current
                 );
 
-
-            if (
-                mobile
-            ) {
+            if (mobile) {
 
                 mobile.classList.toggle(
                     "active",
-                    current ===
-                        tab
+                    current === tab
                 );
 
             }
@@ -3422,10 +3463,7 @@ function switchTab(
     );
 
 
-    if (
-        tab ===
-        "favorites"
-    ) {
+    if (tab === "favorites") {
 
         renderFavorites();
 

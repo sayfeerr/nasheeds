@@ -1,66 +1,524 @@
 "use strict";
 
-/*
- * ============================================================
- * NUSHUD - USER UPLOAD
- * ============================================================
- *
- * Compatible con:
- *   /api/user-nasheeds
- *   /api/user-nasheeds/prepare
- *   /api/user-nasheeds/:id/process
- *
- * El servidor controla:
- *   - autenticación
- *   - 1 subida diaria
- *   - almacenamiento
- *   - transcripción
- *   - traducciones
- *   - nasheeds privados
- *
- * Este archivo SOLO controla la interfaz.
- * ============================================================
- */
-
 (function () {
 
-    const CONTENT_ID =
-        "nushud-upload-content";
+    /* =========================================================
+       ESTADO
+       ========================================================= */
 
-    const BUCKET =
-        "UserNasheeds";
-
-    const MAX_AUDIO =
-        25 * 1024 * 1024;
-
-    const MAX_COVER =
-        5 * 1024 * 1024;
-
-    let isInitialized =
-        false;
-
-    let isUploading =
-        false;
-
-    let currentUser =
-        null;
-
-    let currentList =
-        [];
+    let currentUser = null;
+    let initialized = false;
+    let uploadSection = null;
 
 
-    /* ========================================================
-       UTILIDADES
-       ======================================================== */
+    /* =========================================================
+       IDIOMAS
+       ========================================================= */
 
-    function getContent() {
+    const I18N = {
 
-        return document.getElementById(
-            CONTENT_ID
+        es: {
+
+            title:
+                "Subir nasheed",
+
+            subtitle:
+                "Tu espacio privado para crear nasheeds.",
+
+            loginTitle:
+                "Inicia sesión para subir",
+
+            loginText:
+                "Necesitas una cuenta de Nushud para subir y conservar tus propios nasheeds.",
+
+            login:
+                "Iniciar sesión",
+
+            register:
+                "Crear cuenta",
+
+            daily:
+                "1 subida diaria",
+
+            private:
+                "Solo visible para ti",
+
+            automatic:
+                "Subtítulos automáticos",
+
+            audio:
+                "Archivo de audio",
+
+            audioHelp:
+                "MP3, M4A, WAV, OGG o formatos compatibles. Máximo 25 MB.",
+
+            cover:
+                "Portada",
+
+            optional:
+                "Opcional",
+
+            titleLabel:
+                "Título",
+
+            titlePlaceholder:
+                "Nombre del nasheed",
+
+            languages:
+                "Traducciones",
+
+            arabic:
+                "Árabe",
+
+            arabicRequired:
+                "Obligatorio",
+
+            spanish:
+                "Español",
+
+            english:
+                "Inglés",
+
+            russian:
+                "Ruso",
+
+            submit:
+                "Subir y generar",
+
+            preparing:
+                "Preparando subida...",
+
+            uploadingAudio:
+                "Subiendo audio...",
+
+            uploadingCover:
+                "Subiendo portada...",
+
+            generating:
+                "Generando subtítulos...",
+
+            ready:
+                "Nasheed generado correctamente.",
+
+            myNasheeds:
+                "Mis nasheeds",
+
+            noNasheeds:
+                "Todavía no tienes nasheeds.",
+
+            readyStatus:
+                "Disponible",
+
+            processingStatus:
+                "Procesando",
+
+            errorStatus:
+                "Error",
+
+            privateBadge:
+                "PRIVADO",
+
+            todayBadge:
+                "HOY",
+
+            invalid:
+                "Completa el título y selecciona un audio.",
+
+            loginRequired:
+                "Debes iniciar sesión.",
+
+            server:
+                "El servidor no devolvió una respuesta válida.",
+
+            refresh:
+                "Actualizar",
+
+            play:
+                "Reproducir"
+
+        },
+
+        en: {
+
+            title:
+                "Upload nasheed",
+
+            subtitle:
+                "Your private space to create nasheeds.",
+
+            loginTitle:
+                "Sign in to upload",
+
+            loginText:
+                "You need a Nushud account to upload and keep your own nasheeds.",
+
+            login:
+                "Sign in",
+
+            register:
+                "Create account",
+
+            daily:
+                "1 upload per day",
+
+            private:
+                "Only visible to you",
+
+            automatic:
+                "Automatic subtitles",
+
+            audio:
+                "Audio file",
+
+            audioHelp:
+                "MP3, M4A, WAV, OGG or compatible formats. Maximum 25 MB.",
+
+            cover:
+                "Cover",
+
+            optional:
+                "Optional",
+
+            titleLabel:
+                "Title",
+
+            titlePlaceholder:
+                "Nasheed name",
+
+            languages:
+                "Translations",
+
+            arabic:
+                "Arabic",
+
+            arabicRequired:
+                "Required",
+
+            spanish:
+                "Spanish",
+
+            english:
+                "English",
+
+            russian:
+                "Russian",
+
+            submit:
+                "Upload & generate",
+
+            preparing:
+                "Preparing upload...",
+
+            uploadingAudio:
+                "Uploading audio...",
+
+            uploadingCover:
+                "Uploading cover...",
+
+            generating:
+                "Generating subtitles...",
+
+            ready:
+                "Nasheed generated successfully.",
+
+            myNasheeds:
+                "My nasheeds",
+
+            noNasheeds:
+                "You do not have any nasheeds yet.",
+
+            readyStatus:
+                "Available",
+
+            processingStatus:
+                "Processing",
+
+            errorStatus:
+                "Error",
+
+            privateBadge:
+                "PRIVATE",
+
+            todayBadge:
+                "TODAY",
+
+            invalid:
+                "Enter a title and select an audio file.",
+
+            loginRequired:
+                "You must sign in.",
+
+            server:
+                "The server did not return a valid response.",
+
+            refresh:
+                "Refresh",
+
+            play:
+                "Play"
+
+        }
+
+    };
+
+
+    function getLanguage() {
+
+        try {
+
+            return localStorage.getItem(
+                "nasheed_interface_language"
+            ) === "en"
+                ? "en"
+                : "es";
+
+        } catch {
+
+            return "es";
+
+        }
+
+    }
+
+
+    function t(
+        key
+    ) {
+
+        const language =
+            getLanguage();
+
+        return (
+            I18N[language]?.[key] ||
+            I18N.es[key] ||
+            key
         );
 
     }
 
+
+    /* =========================================================
+       USUARIO
+       ========================================================= */
+
+    function getCurrentUser() {
+
+        if (
+            window.NushudAuth &&
+            typeof window.NushudAuth.getUser ===
+                "function"
+        ) {
+
+            return (
+                window.NushudAuth.getUser() ||
+                null
+            );
+
+        }
+
+        return null;
+
+    }
+
+
+    /* =========================================================
+       TOKEN SUPABASE
+       ========================================================= */
+
+    async function getAccessToken() {
+
+        if (
+            !window.supabase ||
+            typeof window.supabase.createClient !==
+                "function"
+        ) {
+
+            return null;
+
+        }
+
+
+        const response =
+            await fetch(
+                "/api/public-config",
+                {
+                    method:
+                        "GET",
+
+                    credentials:
+                        "same-origin",
+
+                    cache:
+                        "no-store"
+                }
+            );
+
+
+        if (
+            !response.ok
+        ) {
+
+            return null;
+
+        }
+
+
+        const config =
+            await response.json();
+
+
+        if (
+            !config.supabaseUrl ||
+            !config.supabasePublishableKey
+        ) {
+
+            return null;
+
+        }
+
+
+        const client =
+            window.supabase.createClient(
+                config.supabaseUrl,
+                config.supabasePublishableKey,
+                {
+                    auth: {
+
+                        persistSession:
+                            true,
+
+                        autoRefreshToken:
+                            true,
+
+                        detectSessionInUrl:
+                            true
+
+                    }
+                }
+            );
+
+
+        const {
+            data,
+            error
+        } =
+            await client.auth.getSession();
+
+
+        if (
+            error
+        ) {
+
+            console.error(
+                "[NUSHUD USER UPLOAD SESSION]",
+                error
+            );
+
+            return null;
+
+        }
+
+
+        return (
+            data?.session?.access_token ||
+            null
+        );
+
+    }
+
+
+    /* =========================================================
+       API JSON
+       ========================================================= */
+
+    async function apiJson(
+        url,
+        options = {}
+    ) {
+
+        const response =
+            await fetch(
+                url,
+                options
+            );
+
+
+        const contentType =
+            (
+                response.headers.get(
+                    "content-type"
+                ) ||
+                ""
+            ).toLowerCase();
+
+
+        const text =
+            await response.text();
+
+
+        if (
+            !contentType.includes(
+                "application/json"
+            )
+        ) {
+
+            console.error(
+                "[NUSHUD API NON JSON]",
+                url,
+                response.status,
+                text.slice(
+                    0,
+                    1000
+                )
+            );
+
+
+            throw new Error(
+                `${t("server")} HTTP ${response.status}`
+            );
+
+        }
+
+
+        let data;
+
+
+        try {
+
+            data =
+                JSON.parse(
+                    text
+                );
+
+        } catch {
+
+            throw new Error(
+                t("server")
+            );
+
+        }
+
+
+        if (
+            !response.ok
+        ) {
+
+            throw new Error(
+                data?.error ||
+                t("server")
+            );
+
+        }
+
+
+        return data;
+
+    }
+
+
+    /* =========================================================
+       ESCAPE
+       ========================================================= */
 
     function escapeHtml(
         value
@@ -71,1459 +529,862 @@
                 "div"
             );
 
+
         div.textContent =
             String(
-                value ?? ""
+                value ??
+                ""
             );
+
 
         return div.innerHTML;
 
     }
 
 
-    function formatDate(
-        value
-    ) {
-
-        if (!value) {
-            return "";
-        }
-
-        try {
-
-            const date =
-                new Date(
-                    value
-                );
-
-            if (
-                Number.isNaN(
-                    date.getTime()
-                )
-            ) {
-                return "";
-            }
-
-            return date.toLocaleDateString(
-                undefined,
-                {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric"
-                }
-            );
-
-        } catch {
-
-            return "";
-
-        }
-
-    }
-
-
-    function getStatusLabel(
-        status
-    ) {
-
-        switch (
-            String(
-                status || ""
-            ).toLowerCase()
-        ) {
-
-            case "processing":
-
-                return "Procesando…";
-
-            case "ready":
-
-                return "Disponible";
-
-            case "error":
-
-                return "Error";
-
-            default:
-
-                return "Preparando…";
-
-        }
-
-    }
-
-
-    function getStatusClass(
-        status
-    ) {
-
-        switch (
-            String(
-                status || ""
-            ).toLowerCase()
-        ) {
-
-            case "ready":
-
-                return "text-amber-400";
-
-            case "error":
-
-                return "text-red-400";
-
-            case "processing":
-
-                return "text-zinc-400";
-
-            default:
-
-                return "text-zinc-500";
-
-        }
-
-    }
-
-
-    async function getAccessToken() {
-
-        try {
-
-            /*
-             * Primero usamos la API de autenticación
-             * que ya utiliza NASHEED.
-             */
-
-            if (
-                window.NushudUserApi &&
-                typeof
-                    window.NushudUserApi
-                        .getAccessToken ===
-                    "function"
-            ) {
-
-                const token =
-                    await
-                    window.NushudUserApi
-                        .getAccessToken();
-
-                if (token) {
-                    return token;
-                }
-
-            }
-
-
-            /*
-             * Fallback directo a Supabase.
-             */
-
-            if (
-                window.NushudClient &&
-                window.NushudClient.auth
-            ) {
-
-                const sessionResult =
-                    await
-                    window.NushudClient
-                        .auth
-                        .getSession();
-
-                return (
-                    sessionResult
-                        ?.data
-                        ?.session
-                        ?.access_token ||
-                    ""
-                );
-
-            }
-
-
-            /*
-             * Último fallback:
-             * crear cliente usando public-config.
-             */
-
-            if (
-                window.supabase &&
-                typeof
-                    window.supabase
-                        .createClient ===
-                    "function"
-            ) {
-
-                const response =
-                    await fetch(
-                        "/api/public-config",
-                        {
-                            method:
-                                "GET",
-
-                            cache:
-                                "no-store",
-
-                            credentials:
-                                "same-origin"
-                        }
-                    );
-
-                if (!response.ok) {
-                    return "";
-                }
-
-                const config =
-                    await response.json();
-
-                if (
-                    !config.supabaseUrl ||
-                    !config.supabasePublishableKey
-                ) {
-                    return "";
-                }
-
-                if (
-                    !window.NushudUploadClient
-                ) {
-
-                    window.NushudUploadClient =
-                        window.supabase
-                            .createClient(
-                                config.supabaseUrl,
-                                config.supabasePublishableKey,
-                                {
-                                    auth: {
-                                        persistSession:
-                                            true,
-
-                                        autoRefreshToken:
-                                            true,
-
-                                        detectSessionInUrl:
-                                            true,
-
-                                        flowType:
-                                            "pkce"
-                                    }
-                                }
-                            );
-
-                }
-
-                const sessionResult =
-                    await
-                    window.NushudUploadClient
-                        .auth
-                        .getSession();
-
-                return (
-                    sessionResult
-                        ?.data
-                        ?.session
-                        ?.access_token ||
-                    ""
-                );
-
-            }
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[NUSHUD UPLOAD TOKEN]",
-                error
-            );
-
-        }
-
-        return "";
-
-    }
-
-
-    async function getSupabaseClient() {
+    /* =========================================================
+       INICIALIZAR
+       ========================================================= */
+
+    function init() {
 
         if (
-            window.NushudUploadClient
+            initialized
         ) {
 
-            return
-                window.NushudUploadClient;
+            render();
+
+            return;
 
         }
+
+
+        initialized =
+            true;
+
+
+        uploadSection =
+            document.getElementById(
+                "section-upload"
+            );
+
 
         if (
-            !window.supabase ||
-            typeof
-                window.supabase
-                    .createClient !==
-                "function"
+            !uploadSection
         ) {
 
-            throw new Error(
-                "Supabase JS no está disponible."
-            );
-
-        }
-
-        const response =
-            await fetch(
-                "/api/public-config",
-                {
-                    method:
-                        "GET",
-
-                    cache:
-                        "no-store",
-
-                    credentials:
-                        "same-origin"
-                }
-            );
-
-        if (!response.ok) {
-
-            throw new Error(
-                "No se pudo cargar la configuración de Supabase."
-            );
-
-        }
-
-        const config =
-            await response.json();
-
-        if (
-            !config.supabaseUrl ||
-            !config.supabasePublishableKey
-        ) {
-
-            throw new Error(
-                "Configuración de Supabase incompleta."
-            );
-
-        }
-
-        window.NushudUploadClient =
-            window.supabase
-                .createClient(
-                    config.supabaseUrl,
-                    config.supabasePublishableKey,
-                    {
-                        auth: {
-                            persistSession:
-                                true,
-
-                            autoRefreshToken:
-                                true,
-
-                            detectSessionInUrl:
-                                true,
-
-                            flowType:
-                                "pkce"
-                        }
-                    }
-                );
-
-        return
-            window.NushudUploadClient;
-
-    }
-
-
-    async function getCurrentUser() {
-
-        try {
-
-            /*
-             * API propia de auth.
-             */
-
-            if (
-                window.NushudAuth &&
-                typeof
-                    window.NushudAuth
-                        .getUser ===
-                    "function"
-            ) {
-
-                const user =
-                    window.NushudAuth
-                        .getUser();
-
-                if (user) {
-                    return user;
-                }
-
-            }
-
-
-            /*
-             * Supabase directo.
-             */
-
-            const client =
-                await getSupabaseClient();
-
-            const result =
-                await
-                client.auth.getUser();
-
-            if (
-                result &&
-                result.data &&
-                result.data.user
-            ) {
-
-                return result.data.user;
-
-            }
-
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[NUSHUD CURRENT USER]",
-                error
-            );
-
-        }
-
-        return null;
-
-    }
-
-
-    async function authRequired() {
-
-        const user =
-            await getCurrentUser();
-
-        if (user) {
-
-            currentUser =
-                user;
-
-            return true;
-
-        }
-
-        currentUser =
-            null;
-
-        return false;
-
-    }
-
-
-    function openLogin() {
-
-        if (
-            window.NushudAuth &&
-            typeof
-                window.NushudAuth
-                    .open ===
-                "function"
-        ) {
-
-            window.NushudAuth.open(
-                "login"
+            console.warn(
+                "[NUSHUD] No existe #section-upload"
             );
 
             return;
 
         }
 
-        alert(
-            "Debes iniciar sesión."
+
+        render();
+
+
+        /*
+         * Cuando auth.js cambie de usuario,
+         * reconstruimos completamente la sección.
+         */
+
+        window.addEventListener(
+            "nushud-auth-changed",
+            function () {
+
+                currentUser =
+                    getCurrentUser();
+
+                render();
+
+            }
+        );
+
+
+        window.addEventListener(
+            "nushud-language-changed",
+            function () {
+
+                render();
+
+            }
         );
 
     }
 
 
-    /* ========================================================
-       ESTADO DE LA INTERFAZ
-       ======================================================== */
+    /* =========================================================
+       RENDER PRINCIPAL
+       ========================================================= */
 
-    function renderLoading() {
+    function render() {
 
-        const container =
-            getContent();
+        if (
+            !uploadSection
+        ) {
 
-        if (!container) {
-            return;
+            uploadSection =
+                document.getElementById(
+                    "section-upload"
+                );
+
         }
 
-        container.innerHTML = `
 
-            <div class="
-                glass-panel
-                rounded-2xl
-                border border-white/5
-                p-6
-                text-center
-            ">
+        if (
+            !uploadSection
+        ) {
 
-                <div class="
-                    w-8
-                    h-8
-                    mx-auto
-                    mb-3
-                    rounded-full
-                    border-2
-                    border-amber-500/20
-                    border-t-amber-500
-                    animate-spin
-                "></div>
+            return;
 
-                <p class="
-                    text-xs
-                    text-zinc-400
-                ">
-                    Cargando…
-                </p>
+        }
 
-            </div>
 
-        `;
+        currentUser =
+            getCurrentUser();
+
+
+        if (
+            currentUser
+        ) {
+
+            renderUploader();
+
+            loadMyNasheeds();
+
+        } else {
+
+            renderLogin();
+
+        }
 
     }
 
 
-    function renderLoggedOut() {
+    /* =========================================================
+       LOGIN
+       ========================================================= */
 
-        const container =
-            getContent();
+    function renderLogin() {
 
-        if (!container) {
-            return;
-        }
+        uploadSection.innerHTML = `
 
-        container.innerHTML = `
+            <div class="max-w-xl mx-auto">
 
-            <div class="
-                nushud-upload-shell
-            ">
+                <div
+                    class="glass-panel rounded-3xl border border-white/5 overflow-hidden">
 
-                <div class="
-                    nushud-upload-card
-                ">
+                    <div class="p-8 text-center">
 
-                    <div class="
-                        nushud-upload-body
-                        text-center
-                        py-10
-                    ">
+                        <div
+                            class="mx-auto w-12 h-12 rounded-2xl bg-white/[.035] border border-white/10 flex items-center justify-center text-amber-400 text-lg">
 
-                        <div class="
-                            w-14
-                            h-14
-                            mx-auto
-                            mb-4
-                            rounded-2xl
-                            bg-amber-500/10
-                            border
-                            border-amber-500/20
-                            text-amber-400
-                            flex
-                            items-center
-                            justify-center
-                            text-xl
-                        ">
                             ↑
+
                         </div>
 
-                        <h3 class="
-                            text-sm
-                            font-extrabold
-                            text-zinc-100
-                        ">
-                            Inicia sesión para subir
-                        </h3>
 
-                        <p class="
-                            text-[10px]
-                            text-zinc-500
-                            mt-2
-                            max-w-xs
-                            mx-auto
-                            leading-relaxed
-                        ">
-                            Tus nasheeds subidos son
-                            privados y solo tú podrás
-                            escucharlos.
+                        <h2
+                            class="mt-5 text-base font-extrabold text-zinc-100">
+
+                            ${escapeHtml(
+                                t("loginTitle")
+                            )}
+
+                        </h2>
+
+
+                        <p
+                            class="mt-2 max-w-sm mx-auto text-[10px] leading-relaxed text-zinc-500">
+
+                            ${escapeHtml(
+                                t("loginText")
+                            )}
+
                         </p>
 
-                        <button
-                            id="nushud-upload-login"
-                            type="button"
-                            class="
-                                nushud-upload-button
-                                mt-5
-                            "
-                        >
-                            Iniciar sesión
-                        </button>
 
-                    </div>
+                        <div
+                            class="mt-6 flex justify-center gap-2">
 
-                </div>
+                            <button
+                                id="user-upload-login"
+                                type="button"
+                                class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-extrabold cursor-pointer">
 
-            </div>
+                                ${escapeHtml(
+                                    t("login")
+                                )}
 
-        `;
+                            </button>
 
 
-        document
-            .getElementById(
-                "nushud-upload-login"
-            )
-            ?.addEventListener(
-                "click",
-                openLogin
-            );
+                            <button
+                                id="user-upload-register"
+                                type="button"
+                                class="px-4 py-2.5 rounded-xl bg-white/[.035] hover:bg-white/[.06] text-zinc-300 border border-white/10 text-[10px] font-bold cursor-pointer">
 
-    }
+                                ${escapeHtml(
+                                    t("register")
+                                )}
 
-
-    function renderForm(
-        existingRows
-    ) {
-
-        const container =
-            getContent();
-
-        if (!container) {
-            return;
-        }
-
-        const hasTodayUpload =
-            Array.isArray(
-                existingRows
-            ) &&
-            existingRows.some(
-                item =>
-                    String(
-                        item.status
-                    ).toLowerCase() ===
-                    "processing"
-            ) ||
-            false;
-
-
-        /*
-         * El backend es quien realmente controla
-         * si el día ya está utilizado.
-         */
-
-        container.innerHTML = `
-
-            <div class="
-                nushud-upload-shell
-            ">
-
-                <div class="
-                    nushud-upload-card
-                ">
-
-                    <div class="
-                        nushud-upload-header
-                    ">
-
-                        <div class="
-                            flex
-                            items-start
-                            justify-between
-                            gap-4
-                        ">
-
-                            <div>
-
-                                <div class="
-                                    nushud-upload-title
-                                ">
-                                    Nueva subida
-                                </div>
-
-                                <div class="
-                                    nushud-upload-description
-                                ">
-                                    Sube un nasheed y genera
-                                    automáticamente los subtítulos
-                                    en árabe y las traducciones
-                                    que elijas.
-                                </div>
-
-                            </div>
-
-                            <span class="
-                                shrink-0
-                                px-2.5
-                                py-1
-                                rounded-lg
-                                bg-amber-500/10
-                                border
-                                border-amber-500/15
-                                text-[8px]
-                                font-bold
-                                text-amber-400
-                                uppercase
-                            ">
-                                1 al día
-                            </span>
+                            </button>
 
                         </div>
 
                     </div>
 
 
-                    <form
-                        id="nushud-upload-form"
-                        class="
-                            nushud-upload-body
-                        "
-                    >
+                    <div
+                        class="grid grid-cols-3 border-t border-white/5">
 
-                        <div class="
-                            nushud-upload-field
-                        ">
+                        <div
+                            class="py-4 text-center">
 
-                            <label
-                                for="nushud-title"
-                                class="
-                                    nushud-upload-label
-                                "
-                            >
-                                Título del nasheed
-                            </label>
+                            <div
+                                class="text-[10px] font-extrabold text-amber-400">
 
-                            <input
-                                id="nushud-title"
-                                name="title"
-                                type="text"
-                                maxlength="120"
-                                autocomplete="off"
-                                class="
-                                    nushud-upload-input
-                                "
-                                placeholder="Ej. Kuntu Maitan"
-                                required
-                            >
-
-                        </div>
-
-
-                        <div class="
-                            nushud-upload-field
-                        ">
-
-                            <label
-                                for="nushud-audio"
-                                class="
-                                    nushud-upload-label
-                                "
-                            >
-                                Audio
-                            </label>
-
-                            <input
-                                id="nushud-audio"
-                                name="audio"
-                                type="file"
-                                accept="audio/*,video/mp4,video/webm"
-                                class="
-                                    nushud-upload-file
-                                "
-                                required
-                            >
-
-                            <p class="
-                                text-[9px]
-                                text-zinc-600
-                                mt-2
-                            ">
-                                Máximo 25 MB.
-                            </p>
-
-                        </div>
-
-
-                        <div class="
-                            nushud-upload-field
-                        ">
-
-                            <label
-                                for="nushud-cover"
-                                class="
-                                    nushud-upload-label
-                                "
-                            >
-                                Portada
-                                <span class="
-                                    font-normal
-                                    text-zinc-600
-                                ">
-                                    (opcional)
-                                </span>
-                            </label>
-
-                            <input
-                                id="nushud-cover"
-                                name="cover"
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                class="
-                                    nushud-upload-file
-                                "
-                            >
-
-                            <p class="
-                                text-[9px]
-                                text-zinc-600
-                                mt-2
-                            ">
-                                JPG, PNG o WebP · máximo 5 MB.
-                            </p>
-
-                        </div>
-
-
-                        <div class="
-                            nushud-upload-field
-                        ">
-
-                            <label
-                                class="
-                                    nushud-upload-label
-                                "
-                            >
-                                Traducciones
-                            </label>
-
-                            <div class="
-                                nushud-upload-language-grid
-                            ">
-
-                                <div class="
-                                    nushud-upload-language
-                                ">
-
-                                    <input
-                                        id="upload-es"
-                                        type="checkbox"
-                                        value="es"
-                                        checked
-                                    >
-
-                                    <label for="upload-es">
-                                        Español
-                                    </label>
-
-                                </div>
-
-
-                                <div class="
-                                    nushud-upload-language
-                                ">
-
-                                    <input
-                                        id="upload-en"
-                                        type="checkbox"
-                                        value="en"
-                                    >
-
-                                    <label for="upload-en">
-                                        English
-                                    </label>
-
-                                </div>
-
-
-                                <div class="
-                                    nushud-upload-language
-                                ">
-
-                                    <input
-                                        id="upload-ru"
-                                        type="checkbox"
-                                        value="ru"
-                                    >
-
-                                    <label for="upload-ru">
-                                        Русский
-                                    </label>
-
-                                </div>
+                                1
 
                             </div>
 
-                            <p class="
-                                text-[9px]
-                                text-zinc-600
-                                mt-2
-                            ">
-                                El árabe es obligatorio y se genera automáticamente.
-                            </p>
+                            <div
+                                class="mt-1 text-[8px] text-zinc-700">
+
+                                ${escapeHtml(
+                                    t("daily")
+                                )}
+
+                            </div>
 
                         </div>
 
 
                         <div
-                            id="nushud-upload-status"
-                            class="
-                                nushud-upload-status
-                            "
-                        ></div>
+                            class="py-4 text-center">
 
+                            <div
+                                class="text-[10px] font-extrabold text-amber-400">
 
-                        <div class="
-                            nushud-upload-actions
-                        ">
+                                ◆
 
-                            <button
-                                type="submit"
-                                id="nushud-upload-submit"
-                                class="
-                                    nushud-upload-button
-                                "
-                            >
-                                Subir nasheed
-                            </button>
+                            </div>
+
+                            <div
+                                class="mt-1 text-[8px] text-zinc-700">
+
+                                ${escapeHtml(
+                                    t("private")
+                                )}
+
+                            </div>
 
                         </div>
 
-                    </form>
 
-                </div>
+                        <div
+                            class="py-4 text-center">
 
+                            <div
+                                class="text-[10px] font-extrabold text-amber-400">
 
-                <div
-                    id="nushud-private-list-wrapper"
-                    class="
-                        mt-4
-                    "
-                ></div>
+                                CC
 
-            </div>
+                            </div>
 
-        `;
+                            <div
+                                class="mt-1 text-[8px] text-zinc-700">
 
+                                ${escapeHtml(
+                                    t("automatic")
+                                )}
 
-        bindForm();
-
-        renderPrivateList(
-            existingRows
-        );
-
-    }
-
-
-    function renderProcessing(
-        row
-    ) {
-
-        const container =
-            getContent();
-
-        if (!container) {
-            return;
-        }
-
-        container.innerHTML = `
-
-            <div class="
-                nushud-upload-shell
-            ">
-
-                <div class="
-                    nushud-upload-card
-                ">
-
-                    <div class="
-                        nushud-upload-body
-                        text-center
-                        py-10
-                    ">
-
-                        <div class="
-                            w-12
-                            h-12
-                            mx-auto
-                            mb-4
-                            rounded-2xl
-                            bg-amber-500/10
-                            border
-                            border-amber-500/20
-                            flex
-                            items-center
-                            justify-center
-                            text-amber-400
-                            text-lg
-                        ">
-                            ✦
-                        </div>
-
-                        <h3 class="
-                            text-sm
-                            font-extrabold
-                            text-zinc-100
-                        ">
-                            Procesando tu nasheed
-                        </h3>
-
-                        <p class="
-                            text-[10px]
-                            text-zinc-500
-                            mt-2
-                            max-w-sm
-                            mx-auto
-                            leading-relaxed
-                        ">
-                            Estamos generando el subtítulo
-                            árabe y las traducciones.
-                            Puedes dejar esta página abierta.
-                        </p>
-
-                        <div class="
-                            mt-5
-                            h-1.5
-                            max-w-xs
-                            mx-auto
-                            overflow-hidden
-                            rounded-full
-                            bg-white/5
-                        ">
-
-                            <div class="
-                                h-full
-                                w-1/2
-                                rounded-full
-                                bg-amber-500
-                                animate-pulse
-                            "></div>
+                            </div>
 
                         </div>
-
-                        <p class="
-                            text-[9px]
-                            text-zinc-600
-                            mt-4
-                        ">
-                            ${escapeHtml(
-                                row?.title ||
-                                "Nasheed"
-                            )}
-                        </p>
 
                     </div>
 
                 </div>
 
             </div>
-
         `;
+
+
+        document
+            .getElementById(
+                "user-upload-login"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    if (
+                        window.NushudAuth &&
+                        typeof window.NushudAuth.open ===
+                            "function"
+                    ) {
+
+                        window.NushudAuth.open(
+                            "login"
+                        );
+
+                    }
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "user-upload-register"
+            )
+            ?.addEventListener(
+                "click",
+                function () {
+
+                    if (
+                        window.NushudAuth &&
+                        typeof window.NushudAuth.open ===
+                            "function"
+                    ) {
+
+                        window.NushudAuth.open(
+                            "register"
+                        );
+
+                    }
+
+                }
+            );
 
     }
 
 
-    function renderPrivateList(
-        rows
-    ) {
+    /* =========================================================
+       UPLOADER
+       ========================================================= */
 
-        const wrapper =
-            document.getElementById(
-                "nushud-private-list-wrapper"
-            );
+    function renderUploader() {
 
-        if (!wrapper) {
-            return;
-        }
+        uploadSection.innerHTML = `
 
-        if (
-            !Array.isArray(rows) ||
-            !rows.length
-        ) {
+            <div
+                class="max-w-xl mx-auto">
 
-            wrapper.replaceChildren();
+                <div
+                    class="flex items-end justify-between gap-4 mb-5">
 
-            return;
+                    <div>
 
-        }
+                        <div
+                            class="flex items-center gap-2">
 
-        const readyRows =
-            rows.filter(
-                row =>
-                    row &&
-                    row.status ===
-                        "ready"
-            );
+                            <h2
+                                class="text-xl font-extrabold tracking-tight text-zinc-100">
 
-        if (!readyRows.length) {
+                                ${escapeHtml(
+                                    t("title")
+                                )}
 
-            wrapper.replaceChildren();
+                            </h2>
 
-            return;
 
-        }
+                            <span
+                                class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/15 text-[7px] font-extrabold tracking-wider text-amber-400">
 
-        wrapper.innerHTML = `
+                                ${escapeHtml(
+                                    t("privateBadge")
+                                )}
 
-            <div class="
-                glass-panel
-                rounded-2xl
-                border
-                border-white/5
-                p-4
-            ">
+                            </span>
 
-                <div class="
-                    text-[9px]
-                    font-extrabold
-                    uppercase
-                    tracking-widest
-                    text-zinc-500
-                    mb-3
-                ">
-                    Mis nasheeds
+                        </div>
+
+
+                        <p
+                            class="mt-1 text-[10px] text-zinc-500">
+
+                            ${escapeHtml(
+                                t("subtitle")
+                            )}
+
+                        </p>
+
+                    </div>
+
+
+                    <span
+                        class="shrink-0 px-2.5 py-1 rounded-lg bg-white/[.025] border border-white/5 text-[8px] font-bold text-zinc-600">
+
+                        ${escapeHtml(
+                            t("daily")
+                        )}
+
+                    </span>
+
                 </div>
 
-                <div class="
-                    nushud-private-list
-                ">
 
-                    ${readyRows.map(
-                        row => `
+                <form
+                    id="nushud-user-upload-form"
+                    class="glass-panel rounded-2xl border border-white/5 overflow-hidden">
 
-                            <div class="
-                                nushud-private-item
-                            ">
+                    <div
+                        class="p-5 space-y-5">
 
-                                <div class="
-                                    min-w-0
-                                ">
 
-                                    <div class="
-                                        nushud-private-item-title
-                                    ">
+                        <!-- TÍTULO -->
+
+                        <div>
+
+                            <label
+                                for="user-upload-title"
+                                class="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+
+                                ${escapeHtml(
+                                    t("titleLabel")
+                                )}
+
+                            </label>
+
+
+                            <input
+                                id="user-upload-title"
+                                type="text"
+                                maxlength="120"
+                                required
+                                placeholder="${escapeHtml(
+                                    t("titlePlaceholder")
+                                )}"
+                                class="mt-2 w-full px-3.5 py-3 rounded-xl bg-zinc-950/80 border border-white/8 text-xs text-zinc-100 placeholder:text-zinc-700 outline-none focus:border-amber-500/40">
+
+                        </div>
+
+
+                        <!-- AUDIO -->
+
+                        <div>
+
+                            <label
+                                class="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+
+                                ${escapeHtml(
+                                    t("audio")
+                                )}
+
+                            </label>
+
+
+                            <label
+                                for="user-upload-audio"
+                                class="mt-2 flex items-center gap-3 p-3.5 rounded-xl border border-dashed border-white/10 bg-white/[.018] hover:bg-white/[.035] cursor-pointer">
+
+                                <span
+                                    class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center text-amber-400">
+
+                                    ♫
+
+                                </span>
+
+
+                                <span
+                                    class="min-w-0">
+
+                                    <span
+                                        id="user-upload-audio-name"
+                                        class="block text-[10px] font-bold text-zinc-300 truncate">
+
                                         ${escapeHtml(
-                                            row.title
+                                            t("audio")
                                         )}
-                                    </div>
 
-                                    <div class="
-                                        text-[8px]
-                                        text-zinc-600
-                                        mt-1
-                                    ">
-                                        Privado
-                                        ${
-                                            row.created_at
-                                                ? " · " +
-                                                  escapeHtml(
-                                                      formatDate(
-                                                          row.created_at
-                                                      )
-                                                  )
-                                                : ""
-                                        }
-                                    </div>
+                                    </span>
 
-                                </div>
 
-                                <div class="
-                                    nushud-private-item-status
-                                    ${getStatusClass(
-                                        row.status
+                                    <span
+                                        class="block mt-1 text-[8px] text-zinc-600">
+
+                                        ${escapeHtml(
+                                            t("audioHelp")
+                                        )}
+
+                                    </span>
+
+                                </span>
+
+                            </label>
+
+
+                            <input
+                                id="user-upload-audio"
+                                type="file"
+                                accept="audio/*,video/mp4,video/webm"
+                                required
+                                class="hidden">
+
+                        </div>
+
+
+                        <!-- PORTADA -->
+
+                        <div>
+
+                            <label
+                                class="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+
+                                ${escapeHtml(
+                                    t("cover")
+                                )}
+
+                                <span
+                                    class="normal-case tracking-normal text-zinc-700">
+
+                                    · ${escapeHtml(
+                                        t("optional")
                                     )}
-                                ">
-                                    Disponible
-                                </div>
+
+                                </span>
+
+                            </label>
+
+
+                            <label
+                                for="user-upload-cover"
+                                class="mt-2 flex items-center gap-3 p-3.5 rounded-xl border border-white/7 bg-white/[.018] hover:bg-white/[.035] cursor-pointer">
+
+                                <span
+                                    class="w-9 h-9 rounded-xl bg-white/[.035] border border-white/8 flex items-center justify-center text-zinc-500">
+
+                                    ▧
+
+                                </span>
+
+
+                                <span
+                                    id="user-upload-cover-name"
+                                    class="min-w-0 text-[10px] text-zinc-500 truncate">
+
+                                    ${escapeHtml(
+                                        t("cover")
+                                    )}
+
+                                </span>
+
+                            </label>
+
+
+                            <input
+                                id="user-upload-cover"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                class="hidden">
+
+                        </div>
+
+
+                        <!-- IDIOMAS -->
+
+                        <div>
+
+                            <label
+                                class="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">
+
+                                ${escapeHtml(
+                                    t("languages")
+                                )}
+
+                            </label>
+
+
+                            <div
+                                class="mt-2 grid grid-cols-3 gap-2">
+
+                                <label
+                                    class="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/[.045] border border-amber-500/10">
+
+                                    <input
+                                        type="checkbox"
+                                        checked
+                                        disabled
+                                        class="accent-amber-500">
+
+                                    <span>
+
+                                        <span
+                                            class="block text-[9px] font-bold text-zinc-300">
+
+                                            ${escapeHtml(
+                                                t("arabic")
+                                            )}
+
+                                        </span>
+
+
+                                        <span
+                                            class="block text-[7px] text-amber-500/70">
+
+                                            ${escapeHtml(
+                                                t("arabicRequired")
+                                            )}
+
+                                        </span>
+
+                                    </span>
+
+                                </label>
+
+
+                                <label
+                                    class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[.018] border border-white/7 cursor-pointer hover:bg-white/[.035]">
+
+                                    <input
+                                        id="user-upload-es"
+                                        type="checkbox"
+                                        checked
+                                        class="accent-amber-500">
+
+                                    <span
+                                        class="text-[9px] font-semibold text-zinc-400">
+
+                                        ${escapeHtml(
+                                            t("spanish")
+                                        )}
+
+                                    </span>
+
+                                </label>
+
+
+                                <label
+                                    class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[.018] border border-white/7 cursor-pointer hover:bg-white/[.035]">
+
+                                    <input
+                                        id="user-upload-en"
+                                        type="checkbox"
+                                        class="accent-amber-500">
+
+                                    <span
+                                        class="text-[9px] font-semibold text-zinc-400">
+
+                                        ${escapeHtml(
+                                            t("english")
+                                        )}
+
+                                    </span>
+
+                                </label>
+
+
+                                <label
+                                    class="flex items-center gap-2 p-2.5 rounded-xl bg-white/[.018] border border-white/7 cursor-pointer hover:bg-white/[.035]">
+
+                                    <input
+                                        id="user-upload-ru"
+                                        type="checkbox"
+                                        class="accent-amber-500">
+
+                                    <span
+                                        class="text-[9px] font-semibold text-zinc-400">
+
+                                        ${escapeHtml(
+                                            t("russian")
+                                        )}
+
+                                    </span>
+
+                                </label>
 
                             </div>
 
-                        `
-                    ).join("")}
+                        </div>
+
+
+                    </div>
+
+
+                    <div
+                        class="border-t border-white/5 px-5 py-4">
+
+                        <button
+                            id="user-upload-submit"
+                            type="submit"
+                            class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[10px] font-extrabold shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed">
+
+                            ${escapeHtml(
+                                t("submit")
+                            )}
+
+                        </button>
+
+
+                        <div
+                            id="user-upload-status"
+                            class="min-h-[17px] mt-3 text-center text-[9px] text-zinc-600">
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+
+                <!-- MIS NASHEEDS -->
+
+                <div
+                    class="mt-7">
+
+                    <div
+                        class="flex items-center justify-between mb-3">
+
+                        <h3
+                            class="text-[9px] font-extrabold uppercase tracking-widest text-zinc-500">
+
+                            ${escapeHtml(
+                                t("myNasheeds")
+                            )}
+
+                        </h3>
+
+
+                        <span
+                            class="text-[8px] text-zinc-700">
+
+                            ${escapeHtml(
+                                t("privateBadge")
+                            )}
+
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="user-upload-list"
+                        class="space-y-2">
+
+                    </div>
 
                 </div>
 
             </div>
-
         `;
 
-    }
 
-
-    /* ========================================================
-       LISTADO
-       ======================================================== */
-
-    async function loadUserNasheeds() {
-
-        const token =
-            await getAccessToken();
-
-        if (!token) {
-
-            currentList = [];
-
-            return {
-                rows: [],
-                authenticated: false
-            };
-
-        }
-
-        const response =
-            await fetch(
-                "/api/user-nasheeds",
-                {
-                    method:
-                        "GET",
-
-                    cache:
-                        "no-store",
-
-                    credentials:
-                        "same-origin",
-
-                    headers: {
-                        Accept:
-                            "application/json",
-
-                        Authorization:
-                            `Bearer ${token}`
-                    }
-                }
-            );
-
-        const raw =
-            await response.text();
-
-        let data;
-
-        try {
-
-            data =
-                JSON.parse(
-                    raw
-                );
-
-        } catch {
-
-            throw new Error(
-                "El servidor devolvió una respuesta no válida."
-            );
-
-        }
-
-        if (!response.ok) {
-
-            throw new Error(
-                data?.error ||
-                "No se pudieron cargar tus nasheeds."
-            );
-
-        }
-
-        currentList =
-            Array.isArray(
-                data?.nasheeds
-            )
-                ? data.nasheeds
-                : [];
-
-        return {
-            rows:
-                currentList,
-            authenticated:
-                true
-        };
+        bindUploader();
 
     }
 
 
-    /* ========================================================
-       VALIDACIÓN
-       ======================================================== */
+    /* =========================================================
+       EVENTOS DEL FORMULARIO
+       ========================================================= */
 
-    function validateAudio(
-        file
-    ) {
-
-        if (!file) {
-
-            return "Selecciona un archivo de audio.";
-
-        }
-
-        if (
-            file.size <= 0
-        ) {
-
-            return "El archivo de audio está vacío.";
-
-        }
-
-        if (
-            file.size >
-            MAX_AUDIO
-        ) {
-
-            return "El audio no puede superar los 25 MB.";
-
-        }
-
-        const allowed =
-            new Set([
-                "audio/mpeg",
-                "audio/mp3",
-                "audio/mp4",
-                "audio/x-m4a",
-                "audio/m4a",
-                "audio/ogg",
-                "audio/wav",
-                "audio/x-wav",
-                "audio/webm",
-                "audio/flac",
-                "video/mp4",
-                "video/webm"
-            ]);
-
-        if (
-            file.type &&
-            !allowed.has(
-                file.type
-            )
-        ) {
-
-            return "El formato de audio no es compatible.";
-
-        }
-
-        return "";
-
-    }
-
-
-    function validateCover(
-        file
-    ) {
-
-        if (!file) {
-            return "";
-        }
-
-        if (
-            file.size <= 0
-        ) {
-
-            return "La portada está vacía.";
-
-        }
-
-        if (
-            file.size >
-            MAX_COVER
-        ) {
-
-            return "La portada no puede superar los 5 MB.";
-
-        }
-
-        const allowed =
-            new Set([
-                "image/jpeg",
-                "image/png",
-                "image/webp"
-            ]);
-
-        if (
-            file.type &&
-            !allowed.has(
-                file.type
-            )
-        ) {
-
-            return "La portada debe ser JPG, PNG o WebP.";
-
-        }
-
-        return "";
-
-    }
-
-
-    /* ========================================================
-       SUBIDA A STORAGE
-       ======================================================== */
-
-    async function uploadSignedFile(
-        client,
-        path,
-        token,
-        file
-    ) {
-
-        if (
-            !path ||
-            !token ||
-            !file
-        ) {
-
-            throw new Error(
-                "Datos de subida incompletos."
-            );
-
-        }
-
-        const result =
-            await client
-                .storage
-                .from(
-                    BUCKET
-                )
-                .uploadToSignedUrl(
-                    path,
-                    token,
-                    file
-                );
-
-        if (
-            result.error
-        ) {
-
-            throw result.error;
-
-        }
-
-        return true;
-
-    }
-
-
-    /* ========================================================
-       FORMULARIO
-       ======================================================== */
-
-    function bindForm() {
+    function bindUploader() {
 
         const form =
             document.getElementById(
-                "nushud-upload-form"
+                "nushud-user-upload-form"
             );
 
-        if (!form) {
-            return;
+
+        const audioInput =
+            document.getElementById(
+                "user-upload-audio"
+            );
+
+
+        const coverInput =
+            document.getElementById(
+                "user-upload-cover"
+            );
+
+
+        if (
+            form
+        ) {
+
+            form.addEventListener(
+                "submit",
+                handleSubmit
+            );
+
         }
 
-        form.addEventListener(
-            "submit",
-            handleSubmit
-        );
+
+        if (
+            audioInput
+        ) {
+
+            audioInput.addEventListener(
+                "change",
+                function () {
+
+                    const name =
+                        document.getElementById(
+                            "user-upload-audio-name"
+                        );
+
+
+                    if (
+                        this.files &&
+                        this.files[0]
+                    ) {
+
+                        name.textContent =
+                            this.files[0].name;
+
+                        name.className =
+                            "block text-[10px] font-bold text-amber-400 truncate";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        if (
+            coverInput
+        ) {
+
+            coverInput.addEventListener(
+                "change",
+                function () {
+
+                    const name =
+                        document.getElementById(
+                            "user-upload-cover-name"
+                        );
+
+
+                    if (
+                        this.files &&
+                        this.files[0]
+                    ) {
+
+                        name.textContent =
+                            this.files[0].name;
+
+                        name.className =
+                            "min-w-0 text-[10px] text-amber-400 truncate";
+
+                    }
+
+                }
+            );
+
+        }
 
     }
 
+
+    /* =========================================================
+       SUBIR
+       ========================================================= */
 
     async function handleSubmit(
         event
@@ -1531,55 +1392,43 @@
 
         event.preventDefault();
 
-        if (isUploading) {
-            return;
-        }
 
-        const token =
-            await getAccessToken();
+        currentUser =
+            getCurrentUser();
 
-        if (!token) {
 
-            openLogin();
+        if (
+            !currentUser
+        ) {
 
-            return;
-
-        }
-
-        const user =
-            await getCurrentUser();
-
-        if (!user) {
-
-            openLogin();
+            render();
 
             return;
 
         }
+
 
         const titleInput =
             document.getElementById(
-                "nushud-title"
+                "user-upload-title"
             );
+
 
         const audioInput =
             document.getElementById(
-                "nushud-audio"
+                "user-upload-audio"
             );
+
 
         const coverInput =
             document.getElementById(
-                "nushud-cover"
+                "user-upload-cover"
             );
+
 
         const submitButton =
             document.getElementById(
-                "nushud-upload-submit"
-            );
-
-        const status =
-            document.getElementById(
-                "nushud-upload-status"
+                "user-upload-submit"
             );
 
 
@@ -1589,60 +1438,24 @@
                 ""
             ).trim();
 
-        const audioFile =
+
+        const audio =
             audioInput?.files?.[0] ||
             null;
 
-        const coverFile =
+
+        const cover =
             coverInput?.files?.[0] ||
             null;
 
 
-        const audioError =
-            validateAudio(
-                audioFile
-            );
-
-        if (audioError) {
-
-            setStatus(
-                status,
-                audioError,
-                true
-            );
-
-            return;
-
-        }
-
-
-        const coverError =
-            validateCover(
-                coverFile
-            );
-
-        if (coverError) {
-
-            setStatus(
-                status,
-                coverError,
-                true
-            );
-
-            return;
-
-        }
-
-
         if (
             !title ||
-            title.length >
-                120
+            !audio
         ) {
 
             setStatus(
-                status,
-                "El título es obligatorio y debe tener como máximo 120 caracteres.",
+                t("invalid"),
                 true
             );
 
@@ -1654,9 +1467,10 @@
         const translations =
             [];
 
+
         if (
             document.getElementById(
-                "upload-es"
+                "user-upload-es"
             )?.checked
         ) {
 
@@ -1666,9 +1480,10 @@
 
         }
 
+
         if (
             document.getElementById(
-                "upload-en"
+                "user-upload-en"
             )?.checked
         ) {
 
@@ -1678,9 +1493,10 @@
 
         }
 
+
         if (
             document.getElementById(
-                "upload-ru"
+                "user-upload-ru"
             )?.checked
         ) {
 
@@ -1691,37 +1507,47 @@
         }
 
 
-        isUploading =
-            true;
-
-        if (submitButton) {
+        if (
+            submitButton
+        ) {
 
             submitButton.disabled =
                 true;
 
-            submitButton.textContent =
-                "Preparando…";
-
         }
-
-        setStatus(
-            status,
-            "Preparando la subida…",
-            false
-        );
 
 
         try {
 
-            /*
-             * Comprobamos que el servidor ve
-             * exactamente al mismo usuario.
-             */
+            const token =
+                await getAccessToken();
 
-            const prepareResponse =
-                await fetch(
+
+            if (
+                !token
+            ) {
+
+                throw new Error(
+                    t("loginRequired")
+                );
+
+            }
+
+
+            setStatus(
+                t("preparing")
+            );
+
+
+            /* =================================================
+               PREPARAR
+               ================================================= */
+
+            const prepared =
+                await apiJson(
                     "/api/user-nasheeds/prepare",
                     {
+
                         method:
                             "POST",
 
@@ -1729,9 +1555,6 @@
                             "same-origin",
 
                         headers: {
-
-                            Accept:
-                                "application/json",
 
                             "Content-Type":
                                 "application/json",
@@ -1751,30 +1574,33 @@
                                 audio: {
 
                                     name:
-                                        audioFile.name,
+                                        audio.name,
 
                                     type:
-                                        audioFile.type,
+                                        audio.type,
 
                                     size:
-                                        audioFile.size
+                                        audio.size
 
                                 },
 
                                 cover:
-                                    coverFile
+
+                                    cover
+
                                         ? {
 
                                             name:
-                                                coverFile.name,
+                                                cover.name,
 
                                             type:
-                                                coverFile.type,
+                                                cover.type,
 
                                             size:
-                                                coverFile.size
+                                                cover.size
 
                                         }
+
                                         : null
 
                             })
@@ -1783,128 +1609,71 @@
                 );
 
 
-            const prepareRaw =
-                await prepareResponse.text();
+            /* =================================================
+               CONFIG SUPABASE
+               ================================================= */
 
-            let prepareData;
-
-            try {
-
-                prepareData =
-                    JSON.parse(
-                        prepareRaw
-                    );
-
-            } catch {
-
-                throw new Error(
-                    "El servidor devolvió una respuesta no válida al preparar la subida."
-                );
-
-            }
-
-
-            if (
-                !prepareResponse.ok
-            ) {
-
-                throw new Error(
-                    prepareData?.error ||
-                    "No se pudo preparar la subida."
-                );
-
-            }
-
-
-            if (
-                !prepareData.success ||
-                !prepareData.id ||
-                !prepareData.audio?.path ||
-                !prepareData.audio?.token
-            ) {
-
-                throw new Error(
-                    "La respuesta de preparación está incompleta."
-                );
-
-            }
-
-
-            setStatus(
-                status,
-                "Subiendo el audio…",
-                false
-            );
-
-
-            const client =
-                await getSupabaseClient();
-
-
-            await uploadSignedFile(
-                client,
-                prepareData.audio.path,
-                prepareData.audio.token,
-                audioFile
-            );
-
-
-            if (
-                prepareData.cover &&
-                coverFile
-            {
-
-                setStatus(
-                    status,
-                    "Subiendo la portada…",
-                    false
-                );
-
-
-                await uploadSignedFile(
-                    client,
-                    prepareData.cover.path,
-                    prepareData.cover.token,
-                    coverFile
-                );
-
-            }
-
-
-            setStatus(
-                status,
-                "Enviando a la IA…",
-                false
-            );
-
-
-            if (submitButton) {
-
-                submitButton.textContent =
-                    "Procesando…";
-
-            }
-
-
-            const processResponse =
+            const configResponse =
                 await fetch(
-                    `/api/user-nasheeds/${encodeURIComponent(
-                        prepareData.id
-                    )}/process`,
+                    "/api/public-config",
                     {
+
                         method:
-                            "POST",
+                            "GET",
 
                         credentials:
                             "same-origin",
 
-                        headers: {
+                        cache:
+                            "no-store"
 
-                            Accept:
-                                "application/json",
+                    }
+                );
 
-                            Authorization:
-                                `Bearer ${token}`
+
+            if (
+                !configResponse.ok
+            ) {
+
+                throw new Error(
+                    t("server")
+                );
+
+            }
+
+
+            const config =
+                await configResponse.json();
+
+
+            if (
+                !config.supabaseUrl ||
+                !config.supabasePublishableKey
+            ) {
+
+                throw new Error(
+                    t("server")
+                );
+
+            }
+
+
+            const client =
+                window.supabase.createClient(
+                    config.supabaseUrl,
+                    config.supabasePublishableKey,
+                    {
+
+                        auth: {
+
+                            persistSession:
+                                true,
+
+                            autoRefreshToken:
+                                true,
+
+                            detectSessionInUrl:
+                                true
 
                         }
 
@@ -1912,119 +1681,204 @@
                 );
 
 
-            const processRaw =
-                await processResponse.text();
-
-            let processData;
-
-            try {
-
-                processData =
-                    JSON.parse(
-                        processRaw
-                    );
-
-            } catch {
-
-                throw new Error(
-                    "El servidor devolvió una respuesta no válida al procesar el nasheed."
-                );
-
-            }
-
-
-            if (
-                !processResponse.ok
-            ) {
-
-                throw new Error(
-                    processData?.error ||
-                    "La IA no pudo procesar el nasheed."
-                );
-
-            }
-
+            /* =================================================
+               SUBIR AUDIO
+               ================================================= */
 
             setStatus(
-                status,
-                "Nasheed procesado correctamente.",
-                false,
-                true
+                t("uploadingAudio")
             );
 
 
-            form.reset();
+            const audioUpload =
+                await client
+                    .storage
+                    .from(
+                        "UserNasheeds"
+                    )
+                    .uploadToSignedUrl(
+                        prepared.audio.path,
+                        prepared.audio.token,
+                        audio
+                    );
 
 
-            /*
-             * Recargar lista privada.
-             */
+            if (
+                audioUpload.error
+            ) {
 
-            try {
-
-                await refresh();
-
-            } catch {
-
-                /* ignore */
+                throw audioUpload.error;
 
             }
 
 
-            /*
-             * Recargar la biblioteca principal
-             * para que aparezca inmediatamente.
-             */
+            /* =================================================
+               SUBIR PORTADA
+               ================================================= */
 
             if (
-                typeof
-                    window.fetchNasheeds ===
-                    "function"
+                prepared.cover &&
+                cover
             ) {
 
-                try {
+                setStatus(
+                    t("uploadingCover")
+                );
 
-                    await
-                        window.fetchNasheeds();
 
-                } catch {
+                const coverUpload =
+                    await client
+                        .storage
+                        .from(
+                            "UserNasheeds"
+                        )
+                        .uploadToSignedUrl(
+                            prepared.cover.path,
+                            prepared.cover.token,
+                            cover
+                        );
 
-                    /* ignore */
+
+                if (
+                    coverUpload.error
+                ) {
+
+                    throw coverUpload.error;
 
                 }
 
             }
 
-            /*
-             * Disparamos el mismo evento usado
-             * por el resto de la aplicación.
-             */
 
-            window.dispatchEvent(
-                new CustomEvent(
-                    "nushud-user-nasheed-ready"
-                )
+            /* =================================================
+               PROCESAR IA
+               ================================================= */
+
+            setStatus(
+                t("generating")
             );
 
 
-            setTimeout(
-                () => {
+            await apiJson(
+                `/api/user-nasheeds/${encodeURIComponent(
+                    prepared.id
+                )}/process`,
+                {
 
-                    const statusElement =
-                        document.getElementById(
-                            "nushud-upload-status"
-                        );
+                    method:
+                        "POST",
 
-                    if (statusElement) {
+                    credentials:
+                        "same-origin",
 
-                        statusElement.textContent =
-                            "";
+                    headers: {
+
+                        Authorization:
+                            `Bearer ${token}`
 
                     }
 
-                },
-                5000
+                }
             );
+
+
+            /* =================================================
+               LIMPIAR FORMULARIO
+               ================================================= */
+
+            if (
+                titleInput
+            ) {
+
+                titleInput.value =
+                    "";
+
+            }
+
+
+            if (
+                audioInput
+            ) {
+
+                audioInput.value =
+                    "";
+
+            }
+
+
+            if (
+                coverInput
+            ) {
+
+                coverInput.value =
+                    "";
+
+            }
+
+
+            const audioName =
+                document.getElementById(
+                    "user-upload-audio-name"
+                );
+
+
+            const coverName =
+                document.getElementById(
+                    "user-upload-cover-name"
+                );
+
+
+            if (
+                audioName
+            ) {
+
+                audioName.textContent =
+                    t("audio");
+
+                audioName.className =
+                    "block text-[10px] font-bold text-zinc-300 truncate";
+
+            }
+
+
+            if (
+                coverName
+            ) {
+
+                coverName.textContent =
+                    t("cover");
+
+                coverName.className =
+                    "min-w-0 text-[10px] text-zinc-500 truncate";
+
+            }
+
+
+            setStatus(
+                t("ready"),
+                false
+            );
+
+
+            /* =================================================
+               RECARGAR MIS NASHEEDS
+               ================================================= */
+
+            await loadMyNasheeds();
+
+
+            /* =================================================
+               RECARGAR LA BIBLIOTECA PRINCIPAL
+               ================================================= */
+
+            if (
+                typeof window.fetchNasheeds ===
+                    "function"
+            ) {
+
+                await window.fetchNasheeds();
+
+            }
 
 
         } catch (
@@ -2036,30 +1890,21 @@
                 error
             );
 
+
             setStatus(
-                status,
                 error?.message ||
-                    "No se pudo completar la subida.",
+                t("server"),
                 true
             );
 
         } finally {
 
-            isUploading =
-                false;
+            if (
+                submitButton
+            ) {
 
-            const currentSubmit =
-                document.getElementById(
-                    "nushud-upload-submit"
-                );
-
-            if (currentSubmit) {
-
-                currentSubmit.disabled =
+                submitButton.disabled =
                     false;
-
-                currentSubmit.textContent =
-                    "Subir nasheed";
 
             }
 
@@ -2068,464 +1913,367 @@
     }
 
 
+    /* =========================================================
+       ESTADO DEL FORMULARIO
+       ========================================================= */
+
     function setStatus(
-        element,
         message,
-        isError,
-        success
+        isError
     ) {
 
-        if (!element) {
-            return;
-        }
-
-        element.textContent =
-            String(
-                message || ""
+        const element =
+            document.getElementById(
+                "user-upload-status"
             );
 
-        element.classList.toggle(
-            "error",
-            Boolean(
-                isError
-            )
-        );
 
-        element.classList.toggle(
-            "success",
-            Boolean(
-                success
-            )
-        );
+        if (
+            !element
+        ) {
+
+            return;
+
+        }
+
+
+        element.textContent =
+            message ||
+            "";
+
+
+        element.className =
+            "min-h-[17px] mt-3 text-center text-[9px] " +
+            (
+                isError
+                    ? "text-red-400"
+                    : "text-zinc-600"
+            );
 
     }
 
 
-    /* ========================================================
-       REFRESH
-       ======================================================== */
+    /* =========================================================
+       CARGAR MIS NASHEEDS
+       ========================================================= */
 
-    async function refresh() {
+    async function loadMyNasheeds() {
 
-        const container =
-            getContent();
+        const list =
+            document.getElementById(
+                "user-upload-list"
+            );
 
-        if (!container) {
-            return;
-        }
 
-        if (isUploading) {
-            return;
-        }
-
-        renderLoading();
-
-        const authenticated =
-            await authRequired();
-
-        if (!authenticated) {
-
-            renderLoggedOut();
+        if (
+            !list
+        ) {
 
             return;
 
         }
+
+
+        currentUser =
+            getCurrentUser();
+
+
+        if (
+            !currentUser
+        ) {
+
+            list.innerHTML =
+                "";
+
+            return;
+
+        }
+
 
         try {
 
-            const result =
-                await
-                loadUserNasheeds();
-
-            const rows =
-                result.rows || [];
+            const token =
+                await getAccessToken();
 
 
-            /*
-             * Buscamos el nasheed del día que
-             * todavía esté procesándose.
-             */
-
-            const processing =
-                rows.find(
-                    row =>
-                        String(
-                            row.status
-                        ).toLowerCase() ===
-                        "processing"
-                );
-
-
-            if (processing) {
-
-                renderProcessing(
-                    processing
-                );
-
-                startProcessingWatcher(
-                    processing.id
-                );
+            if (
+                !token
+            ) {
 
                 return;
 
             }
 
 
-            /*
-             * Si el servidor tiene un "ready"
-             * de hoy, renderizamos el formulario
-             * bloqueado por el backend al intentar
-             * subir, pero mantenemos visible la lista.
-             *
-             * Esto evita perder la interfaz.
-             */
+            const data =
+                await apiJson(
+                    "/api/user-nasheeds",
+                    {
 
-            renderForm(
-                rows
-            );
+                        method:
+                            "GET",
 
+                        credentials:
+                            "same-origin",
+
+                        cache:
+                            "no-store",
+
+                        headers: {
+
+                            Authorization:
+                                `Bearer ${token}`
+
+                        }
+
+                    }
+                );
+
+
+            list.innerHTML =
+                "";
+
+
+            const items =
+                Array.isArray(
+                    data?.nasheeds
+                )
+                    ? data.nasheeds
+                    : [];
+
+
+            if (
+                !items.length
+            ) {
+
+                list.innerHTML = `
+
+                    <div
+                        class="rounded-xl border border-white/5 bg-white/[.018] px-4 py-3 text-[9px] text-zinc-700 text-center">
+
+                        ${escapeHtml(
+                            t("noNasheeds")
+                        )}
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+            for (
+                const item of
+                items
+            ) {
+
+                list.appendChild(
+                    createMyNasheedRow(
+                        item
+                    )
+                );
+
+            }
 
         } catch (
             error
         ) {
 
             console.error(
-                "[NUSHUD USER UPLOAD REFRESH]",
+                "[NUSHUD USER NASHEEDS]",
                 error
             );
 
-            container.innerHTML = `
 
-                <div class="
-                    glass-panel
-                    rounded-2xl
-                    border
-                    border-red-500/10
-                    p-6
-                    text-center
-                ">
+            list.innerHTML = `
 
-                    <div class="
-                        text-red-400
-                        text-lg
-                        mb-3
-                    ">
-                        !
-                    </div>
+                <div
+                    class="rounded-xl border border-red-500/10 bg-red-500/[.03] px-4 py-3 text-[9px] text-red-400">
 
-                    <h3 class="
-                        text-xs
-                        font-extrabold
-                        text-zinc-200
-                    ">
-                        No se pudo cargar la subida
-                    </h3>
-
-                    <p class="
-                        text-[10px]
-                        text-zinc-500
-                        mt-2
-                        leading-relaxed
-                    ">
-                        ${escapeHtml(
-                            error?.message ||
-                            "Error desconocido."
-                        )}
-                    </p>
-
-                    <button
-                        id="nushud-upload-retry"
-                        type="button"
-                        class="
-                            nushud-upload-button
-                            mt-5
-                        "
-                    >
-                        Reintentar
-                    </button>
+                    ${escapeHtml(
+                        error?.message ||
+                        t("server")
+                    )}
 
                 </div>
 
             `;
 
-            document
-                .getElementById(
-                    "nushud-upload-retry"
-                )
-                ?.addEventListener(
-                    "click",
-                    refresh
-                );
-
         }
 
     }
 
 
-    /* ========================================================
-       WATCHER
-       ======================================================== */
+    /* =========================================================
+       FILA DE MIS NASHEEDS
+       ========================================================= */
 
-    let processingTimer =
-        null;
-
-
-    function startProcessingWatcher(
-        id
+    function createMyNasheedRow(
+        item
     ) {
 
+        const row =
+            document.createElement(
+                "div"
+            );
+
+
+        row.className =
+            "flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[.018] px-3.5 py-3";
+
+
+        const left =
+            document.createElement(
+                "div"
+            );
+
+
+        left.className =
+            "min-w-0 flex-1";
+
+
+        const title =
+            document.createElement(
+                "div"
+            );
+
+
+        title.className =
+            "truncate text-[10px] font-bold text-zinc-300";
+
+
+        title.textContent =
+            item.title ||
+            "Nasheed";
+
+
+        const status =
+            document.createElement(
+                "div"
+            );
+
+
+        status.className =
+            "mt-1 text-[8px]";
+
+
         if (
-            processingTimer
+            item.status ===
+            "ready"
         ) {
 
-            clearInterval(
-                processingTimer
+            status.textContent =
+                t("readyStatus");
+
+            status.classList.add(
+                "text-amber-500/70"
+            );
+
+        } else if (
+            item.status ===
+            "processing"
+        ) {
+
+            status.textContent =
+                t("processingStatus");
+
+            status.classList.add(
+                "text-zinc-600"
+            );
+
+        } else {
+
+            status.textContent =
+                item.error ||
+                t("errorStatus");
+
+            status.classList.add(
+                "text-red-400"
             );
 
         }
 
-        let checks =
-            0;
 
-        processingTimer =
-            setInterval(
-                async () => {
+        left.appendChild(
+            title
+        );
 
-                    checks++;
 
-                    if (
-                        checks >
-                        120
-                    ) {
+        left.appendChild(
+            status
+        );
 
-                        clearInterval(
-                            processingTimer
-                        );
 
-                        processingTimer =
-                            null;
+        row.appendChild(
+            left
+        );
 
-                        return;
 
-                    }
-
-                    try {
-
-                        const token =
-                            await
-                            getAccessToken();
-
-                        if (!token) {
-
-                            return;
-
-                        }
-
-                        const response =
-                            await fetch(
-                                "/api/user-nasheeds",
-                                {
-                                    method:
-                                        "GET",
-
-                                    cache:
-                                        "no-store",
-
-                                    credentials:
-                                        "same-origin",
-
-                                    headers: {
-
-                                        Accept:
-                                            "application/json",
-
-                                        Authorization:
-                                            `Bearer ${token}`
-
-                                    }
-
-                                }
-                            );
-
-                        if (
-                            !response.ok
-                        ) {
-
-                            return;
-
-                        }
-
-                        const data =
-                            await
-                            response.json();
-
-                        const row =
-                            (
-                                data?.nasheeds ||
-                                []
-                            ).find(
-                                item =>
-                                    Number(
-                                        item.id
-                                    ) ===
-                                    Number(
-                                        id
-                                    )
-                            );
-
-                        if (
-                            !row
-                        ) {
-
-                            return;
-
-                        }
-
-                        if (
-                            row.status !==
-                                "processing"
-                        ) {
-
-                            clearInterval(
-                                processingTimer
-                            );
-
-                            processingTimer =
-                                null;
-
-                            await
-                                refresh();
-
-                            if (
-                                typeof
-                                    window.fetchNasheeds ===
-                                    "function"
-                            ) {
-
-                                await
-                                    window.fetchNasheeds();
-
-                            }
-
-                        }
-
-                    } catch (
-                        error
-                    ) {
-
-                        console.error(
-                            "[NUSHUD PROCESS WATCHER]",
-                            error
-                        );
-
-                    }
-
-                },
-                5000
+        const badge =
+            document.createElement(
+                "span"
             );
+
+
+        badge.className =
+            "shrink-0 text-[7px] font-extrabold tracking-wider text-zinc-700";
+
+
+        const today =
+            new Date()
+                .toISOString()
+                .slice(
+                    0,
+                    10
+                );
+
+
+        if (
+            item.upload_day ===
+            today
+        ) {
+
+            badge.textContent =
+                t("todayBadge");
+
+        }
+
+
+        row.appendChild(
+            badge
+        );
+
+
+        return row;
 
     }
 
 
-    /* ========================================================
-       AUTH EVENT
-       ======================================================== */
-
-    window.addEventListener(
-        "nushud-auth-changed",
-        async event => {
-
-            currentUser =
-                event
-                    ?.detail
-                    ?.user ||
-                null;
-
-            await refresh();
-
-        }
-    );
-
-
-    /* ========================================================
-       EVENTO DE SUBIDA
-       ======================================================== */
-
-    window.addEventListener(
-        "nushud-user-nasheed-ready",
-        async () => {
-
-            await refresh();
-
-        }
-    );
-
-
-    /* ========================================================
-       API PUBLICA
-       ======================================================== */
+    /* =========================================================
+       HACER DISPONIBLE GLOBALMENTE
+       ========================================================= */
 
     window.NushudUserUpload = {
 
-        refresh,
+        render,
 
-        getCurrentUser,
+        loadMyNasheeds,
 
-        getAccessToken,
+        getUser:
+            function () {
 
-        isUploading() {
+                return getCurrentUser();
 
-            return isUploading;
-
-        }
+            }
 
     };
 
 
-    /* ========================================================
-       INICIO
-       ======================================================== */
-
-    function initialize() {
-
-        if (isInitialized) {
-            return;
-        }
-
-        isInitialized =
-            true;
-
-        /*
-         * No esperamos a que auth.js nos dispare
-         * un evento. Comprobamos el estado nosotros.
-         */
-
-        setTimeout(
-            () => {
-
-                refresh();
-
-            },
-            0
-        );
-
-        /*
-         * Segundo intento para cubrir el caso
-         * en que Supabase termina restaurando
-         * la sesión un poco después.
-         */
-
-        setTimeout(
-            () => {
-
-                refresh();
-
-            },
-            700
-        );
-
-    }
-
+    /* =========================================================
+       ARRANQUE
+       ========================================================= */
 
     if (
         document.readyState ===
@@ -2534,15 +2282,16 @@
 
         document.addEventListener(
             "DOMContentLoaded",
-            initialize,
+            init,
             {
-                once: true
+                once:
+                    true
             }
         );
 
     } else {
 
-        initialize();
+        init();
 
     }
 

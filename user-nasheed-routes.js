@@ -2,58 +2,114 @@
 
 const crypto = require("crypto");
 
+/* =========================================================
+   CONFIGURACIÓN
+   ========================================================= */
+
 const BUCKET = "UserNasheeds";
 
-const MAX_AUDIO = 25 * 1024 * 1024;
-const MAX_COVER = 5 * 1024 * 1024;
+const MAX_AUDIO =
+    25 * 1024 * 1024;
 
-const AUDIO_TYPES = new Set([
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/mp4",
-    "audio/x-m4a",
-    "audio/m4a",
-    "audio/ogg",
-    "audio/wav",
-    "audio/x-wav",
-    "audio/webm",
-    "audio/flac",
-    "video/mp4",
-    "video/webm"
-]);
+const MAX_COVER =
+    5 * 1024 * 1024;
 
-const COVER_TYPES = new Set([
-    "image/jpeg",
-    "image/png",
-    "image/webp"
-]);
 
-const LANGS = new Set([
-    "es",
-    "en",
-    "ru"
-]);
+/* =========================================================
+   FORMATOS
+   ========================================================= */
 
-const GROQ_STT = "whisper-large-v3-turbo";
-const GROQ_LLM = "openai/gpt-oss-20b";
+const AUDIO_TYPES =
+    new Set([
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/mp4",
+        "audio/x-m4a",
+        "audio/m4a",
+        "audio/ogg",
+        "audio/wav",
+        "audio/x-wav",
+        "audio/webm",
+        "audio/flac",
+        "video/mp4",
+        "video/webm"
+    ]);
+
+
+const COVER_TYPES =
+    new Set([
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ]);
+
+
+const LANGS =
+    new Set([
+        "es",
+        "en",
+        "ru"
+    ]);
+
+
+/* =========================================================
+   MODELOS GROQ
+   ========================================================= */
+
+const GROQ_STT =
+    "whisper-large-v3-turbo";
+
+const GROQ_LLM =
+    "openai/gpt-oss-20b";
+
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
 
 function day() {
-    return new Date().toISOString().slice(0, 10);
+
+    return new Date()
+        .toISOString()
+        .slice(
+            0,
+            10
+        );
+
 }
+
 
 function rnd() {
-    return crypto.randomBytes(10).toString("hex");
+
+    return crypto
+        .randomBytes(
+            10
+        )
+        .toString(
+            "hex"
+        );
+
 }
 
-function ext(type, name) {
+
+function ext(
+    type,
+    name
+) {
 
     const extension =
-        String(name || "")
-            .split(".")
+        String(
+            name || ""
+        )
+            .split(
+                "."
+            )
             .pop()
             .toLowerCase();
 
+
     const allowed = [
+
         "mp3",
         "m4a",
         "mp4",
@@ -63,42 +119,90 @@ function ext(type, name) {
         "wav",
         "webm",
         "flac",
+
         "jpg",
         "jpeg",
         "png",
         "webp"
+
     ];
+
 
     if (
         allowed.includes(
             extension
         )
     ) {
-        return extension === "jpeg"
+
+        return extension ===
+            "jpeg"
             ? "jpg"
             : extension;
+
     }
 
+
     const byMime = {
-        "audio/mpeg": "mp3",
-        "audio/mp3": "mp3",
-        "audio/mp4": "m4a",
-        "audio/x-m4a": "m4a",
-        "audio/m4a": "m4a",
-        "audio/ogg": "ogg",
-        "audio/wav": "wav",
-        "audio/x-wav": "wav",
-        "audio/webm": "webm",
-        "audio/flac": "flac",
-        "video/mp4": "mp4",
-        "video/webm": "webm",
-        "image/jpeg": "jpg",
-        "image/png": "png",
-        "image/webp": "webp"
+
+        "audio/mpeg":
+            "mp3",
+
+        "audio/mp3":
+            "mp3",
+
+        "audio/mp4":
+            "m4a",
+
+        "audio/x-m4a":
+            "m4a",
+
+        "audio/m4a":
+            "m4a",
+
+        "audio/ogg":
+            "ogg",
+
+        "audio/wav":
+            "wav",
+
+        "audio/x-wav":
+            "wav",
+
+        "audio/webm":
+            "webm",
+
+        "audio/flac":
+            "flac",
+
+        "video/mp4":
+            "mp4",
+
+        "video/webm":
+            "webm",
+
+        "image/jpeg":
+            "jpg",
+
+        "image/png":
+            "png",
+
+        "image/webp":
+            "webp"
+
     };
 
-    return byMime[type] || "bin";
+
+    return (
+        byMime[type] ||
+        "bin"
+    );
+
 }
+
+
+/* =========================================================
+   USUARIO AUTENTICADO
+   ========================================================= */
 
 async function getUser(
     req,
@@ -111,22 +215,34 @@ async function getUser(
             ""
         );
 
+
     if (
         !authorization.startsWith(
             "Bearer "
         )
     ) {
+
         return null;
+
     }
+
 
     const token =
         authorization
-            .slice(7)
+            .slice(
+                7
+            )
             .trim();
 
-    if (!token) {
+
+    if (
+        !token
+    ) {
+
         return null;
+
     }
+
 
     try {
 
@@ -138,13 +254,17 @@ async function getUser(
                 token
             );
 
+
         if (
             error ||
             !data ||
             !data.user
         ) {
+
             return null;
+
         }
+
 
         return data.user;
 
@@ -153,17 +273,28 @@ async function getUser(
         return null;
 
     }
+
 }
+
+
+/* =========================================================
+   IDIOMAS
+   ========================================================= */
 
 function normalizeLanguages(
     value
 ) {
 
     if (
-        !Array.isArray(value)
+        !Array.isArray(
+            value
+        )
     ) {
+
         return [];
+
     }
+
 
     return [
         ...new Set(
@@ -178,11 +309,19 @@ function normalizeLanguages(
                 )
                 .filter(
                     item =>
-                        LANGS.has(item)
+                        LANGS.has(
+                            item
+                        )
                 )
         )
     ];
+
 }
+
+
+/* =========================================================
+   TIEMPO VTT
+   ========================================================= */
 
 function vttTime(
     value
@@ -198,42 +337,75 @@ function vttTime(
             )
         );
 
+
     const hours =
         Math.floor(
             milliseconds /
-                3600000
+            3600000
         );
+
 
     const minutes =
         Math.floor(
             (
                 milliseconds %
                 3600000
-            ) / 60000
+            ) /
+            60000
         );
+
 
     const seconds =
         Math.floor(
             (
                 milliseconds %
                 60000
-            ) / 1000
+            ) /
+            1000
         );
+
 
     const ms =
         milliseconds %
         1000;
 
+
     return (
-        String(hours).padStart(2, "0") +
+        String(
+            hours
+        ).padStart(
+            2,
+            "0"
+        ) +
         ":" +
-        String(minutes).padStart(2, "0") +
+        String(
+            minutes
+        ).padStart(
+            2,
+            "0"
+        ) +
         ":" +
-        String(seconds).padStart(2, "0") +
+        String(
+            seconds
+        ).padStart(
+            2,
+            "0"
+        ) +
         "." +
-        String(ms).padStart(3, "0")
+        String(
+            ms
+        ).padStart(
+            3,
+            "0"
+        )
     );
+
 }
+
+
+/* =========================================================
+   LIMPIAR TEXTO
+   ========================================================= */
 
 function cleanText(
     value
@@ -251,7 +423,13 @@ function cleanText(
             " "
         )
         .trim();
+
 }
+
+
+/* =========================================================
+   CREAR VTT
+   ========================================================= */
 
 function makeVTT(
     segments
@@ -262,8 +440,10 @@ function makeVTT(
         ""
     ];
 
+
     for (
-        const segment of segments
+        const segment of
+        segments
     ) {
 
         const text =
@@ -271,42 +451,62 @@ function makeVTT(
                 segment.text
             );
 
+
         const start =
             Number(
                 segment.start
             );
+
 
         const end =
             Number(
                 segment.end
             );
 
+
         if (
             !text ||
-            !Number.isFinite(start) ||
-            !Number.isFinite(end) ||
+            !Number.isFinite(
+                start
+            ) ||
+            !Number.isFinite(
+                end
+            ) ||
             end <= start
         ) {
+
             continue;
+
         }
+
 
         lines.push(
             `${vttTime(start)} --> ${vttTime(end)}`
         );
 
+
         lines.push(
             text
         );
 
+
         lines.push(
             ""
         );
+
     }
+
 
     return lines.join(
         "\n"
     );
+
 }
+
+
+/* =========================================================
+   PETICIÓN GROQ
+   ========================================================= */
 
 async function groqRequest(
     url,
@@ -319,18 +519,23 @@ async function groqRequest(
             url,
             {
                 ...options,
+
                 headers: {
                     ...(options.headers || {}),
+
                     Authorization:
                         `Bearer ${apiKey}`
                 }
             }
         );
 
+
     const raw =
         await response.text();
 
+
     let body;
+
 
     try {
 
@@ -342,12 +547,16 @@ async function groqRequest(
     } catch {
 
         body = {
+
             error: {
-                message: raw
+                message:
+                    raw
             }
+
         };
 
     }
+
 
     if (
         !response.ok
@@ -359,14 +568,24 @@ async function groqRequest(
                 `Groq HTTP ${response.status}`
             );
 
+
         error.status =
             response.status;
 
+
         throw error;
+
     }
 
+
     return body;
+
 }
+
+
+/* =========================================================
+   TRANSCRIPCIÓN ÁRABE
+   ========================================================= */
 
 async function transcribeArabic(
     audioUrl,
@@ -376,45 +595,64 @@ async function transcribeArabic(
     const form =
         new FormData();
 
+
     form.append(
         "model",
         GROQ_STT
     );
+
 
     form.append(
         "url",
         audioUrl
     );
 
+
     form.append(
         "language",
         "ar"
     );
+
 
     form.append(
         "response_format",
         "verbose_json"
     );
 
+
+    /*
+     * IMPORTANTE:
+     * Groq documenta este parámetro como
+     * timestamp_granularities[].
+     *
+     * Debe ir como array en multipart/form-data.
+     */
+
     form.append(
-        "timestamp_granularities",
+        "timestamp_granularities[]",
         "segment"
     );
+
 
     form.append(
         "temperature",
         "0"
     );
 
+
     const result =
         await groqRequest(
             "https://api.groq.com/openai/v1/audio/transcriptions",
             {
-                method: "POST",
-                body: form
+                method:
+                    "POST",
+
+                body:
+                    form
             },
             apiKey
         );
+
 
     const segments =
         Array.isArray(
@@ -423,47 +661,67 @@ async function transcribeArabic(
             ? result.segments
             : [];
 
+
     const cleanSegments =
         segments
             .map(
                 segment => ({
+
                     start:
                         Number(
                             segment.start
                         ),
+
                     end:
                         Number(
                             segment.end
                         ),
+
                     text:
                         cleanText(
                             segment.text
                         )
+
                 })
             )
             .filter(
                 segment =>
+
                     segment.text &&
+
                     Number.isFinite(
                         segment.start
                     ) &&
+
                     Number.isFinite(
                         segment.end
                     ) &&
+
                     segment.end >
                         segment.start
+
             );
+
 
     if (
         !cleanSegments.length
     ) {
+
         throw new Error(
-            "La IA no devolvió segmentos."
+            "La IA no devolvió segmentos de transcripción."
         );
+
     }
 
+
     return cleanSegments;
+
 }
+
+
+/* =========================================================
+   TRADUCCIÓN
+   ========================================================= */
 
 async function translateBatch(
     batch,
@@ -472,10 +730,18 @@ async function translateBatch(
 ) {
 
     const languageNames = {
-        es: "Spanish",
-        en: "English",
-        ru: "Russian"
+
+        es:
+            "Spanish",
+
+        en:
+            "English",
+
+        ru:
+            "Russian"
+
     };
+
 
     const input =
         batch.map(
@@ -483,61 +749,88 @@ async function translateBatch(
                 segment,
                 index
             ) => ({
+
                 i:
                     index,
+
                 text:
                     segment.text
+
             })
         );
+
 
     const result =
         await groqRequest(
             "https://api.groq.com/openai/v1/chat/completions",
             {
-                method: "POST",
+
+                method:
+                    "POST",
+
                 headers: {
+
                     "Content-Type":
                         "application/json"
+
                 },
+
                 body:
                     JSON.stringify({
+
                         model:
                             GROQ_LLM,
+
                         temperature:
                             0.1,
+
                         response_format: {
                             type:
                                 "json_object"
                         },
+
                         messages: [
+
                             {
+
                                 role:
                                     "system",
+
                                 content:
                                     `Translate Arabic nasheed lyrics into ${languageNames[language]}. ` +
                                     "Return only JSON in the form " +
                                     '{"translations":[{"i":0,"text":"..."}]}. ' +
                                     "Keep every index and preserve the meaning. " +
                                     "Do not add explanations."
+
                             },
+
                             {
+
                                 role:
                                     "user",
+
                                 content:
                                     JSON.stringify({
                                         translations:
                                             input
                                     })
+
                             }
+
                         ]
+
                     })
+
             },
             apiKey
         );
 
+
     let content =
         result?.choices?.[0]?.message?.content ||
         "";
+
 
     content =
         content
@@ -551,7 +844,9 @@ async function translateBatch(
                 ""
             );
 
+
     let parsed;
+
 
     try {
 
@@ -565,7 +860,9 @@ async function translateBatch(
         throw new Error(
             `La traducción ${language} no devolvió JSON válido.`
         );
+
     }
+
 
     const map =
         new Map(
@@ -584,21 +881,34 @@ async function translateBatch(
             )
         );
 
+
     return batch.map(
         (
             original,
             index
         ) => ({
+
             start:
                 original.start,
+
             end:
                 original.end,
+
             text:
-                map.get(index) ||
+                map.get(
+                    index
+                ) ||
                 original.text
+
         })
     );
+
 }
+
+
+/* =========================================================
+   TRADUCIR TODO
+   ========================================================= */
 
 async function translateAll(
     segments,
@@ -606,7 +916,9 @@ async function translateAll(
     apiKey
 ) {
 
-    const output = [];
+    const output =
+        [];
+
 
     for (
         let i = 0;
@@ -620,6 +932,7 @@ async function translateAll(
                 i + 45
             );
 
+
         const translated =
             await translateBatch(
                 batch,
@@ -627,13 +940,22 @@ async function translateAll(
                 apiKey
             );
 
+
         output.push(
             ...translated
         );
+
     }
 
+
     return output;
+
 }
+
+
+/* =========================================================
+   SIGNED URL
+   ========================================================= */
 
 async function signUrl(
     supabase,
@@ -654,14 +976,24 @@ async function signUrl(
                 seconds
             );
 
+
     if (
         error
     ) {
+
         throw error;
+
     }
 
+
     return data.signedUrl;
+
 }
+
+
+/* =========================================================
+   CONVERTIR NASHEED PRIVADO
+   ========================================================= */
 
 async function privateTrack(
     supabase,
@@ -670,6 +1002,7 @@ async function privateTrack(
 
     const subtitles =
         {};
+
 
     for (
         const [
@@ -685,8 +1018,11 @@ async function privateTrack(
                 "__"
             )
         ) {
+
             continue;
+
         }
+
 
         subtitles[
             language
@@ -696,9 +1032,12 @@ async function privateTrack(
                 path,
                 86400
             );
+
     }
 
+
     return {
+
         id:
             Number(
                 row.id
@@ -736,14 +1075,22 @@ async function privateTrack(
 
         created_at:
             row.created_at
+
     };
+
 }
+
+
+/* =========================================================
+   REGISTRO DE RUTAS
+   ========================================================= */
 
 function registerUserNasheedRoutes({
     app,
     supabase,
     groqApiKey
 }) {
+
 
     /* =====================================================
        LISTA DEL USUARIO
@@ -762,16 +1109,24 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (
                 !currentUser
             ) {
+
                 return res
-                    .status(401)
+                    .status(
+                        401
+                    )
                     .json({
+
                         error:
                             "Debes iniciar sesión."
+
                     });
+
             }
+
 
             try {
 
@@ -798,36 +1153,49 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (
                     error
                 ) {
+
                     throw error;
+
                 }
 
+
                 return res.json({
+
                     nasheeds:
                         (
                             data ||
                             []
                         ).map(
                             item => ({
+
                                 id:
                                     Number(
                                         item.id
                                     ),
+
                                 title:
                                     item.title,
+
                                 status:
                                     item.status,
+
                                 error:
                                     item.error_message ||
                                     null,
+
                                 created_at:
                                     item.created_at,
+
                                 upload_day:
                                     item.upload_day
+
                             })
                         )
+
                 });
 
             } catch (
@@ -839,13 +1207,20 @@ function registerUserNasheedRoutes({
                     error
                 );
 
+
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
+
                         error:
                             "No se pudieron cargar tus nasheeds."
+
                     });
+
             }
+
         }
     );
 
@@ -867,16 +1242,24 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (
                 !currentUser
             ) {
+
                 return res
-                    .status(401)
+                    .status(
+                        401
+                    )
                     .json({
+
                         error:
                             "Debes iniciar sesión."
+
                     });
+
             }
+
 
             try {
 
@@ -886,23 +1269,28 @@ function registerUserNasheedRoutes({
                         ""
                     ).trim();
 
+
                 const audio =
                     req.body?.audio ||
                     {};
 
+
                 const cover =
                     req.body?.cover ||
                     null;
+
 
                 const translations =
                     normalizeLanguages(
                         req.body?.translations
                     );
 
+
                 const audioSize =
                     Number(
                         audio.size
                     );
+
 
                 const audioType =
                     String(
@@ -910,18 +1298,26 @@ function registerUserNasheedRoutes({
                         ""
                     );
 
+
                 if (
                     !title ||
                     title.length >
                         120
                 ) {
+
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
+
                             error:
                                 "El título es obligatorio y debe tener como máximo 120 caracteres."
+
                         });
+
                 }
+
 
                 if (
                     !Number.isFinite(
@@ -932,26 +1328,40 @@ function registerUserNasheedRoutes({
                     audioSize >
                         MAX_AUDIO
                 ) {
+
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
+
                             error:
                                 "El audio debe pesar como máximo 25 MB."
+
                         });
+
                 }
+
 
                 if (
                     !AUDIO_TYPES.has(
                         audioType
                     )
                 ) {
+
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
+
                             error:
                                 "Formato de audio no compatible."
+
                         });
+
                 }
+
 
                 if (
                     cover
@@ -962,11 +1372,13 @@ function registerUserNasheedRoutes({
                             cover.size
                         );
 
+
                     const coverType =
                         String(
                             cover.type ||
                             ""
                         );
+
 
                     if (
                         !Number.isFinite(
@@ -980,17 +1392,26 @@ function registerUserNasheedRoutes({
                             coverType
                         )
                     ) {
+
                         return res
-                            .status(400)
+                            .status(
+                                400
+                            )
                             .json({
+
                                 error:
                                     "La portada debe ser JPG, PNG o WebP y pesar como máximo 5 MB."
+
                             });
+
                     }
+
                 }
+
 
                 const uploadDay =
                     day();
+
 
                 const existing =
                     await supabase
@@ -1010,28 +1431,41 @@ function registerUserNasheedRoutes({
                         )
                         .maybeSingle();
 
+
                 if (
                     existing.error
                 ) {
+
                     throw existing.error;
+
                 }
+
 
                 if (
                     existing.data
                 ) {
+
                     return res
-                        .status(409)
+                        .status(
+                            409
+                        )
                         .json({
+
                             error:
                                 "Ya tienes una subida para hoy.",
+
                             id:
                                 Number(
                                     existing.data.id
                                 ),
+
                             status:
                                 existing.data.status
+
                         });
+
                 }
+
 
                 const inserted =
                     await supabase
@@ -1039,43 +1473,60 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .insert({
+
                             user_id:
                                 currentUser.id,
+
                             title,
+
                             audio_path:
                                 "",
+
                             cover_path:
                                 null,
+
                             subtitles: {
+
                                 __requested:
                                     translations
+
                             },
+
                             status:
                                 "processing",
+
                             error_message:
                                 null,
+
                             upload_day:
                                 uploadDay
+
                         })
                         .select(
                             "id"
                         )
                         .single();
 
+
                 if (
                     inserted.error
                 ) {
+
                     throw inserted.error;
+
                 }
+
 
                 const prefix =
                     `${currentUser.id}/${uploadDay}/${inserted.data.id}-${rnd()}`;
+
 
                 const audioPath =
                     `${prefix}/audio.${ext(
                         audioType,
                         audio.name
                     )}`;
+
 
                 const coverPath =
                     cover
@@ -1084,6 +1535,7 @@ function registerUserNasheedRoutes({
                             cover.name
                         )}`
                         : null;
+
 
                 const audioSigned =
                     await supabase
@@ -1099,14 +1551,19 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (
                     audioSigned.error
                 ) {
+
                     throw audioSigned.error;
+
                 }
+
 
                 let coverSigned =
                     null;
+
 
                 if (
                     coverPath
@@ -1126,12 +1583,17 @@ function registerUserNasheedRoutes({
                                 }
                             );
 
+
                     if (
                         coverSigned.error
                     ) {
+
                         throw coverSigned.error;
+
                     }
+
                 }
+
 
                 const updated =
                     await supabase
@@ -1139,10 +1601,13 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .update({
+
                             audio_path:
                                 audioPath,
+
                             cover_path:
                                 coverPath
+
                         })
                         .eq(
                             "id",
@@ -1153,13 +1618,18 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
+
                 if (
                     updated.error
                 ) {
+
                     throw updated.error;
+
                 }
 
+
                 return res.json({
+
                     success:
                         true,
 
@@ -1169,25 +1639,32 @@ function registerUserNasheedRoutes({
                         ),
 
                     audio: {
+
                         path:
                             audioPath,
+
                         token:
                             audioSigned
                                 .data
                                 .token
+
                     },
 
                     cover:
                         coverSigned
                             ? {
+
                                 path:
                                     coverPath,
+
                                 token:
                                     coverSigned
                                         .data
                                         .token
+
                             }
                             : null
+
                 });
 
             } catch (
@@ -1199,20 +1676,27 @@ function registerUserNasheedRoutes({
                     error
                 );
 
+
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
+
                         error:
                             error.message ||
                             "No se pudo preparar la subida."
+
                     });
+
             }
+
         }
     );
 
 
     /* =====================================================
-       PROCESAR
+       PROCESAR NASHEED
        ===================================================== */
 
     app.post(
@@ -1228,45 +1712,68 @@ function registerUserNasheedRoutes({
                     supabase
                 );
 
+
             if (
                 !currentUser
             ) {
+
                 return res
-                    .status(401)
+                    .status(
+                        401
+                    )
                     .json({
+
                         error:
                             "Debes iniciar sesión."
+
                     });
+
             }
+
 
             if (
                 !groqApiKey
             ) {
+
                 return res
-                    .status(503)
+                    .status(
+                        503
+                    )
                     .json({
+
                         error:
                             "GROQ_API_KEY no está configurada."
+
                     });
+
             }
+
 
             const id =
                 Number(
                     req.params.id
                 );
 
+
             if (
                 !Number.isSafeInteger(
                     id
                 )
             ) {
+
                 return res
-                    .status(400)
+                    .status(
+                        400
+                    )
                     .json({
+
                         error:
                             "ID no válido."
+
                     });
+
             }
+
 
             try {
 
@@ -1288,31 +1795,47 @@ function registerUserNasheedRoutes({
                         )
                         .single();
 
+
                 if (
                     query.error ||
                     !query.data
                 ) {
+
                     return res
-                        .status(404)
+                        .status(
+                            404
+                        )
                         .json({
+
                             error:
                                 "Nasheed no encontrado."
+
                         });
+
                 }
+
 
                 const row =
                     query.data;
 
+
                 if (
                     !row.audio_path
                 ) {
+
                     return res
-                        .status(400)
+                        .status(
+                            400
+                        )
                         .json({
+
                             error:
                                 "Falta el audio subido."
+
                         });
+
                 }
+
 
                 const signedAudio =
                     await supabase
@@ -1325,11 +1848,15 @@ function registerUserNasheedRoutes({
                             600
                         );
 
+
                 if (
                     signedAudio.error
                 ) {
+
                     throw signedAudio.error;
+
                 }
+
 
                 const arabic =
                     await transcribeArabic(
@@ -1338,6 +1865,7 @@ function registerUserNasheedRoutes({
                             .signedUrl,
                         groqApiKey
                     );
+
 
                 const prefix =
                     row.audio_path
@@ -1352,11 +1880,18 @@ function registerUserNasheedRoutes({
                             "/"
                         );
 
+
                 const subtitlePaths =
                     {};
 
+
+                /* =================================================
+                   ÁRABE
+                   ================================================= */
+
                 const arabicPath =
                     `${prefix}/subtitles/ar.vtt`;
+
 
                 const arabicUpload =
                     await supabase
@@ -1372,28 +1907,40 @@ function registerUserNasheedRoutes({
                                 )
                             ),
                             {
+
                                 contentType:
                                     "text/vtt; charset=utf-8",
+
                                 upsert:
                                     true
+
                             }
                         );
+
 
                 if (
                     arabicUpload.error
                 ) {
+
                     throw arabicUpload.error;
+
                 }
+
 
                 subtitlePaths.ar =
                     arabicPath;
 
+
+                /* =================================================
+                   TRADUCCIONES
+                   ================================================= */
+
                 const requested =
                     normalizeLanguages(
-                        row
-                            .subtitles
+                        row.subtitles
                             ?.__requested
                     );
+
 
                 for (
                     const language of
@@ -1407,8 +1954,10 @@ function registerUserNasheedRoutes({
                             groqApiKey
                         );
 
-                    const path =
+
+                    const translationPath =
                         `${prefix}/subtitles/${language}.vtt`;
+
 
                     const upload =
                         await supabase
@@ -1417,31 +1966,44 @@ function registerUserNasheedRoutes({
                                 BUCKET
                             )
                             .upload(
-                                path,
+                                translationPath,
                                 Buffer.from(
                                     makeVTT(
                                         translated
                                     )
                                 ),
                                 {
+
                                     contentType:
                                         "text/vtt; charset=utf-8",
+
                                     upsert:
                                         true
+
                                 }
                             );
+
 
                     if (
                         upload.error
                     ) {
+
                         throw upload.error;
+
                     }
+
 
                     subtitlePaths[
                         language
                     ] =
-                        path;
+                        translationPath;
+
                 }
+
+
+                /* =================================================
+                   GUARDAR
+                   ================================================= */
 
                 const saved =
                     await supabase
@@ -1449,12 +2011,16 @@ function registerUserNasheedRoutes({
                             "user_nasheeds"
                         )
                         .update({
+
                             subtitles:
                                 subtitlePaths,
+
                             status:
                                 "ready",
+
                             error_message:
                                 null
+
                         })
                         .eq(
                             "id",
@@ -1465,20 +2031,29 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
+
                 if (
                     saved.error
                 ) {
+
                     throw saved.error;
+
                 }
 
+
                 return res.json({
+
                     success:
                         true,
+
                     id,
+
                     title:
                         row.title,
+
                     status:
                         "ready"
+
                 });
 
             } catch (
@@ -1490,13 +2065,16 @@ function registerUserNasheedRoutes({
                     error
                 );
 
+
                 await supabase
                     .from(
                         "user_nasheeds"
                     )
                     .update({
+
                         status:
                             "error",
+
                         error_message:
                             String(
                                 error.message ||
@@ -1505,6 +2083,7 @@ function registerUserNasheedRoutes({
                                 0,
                                 500
                             )
+
                     })
                     .eq(
                         "id",
@@ -1515,6 +2094,7 @@ function registerUserNasheedRoutes({
                         currentUser.id
                     );
 
+
                 return res
                     .status(
                         error.status ===
@@ -1523,17 +2103,21 @@ function registerUserNasheedRoutes({
                             : 500
                     )
                     .json({
+
                         error:
                             error.message ||
                             "No se pudo procesar el nasheed."
+
                     });
+
             }
+
         }
     );
 
 
     /* =====================================================
-       NASHEEDS PUBLICOS + PRIVADOS DEL USUARIO
+       PÚBLICOS + PRIVADOS DEL USUARIO
        ===================================================== */
 
     app.get(
@@ -1544,6 +2128,10 @@ function registerUserNasheedRoutes({
         ) => {
 
             try {
+
+                /* ================================================
+                   PÚBLICOS
+                   ================================================ */
 
                 const publicRows =
                     await supabase
@@ -1561,11 +2149,15 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (
                     publicRows.error
                 ) {
+
                     throw publicRows.error;
+
                 }
+
 
                 const publicTracks =
                     (
@@ -1573,28 +2165,41 @@ function registerUserNasheedRoutes({
                         []
                     ).map(
                         item => ({
+
                             id:
                                 Number(
                                     item.id
                                 ),
+
                             title:
                                 item.title,
+
                             file:
                                 item.audio_url,
+
                             cover:
                                 item.cover_url ||
                                 "",
+
                             subtitles:
                                 item.subtitles ||
                                 {},
+
                             warning:
                                 Boolean(
                                     item.warning_enabled
                                 ),
+
                             private:
                                 false
+
                         })
                     );
+
+
+                /* ================================================
+                   USUARIO
+                   ================================================ */
 
                 const currentUser =
                     await getUser(
@@ -1602,13 +2207,21 @@ function registerUserNasheedRoutes({
                         supabase
                     );
 
+
                 if (
                     !currentUser
                 ) {
+
                     return res.json(
                         publicTracks
                     );
+
                 }
+
+
+                /* ================================================
+                   PRIVADOS
+                   ================================================ */
 
                 const privateRows =
                     await supabase
@@ -1634,14 +2247,19 @@ function registerUserNasheedRoutes({
                             }
                         );
 
+
                 if (
                     privateRows.error
                 ) {
+
                     throw privateRows.error;
+
                 }
+
 
                 const privateTracks =
                     [];
+
 
                 for (
                     const row of
@@ -1655,7 +2273,9 @@ function registerUserNasheedRoutes({
                             row
                         )
                     );
+
                 }
+
 
                 return res.json([
                     ...privateTracks,
@@ -1671,17 +2291,32 @@ function registerUserNasheedRoutes({
                     error
                 );
 
+
                 return res
-                    .status(500)
+                    .status(
+                        500
+                    )
                     .json({
+
                         error:
                             "No se pudieron cargar los nasheeds."
+
                     });
+
             }
+
         }
     );
+
 }
 
+
+/* =========================================================
+   EXPORT
+   ========================================================= */
+
 module.exports = {
+
     registerUserNasheedRoutes
+
 };

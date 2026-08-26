@@ -32,28 +32,17 @@
             creating: "Creando cuenta...",
             checking: "Comprobando...",
             invalidEmail: "Introduce un correo electrónico válido.",
-            weakPassword:
-                "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.",
-            invalidPassword:
-                "La contraseña no es válida.",
-            checkEmail:
-                "Cuenta creada. Revisa tu correo para confirmar la cuenta.",
-            resetSent:
-                "Si existe una cuenta con ese correo, recibirás instrucciones para recuperar la contraseña.",
-            writeEmail:
-                "Escribe primero tu correo electrónico.",
-            wrongCredentials:
-                "Correo o contraseña incorrectos.",
-            alreadyRegistered:
-                "Ese correo ya está registrado.",
-            notConfirmed:
-                "Debes confirmar tu correo antes de iniciar sesión.",
-            rateLimit:
-                "Demasiados intentos. Espera unos minutos.",
-            supabaseError:
-                "No se pudo completar la operación.",
-            logout:
-                "Cerrar sesión"
+            weakPassword: "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.",
+            invalidPassword: "La contraseña no es válida.",
+            checkEmail: "Cuenta creada. Revisa tu correo para confirmar la cuenta.",
+            resetSent: "Si existe una cuenta con ese correo, recibirás instrucciones para recuperar la contraseña.",
+            writeEmail: "Escribe primero tu correo electrónico.",
+            wrongCredentials: "Correo o contraseña incorrectos.",
+            alreadyRegistered: "Ese correo ya está registrado.",
+            notConfirmed: "Debes confirmar tu correo antes de iniciar sesión.",
+            rateLimit: "Demasiados intentos. Espera unos minutos.",
+            supabaseError: "No se pudo completar la operación.",
+            logout: "Cerrar sesión"
         },
 
         en: {
@@ -76,53 +65,34 @@
             creating: "Creating account...",
             checking: "Checking...",
             invalidEmail: "Enter a valid email address.",
-            weakPassword:
-                "Password must contain at least 8 characters, one uppercase letter, one lowercase letter and one number.",
-            invalidPassword:
-                "The password is not valid.",
-            checkEmail:
-                "Account created. Check your email to confirm your account.",
-            resetSent:
-                "If an account exists with this email, you will receive recovery instructions.",
-            writeEmail:
-                "Enter your email address first.",
-            wrongCredentials:
-                "Incorrect email or password.",
-            alreadyRegistered:
-                "That email is already registered.",
-            notConfirmed:
-                "You must confirm your email before signing in.",
-            rateLimit:
-                "Too many attempts. Please wait a few minutes.",
-            supabaseError:
-                "The operation could not be completed.",
-            logout:
-                "Sign out"
+            weakPassword: "Password must contain at least 8 characters, one uppercase letter, one lowercase letter and one number.",
+            invalidPassword: "The password is not valid.",
+            checkEmail: "Account created. Check your email to confirm your account.",
+            resetSent: "If an account exists with this email, you will receive recovery instructions.",
+            writeEmail: "Enter your email address first.",
+            wrongCredentials: "Incorrect email or password.",
+            alreadyRegistered: "That email is already registered.",
+            notConfirmed: "You must confirm your email before signing in.",
+            rateLimit: "Too many attempts. Please wait a few minutes.",
+            supabaseError: "The operation could not be completed.",
+            logout: "Sign out"
         }
     };
 
     function getLanguage() {
-
         try {
+            var lang = localStorage.getItem("nasheed_interface_language");
 
-            var saved =
-                localStorage.getItem(
-                    "nasheed_interface_language"
-                );
-
-            if (saved === "en") {
+            if (lang === "en") {
                 return "en";
             }
-
-        } catch (error) {}
+        } catch (e) {}
 
         return "es";
     }
 
     function text(key) {
-
-        var lang =
-            getLanguage();
+        var lang = getLanguage();
 
         return (
             authTexts[lang][key] ||
@@ -131,96 +101,61 @@
         );
     }
 
-    /* =========================================================
-       SUPABASE
-       ========================================================= */
-
     async function getSupabaseClient() {
-
         if (supabaseClient) {
             return supabaseClient;
         }
 
-        var response =
-            await fetch(
-                "/api/public-config",
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    credentials: "same-origin",
-                    headers: {
-                        "Accept": "application/json"
-                    }
-                }
-            );
+        var response = await fetch("/api/public-config", {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin"
+        });
 
         if (!response.ok) {
-            throw new Error(
-                "No se pudo obtener la configuración de Supabase."
-            );
+            throw new Error(text("supabaseError"));
         }
 
-        var config =
-            await response.json();
+        var config = await response.json();
 
         if (
             !config ||
             !config.supabaseUrl ||
             !config.supabasePublishableKey
         ) {
-            throw new Error(
-                "La configuración de Supabase está incompleta."
-            );
+            throw new Error(text("supabaseError"));
         }
 
         if (
             !window.supabase ||
-            typeof window.supabase.createClient !==
-                "function"
+            typeof window.supabase.createClient !== "function"
         ) {
-            throw new Error(
-                "La librería de Supabase no está disponible."
-            );
+            throw new Error(text("supabaseError"));
         }
 
-        supabaseClient =
-            window.supabase.createClient(
-                config.supabaseUrl,
-                config.supabasePublishableKey,
-                {
-                    auth: {
-                        persistSession: true,
-                        autoRefreshToken: true,
-                        detectSessionInUrl: true,
-                        flowType: "pkce"
-                    }
+        supabaseClient = window.supabase.createClient(
+            config.supabaseUrl,
+            config.supabasePublishableKey,
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true,
+                    flowType: "pkce"
                 }
-            );
+            }
+        );
 
         return supabaseClient;
     }
 
-    /* =========================================================
-       ESTILOS
-       ========================================================= */
-
     function injectStyles() {
-
-        if (
-            document.getElementById(
-                STYLE_ID
-            )
-        ) {
+        if (document.getElementById(STYLE_ID)) {
             return;
         }
 
-        var style =
-            document.createElement(
-                "style"
-            );
-
-        style.id =
-            STYLE_ID;
+        var style = document.createElement("style");
+        style.id = STYLE_ID;
 
         style.textContent =
             "#nushud-account{" +
@@ -378,11 +313,6 @@
                 "font-size:12px;" +
             "}" +
 
-            ".nushud-auth-input:focus{" +
-                "border-color:rgba(245,158,11,.55);" +
-                "box-shadow:0 0 0 3px rgba(245,158,11,.08);" +
-            "}" +
-
             ".nushud-auth-button{" +
                 "width:100%;" +
                 "margin-top:17px;" +
@@ -500,47 +430,21 @@
                 ".nushud-account-info{" +
                     "max-width:105px;" +
                 "}" +
-
-                ".nushud-account-button{" +
-                    "min-height:38px;" +
-                "}" +
-
-                ".nushud-auth-card{" +
-                    "padding:22px;" +
-                    "border-radius:24px;" +
-                "}" +
             "}";
 
-        document.head.appendChild(
-            style
-        );
+        document.head.appendChild(style);
     }
 
-    /* =========================================================
-       MODAL
-       ========================================================= */
-
     function createAuthModal() {
-
-        if (
-            document.getElementById(
-                ROOT_ID
-            )
-        ) {
+        if (document.getElementById(ROOT_ID)) {
             return;
         }
 
-        var root =
-            document.createElement(
-                "div"
-            );
-
-        root.id =
-            ROOT_ID;
+        var root = document.createElement("div");
+        root.id = ROOT_ID;
 
         root.innerHTML =
             '<div class="nushud-auth-card">' +
-
                 '<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">' +
                     '<button id="nushud-auth-close" class="nushud-auth-close" type="button"></button>' +
                 "</div>" +
@@ -555,20 +459,16 @@
 
                     '<div class="nushud-auth-field">' +
                         '<label id="nushud-email-label" class="nushud-auth-label" for="nushud-auth-email"></label>' +
-
                         '<input id="nushud-auth-email" class="nushud-auth-input" type="email" autocomplete="email" maxlength="254" required>' +
                     "</div>" +
 
                     '<div class="nushud-auth-field">' +
                         '<label id="nushud-password-label" class="nushud-auth-label" for="nushud-auth-password"></label>' +
-
                         '<input id="nushud-auth-password" class="nushud-auth-input" type="password" autocomplete="current-password" minlength="8" maxlength="72" required>' +
-
                         '<div id="nushud-password-info" style="margin-top:6px;color:#52525b;font-size:9px;"></div>' +
                     "</div>" +
 
                     '<button id="nushud-auth-submit" class="nushud-auth-button" type="submit"></button>' +
-
                 "</form>" +
 
                 '<button id="nushud-auth-reset" class="nushud-auth-secondary" type="button"></button>' +
@@ -579,206 +479,46 @@
                     '<span id="nushud-auth-switch-text"></span>' +
                     '<button id="nushud-auth-switch" type="button"></button>' +
                 "</div>" +
-
             "</div>";
 
-        document.body.appendChild(
-            root
-        );
+        document.body.appendChild(root);
 
-        document
-            .getElementById(
-                "nushud-auth-close"
-            )
-            .addEventListener(
-                "click",
-                closeAuth
-            );
+        document.getElementById("nushud-auth-close")
+            .addEventListener("click", closeAuth);
 
-        document
-            .getElementById(
-                "nushud-auth-switch"
-            )
-            .addEventListener(
-                "click",
-                toggleAuthMode
-            );
+        document.getElementById("nushud-auth-switch")
+            .addEventListener("click", toggleAuthMode);
 
-        document
-            .getElementById(
-                "nushud-auth-reset"
-            )
-            .addEventListener(
-                "click",
-                resetPassword
-            );
+        document.getElementById("nushud-auth-reset")
+            .addEventListener("click", resetPassword);
 
-        document
-            .getElementById(
-                "nushud-auth-form"
-            )
-            .addEventListener(
-                "submit",
-                submitAuth
-            );
+        document.getElementById("nushud-auth-form")
+            .addEventListener("submit", submitAuth);
 
-        root.addEventListener(
-            "click",
-            function (event) {
-
-                if (
-                    event.target === root
-                ) {
-                    closeAuth();
-                }
+        root.addEventListener("click", function (event) {
+            if (event.target === root) {
+                closeAuth();
             }
-        );
+        });
 
         updateAuthLanguage();
-    }
-
-    function openAuth(
-        mode
-    ) {
-
-        authMode =
-            mode === "register"
-                ? "register"
-                : "login";
-
-        updateAuthLanguage();
-
-        var root =
-            document.getElementById(
-                ROOT_ID
-            );
-
-        if (!root) {
-            return;
-        }
-
-        root.classList.add(
-            "open"
-        );
-
-        var email =
-            document.getElementById(
-                "nushud-auth-email"
-            );
-
-        if (email) {
-
-            setTimeout(
-                function () {
-                    email.focus();
-                },
-                50
-            );
-        }
-    }
-
-    function closeAuth() {
-
-        var root =
-            document.getElementById(
-                ROOT_ID
-            );
-
-        if (root) {
-
-            root.classList.remove(
-                "open"
-            );
-        }
-
-        showMessage("");
-    }
-
-    function toggleAuthMode() {
-
-        authMode =
-            authMode === "login"
-                ? "register"
-                : "login";
-
-        updateAuthLanguage();
-
-        showMessage("");
-
-        var password =
-            document.getElementById(
-                "nushud-auth-password"
-            );
-
-        if (password) {
-            password.value = "";
-        }
     }
 
     function updateAuthLanguage() {
-
-        var title =
-            document.getElementById(
-                "nushud-auth-title"
-            );
-
-        var description =
-            document.getElementById(
-                "nushud-auth-description"
-            );
-
-        var emailLabel =
-            document.getElementById(
-                "nushud-email-label"
-            );
-
-        var passwordLabel =
-            document.getElementById(
-                "nushud-password-label"
-            );
-
-        var email =
-            document.getElementById(
-                "nushud-auth-email"
-            );
-
-        var password =
-            document.getElementById(
-                "nushud-auth-password"
-            );
-
-        var info =
-            document.getElementById(
-                "nushud-password-info"
-            );
-
-        var submit =
-            document.getElementById(
-                "nushud-auth-submit"
-            );
-
-        var reset =
-            document.getElementById(
-                "nushud-auth-reset"
-            );
-
-        var switchText =
-            document.getElementById(
-                "nushud-auth-switch-text"
-            );
-
-        var switchButton =
-            document.getElementById(
-                "nushud-auth-switch"
-            );
-
-        var close =
-            document.getElementById(
-                "nushud-auth-close"
-            );
+        var title = document.getElementById("nushud-auth-title");
+        var description = document.getElementById("nushud-auth-description");
+        var emailLabel = document.getElementById("nushud-email-label");
+        var passwordLabel = document.getElementById("nushud-password-label");
+        var email = document.getElementById("nushud-auth-email");
+        var password = document.getElementById("nushud-auth-password");
+        var info = document.getElementById("nushud-password-info");
+        var submit = document.getElementById("nushud-auth-submit");
+        var reset = document.getElementById("nushud-auth-reset");
+        var switchText = document.getElementById("nushud-auth-switch-text");
+        var switchButton = document.getElementById("nushud-auth-switch");
+        var close = document.getElementById("nushud-auth-close");
 
         if (title) {
-
             title.textContent =
                 authMode === "register"
                     ? text("register")
@@ -786,7 +526,6 @@
         }
 
         if (description) {
-
             description.textContent =
                 authMode === "register"
                     ? text("create")
@@ -794,27 +533,22 @@
         }
 
         if (emailLabel) {
-            emailLabel.textContent =
-                text("email");
+            emailLabel.textContent = text("email");
         }
 
         if (passwordLabel) {
-            passwordLabel.textContent =
-                text("password");
+            passwordLabel.textContent = text("password");
         }
 
         if (email) {
-            email.placeholder =
-                text("emailPlaceholder");
+            email.placeholder = text("emailPlaceholder");
         }
 
         if (password) {
-            password.placeholder =
-                text("passwordPlaceholder");
+            password.placeholder = text("passwordPlaceholder");
         }
 
         if (info) {
-
             info.textContent =
                 authMode === "register"
                     ? text("weakPassword")
@@ -822,7 +556,6 @@
         }
 
         if (submit) {
-
             submit.textContent =
                 authMode === "register"
                     ? text("registerButton")
@@ -830,10 +563,7 @@
         }
 
         if (reset) {
-
-            reset.textContent =
-                text("forgot");
-
+            reset.textContent = text("forgot");
             reset.style.display =
                 authMode === "register"
                     ? "none"
@@ -841,7 +571,6 @@
         }
 
         if (switchText) {
-
             switchText.textContent =
                 authMode === "register"
                     ? text("alreadyAccount")
@@ -849,7 +578,6 @@
         }
 
         if (switchButton) {
-
             switchButton.textContent =
                 authMode === "register"
                     ? text("loginButton")
@@ -857,33 +585,72 @@
         }
 
         if (close) {
-            close.textContent =
-                text("close");
+            close.textContent = text("close");
         }
 
-        updateAccountUIOnly();
+        updateAccountUI();
     }
 
-    /* =========================================================
-       VALIDACIÓN
-       ========================================================= */
+    function openAuth(mode) {
+        authMode =
+            mode === "register"
+                ? "register"
+                : "login";
 
-    function validEmail(
-        email
-    ) {
+        updateAuthLanguage();
 
+        var root = document.getElementById(ROOT_ID);
+
+        if (!root) {
+            return;
+        }
+
+        root.classList.add("open");
+
+        setTimeout(function () {
+            var email = document.getElementById("nushud-auth-email");
+
+            if (email) {
+                email.focus();
+            }
+        }, 50);
+    }
+
+    function closeAuth() {
+        var root = document.getElementById(ROOT_ID);
+
+        if (root) {
+            root.classList.remove("open");
+        }
+
+        showMessage("");
+    }
+
+    function toggleAuthMode() {
+        authMode =
+            authMode === "login"
+                ? "register"
+                : "login";
+
+        updateAuthLanguage();
+        showMessage("");
+
+        var password =
+            document.getElementById("nushud-auth-password");
+
+        if (password) {
+            password.value = "";
+        }
+    }
+
+    function validEmail(email) {
         return (
             typeof email === "string" &&
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-                email
-            )
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
         );
     }
 
-    function strongPassword(
-        password
-    ) {
-
+    function strongPassword(password) {
         return (
             typeof password === "string" &&
             password.length >= 8 &&
@@ -894,140 +661,78 @@
         );
     }
 
-    function showMessage(
-        message,
-        type
-    ) {
-
+    function showMessage(message, type) {
         var element =
-            document.getElementById(
-                "nushud-auth-message"
-            );
+            document.getElementById("nushud-auth-message");
 
         if (!element) {
             return;
         }
 
-        element.textContent =
-            message || "";
+        element.textContent = message || "";
 
         element.className =
             "nushud-auth-message " +
             (type || "error");
     }
 
-    function translateError(
-        error
-    ) {
-
+    function translateError(error) {
         var message =
             String(
-                error &&
-                error.message
+                error && error.message
                     ? error.message
                     : ""
             ).toLowerCase();
 
-        if (
-            message.indexOf(
-                "invalid login credentials"
-            ) !== -1
-        ) {
-            return text(
-                "wrongCredentials"
-            );
+        if (message.indexOf("invalid login credentials") !== -1) {
+            return text("wrongCredentials");
+        }
+
+        if (message.indexOf("user already registered") !== -1) {
+            return text("alreadyRegistered");
+        }
+
+        if (message.indexOf("email not confirmed") !== -1) {
+            return text("notConfirmed");
         }
 
         if (
-            message.indexOf(
-                "user already registered"
-            ) !== -1
+            message.indexOf("rate limit") !== -1 ||
+            message.indexOf("too many requests") !== -1
         ) {
-            return text(
-                "alreadyRegistered"
-            );
-        }
-
-        if (
-            message.indexOf(
-                "email not confirmed"
-            ) !== -1
-        ) {
-            return text(
-                "notConfirmed"
-            );
-        }
-
-        if (
-            message.indexOf(
-                "rate limit"
-            ) !== -1 ||
-            message.indexOf(
-                "too many requests"
-            ) !== -1
-        ) {
-            return text(
-                "rateLimit"
-            );
+            return text("rateLimit");
         }
 
         return (
-            error &&
-            error.message
+            error && error.message
                 ? error.message
                 : text("supabaseError")
         );
     }
 
-    /* =========================================================
-       LOGIN / REGISTRO
-       ========================================================= */
-
-    async function submitAuth(
-        event
-    ) {
-
+    async function submitAuth(event) {
         event.preventDefault();
 
-        showMessage("");
-
         var emailInput =
-            document.getElementById(
-                "nushud-auth-email"
-            );
+            document.getElementById("nushud-auth-email");
 
         var passwordInput =
-            document.getElementById(
-                "nushud-auth-password"
-            );
+            document.getElementById("nushud-auth-password");
 
         var submit =
-            document.getElementById(
-                "nushud-auth-submit"
-            );
+            document.getElementById("nushud-auth-submit");
 
         var email =
-            String(
-                emailInput.value || ""
-            )
+            String(emailInput.value || "")
                 .trim()
                 .toLowerCase();
 
         var password =
-            String(
-                passwordInput.value || ""
-            );
+            String(passwordInput.value || "");
 
-        if (
-            !validEmail(email)
-        ) {
-
-            showMessage(
-                text("invalidEmail")
-            );
-
+        if (!validEmail(email)) {
+            showMessage(text("invalidEmail"));
             emailInput.focus();
-
             return;
         }
 
@@ -1035,13 +740,8 @@
             authMode === "register" &&
             !strongPassword(password)
         ) {
-
-            showMessage(
-                text("weakPassword")
-            );
-
+            showMessage(text("weakPassword"));
             passwordInput.focus();
-
             return;
         }
 
@@ -1052,18 +752,12 @@
                 password.length > 72
             )
         ) {
-
-            showMessage(
-                text("invalidPassword")
-            );
-
+            showMessage(text("invalidPassword"));
             passwordInput.focus();
-
             return;
         }
 
-        submit.disabled =
-            true;
+        submit.disabled = true;
 
         submit.textContent =
             authMode === "register"
@@ -1071,14 +765,10 @@
                 : text("checking");
 
         try {
-
             var client =
                 await getSupabaseClient();
 
-            if (
-                authMode === "register"
-            ) {
-
+            if (authMode === "register") {
                 var registerResult =
                     await client.auth.signUp({
                         email: email,
@@ -1089,9 +779,7 @@
                         }
                     });
 
-                if (
-                    registerResult.error
-                ) {
+                if (registerResult.error) {
                     throw registerResult.error;
                 }
 
@@ -1099,19 +787,14 @@
                     registerResult.data &&
                     registerResult.data.session
                 ) {
-
                     currentUser =
-                        registerResult.data.user ||
-                        null;
+                        registerResult.data.user || null;
 
                     closeAuth();
-
                     updateAccountUI();
 
-                    dispatchAuthChange();
-
+                    dispatchAuthChanged();
                 } else {
-
                     showMessage(
                         text("checkEmail"),
                         "success"
@@ -1121,16 +804,13 @@
                 }
 
             } else {
-
                 var loginResult =
                     await client.auth.signInWithPassword({
                         email: email,
                         password: password
                     });
 
-                if (
-                    loginResult.error
-                ) {
+                if (loginResult.error) {
                     throw loginResult.error;
                 }
 
@@ -1141,83 +821,55 @@
                         : null;
 
                 closeAuth();
-
                 updateAccountUI();
 
-                dispatchAuthChange();
+                dispatchAuthChanged();
             }
 
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[NUSHUD AUTH]",
-                error
-            );
+        } catch (error) {
+            console.error("[NUSHUD AUTH]", error);
 
             showMessage(
                 translateError(error)
             );
         }
 
-        submit.disabled =
-            false;
+        submit.disabled = false;
 
         updateAuthLanguage();
     }
 
-    /* =========================================================
-       RECUPERAR CONTRASEÑA
-       ========================================================= */
-
     async function resetPassword() {
-
         showMessage("");
 
         var emailInput =
-            document.getElementById(
-                "nushud-auth-email"
-            );
+            document.getElementById("nushud-auth-email");
 
         var email =
-            String(
-                emailInput.value || ""
-            )
+            String(emailInput.value || "")
                 .trim()
                 .toLowerCase();
 
-        if (
-            !validEmail(email)
-        ) {
-
-            showMessage(
-                text("writeEmail")
-            );
-
+        if (!validEmail(email)) {
+            showMessage(text("writeEmail"));
             emailInput.focus();
-
             return;
         }
 
         try {
-
             var client =
                 await getSupabaseClient();
 
             var result =
-                await client.auth
-                    .resetPasswordForEmail(
-                        email,
-                        {
-                            redirectTo:
-                                window.location.origin
-                        }
-                    );
+                await client.auth.resetPasswordForEmail(
+                    email,
+                    {
+                        redirectTo:
+                            window.location.origin
+                    }
+                );
 
-            if (
-                result.error
-            ) {
+            if (result.error) {
                 throw result.error;
             }
 
@@ -1226,14 +878,8 @@
                 "success"
             );
 
-        } catch (
-            error
-        ) {
-
-            console.error(
-                "[NUSHUD RESET]",
-                error
-            );
+        } catch (error) {
+            console.error("[NUSHUD RESET]", error);
 
             showMessage(
                 translateError(error)
@@ -1241,12 +887,7 @@
         }
     }
 
-    /* =========================================================
-       CUENTA
-       ========================================================= */
-
     function createAccountUI() {
-
         if (
             document.getElementById(
                 ACCOUNT_ID
@@ -1256,12 +897,9 @@
         }
 
         var wrapper =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        wrapper.id =
-            ACCOUNT_ID;
+        wrapper.id = ACCOUNT_ID;
 
         wrapper.innerHTML =
             '<button id="nushud-account-button" class="nushud-account-button" type="button">' +
@@ -1275,68 +913,47 @@
                 '<div style="color:#52525b;font-size:12px;">›</div>' +
             "</button>";
 
-        document.body.appendChild(
-            wrapper
-        );
+        document.body.appendChild(wrapper);
 
         document
-            .getElementById(
-                "nushud-account-button"
-            )
+            .getElementById("nushud-account-button")
             .addEventListener(
                 "click",
                 handleAccountClick
             );
 
-        updateAccountUIOnly();
+        updateAccountUI();
     }
 
-    function updateAccountUIOnly() {
-
+    function updateAccountUI() {
         var name =
-            document.getElementById(
-                "nushud-account-name"
-            );
+            document.getElementById("nushud-account-name");
 
         var status =
-            document.getElementById(
-                "nushud-account-status"
-            );
+            document.getElementById("nushud-account-status");
 
         var avatar =
-            document.getElementById(
-                "nushud-account-avatar"
-            );
+            document.getElementById("nushud-account-avatar");
 
-        if (
-            !name ||
-            !status ||
-            !avatar
-        ) {
+        if (!name || !status || !avatar) {
             return;
         }
 
-        if (
-            currentUser
-        ) {
-
+        if (currentUser) {
             name.textContent =
-                currentUser.email ||
-                "Usuario";
+                currentUser.email || "Usuario";
 
             status.textContent =
                 text("signedIn");
 
             avatar.textContent =
                 (
-                    currentUser.email ||
-                    "N"
+                    currentUser.email || "N"
                 )
                     .charAt(0)
                     .toUpperCase();
 
         } else {
-
             name.textContent =
                 text("login");
 
@@ -1348,80 +965,44 @@
         }
     }
 
-    function updateAccountUI() {
-
-        createAccountUI();
-        updateAccountUIOnly();
-    }
-
     function handleAccountClick() {
-
-        if (
-            currentUser
-        ) {
-
+        if (currentUser) {
             openAccountMenu();
-
         } else {
-
-            openAuth(
-                "login"
-            );
+            openAuth("login");
         }
     }
 
-    /* =========================================================
-       MENÚ CUENTA
-       ========================================================= */
-
     function createAccountMenu() {
-
         var existing =
-            document.getElementById(
-                MENU_ID
-            );
+            document.getElementById(MENU_ID);
 
         if (existing) {
             return existing;
         }
 
         var menu =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        menu.id =
-            MENU_ID;
+        menu.id = MENU_ID;
 
-        document.body.appendChild(
-            menu
-        );
+        document.body.appendChild(menu);
 
         document.addEventListener(
             "click",
             function (event) {
-
                 var button =
                     document.getElementById(
                         "nushud-account-button"
                     );
 
                 if (
-                    menu.classList.contains(
-                        "open"
-                    ) &&
+                    menu.classList.contains("open") &&
                     event.target !== button &&
-                    !button.contains(
-                        event.target
-                    ) &&
-                    !menu.contains(
-                        event.target
-                    )
+                    !button.contains(event.target) &&
+                    !menu.contains(event.target)
                 ) {
-
-                    menu.classList.remove(
-                        "open"
-                    );
+                    menu.classList.remove("open");
                 }
             }
         );
@@ -1430,7 +1011,6 @@
     }
 
     function openAccountMenu() {
-
         var menu =
             createAccountMenu();
 
@@ -1461,17 +1041,15 @@
             button.getBoundingClientRect();
 
         menu.style.left =
-            Math.max(
-                10,
-                rect.left
-            ) + "px";
+            Math.max(10, rect.left) +
+            "px";
 
         menu.style.top =
-            rect.bottom + 8 + "px";
+            rect.bottom +
+            8 +
+            "px";
 
-        menu.classList.add(
-            "open"
-        );
+        menu.classList.add("open");
 
         document
             .getElementById(
@@ -1484,43 +1062,33 @@
     }
 
     async function logout() {
-
         var menu =
             document.getElementById(
                 MENU_ID
             );
 
         if (menu) {
-            menu.classList.remove(
-                "open"
-            );
+            menu.classList.remove("open");
         }
 
         try {
-
             var client =
                 await getSupabaseClient();
 
             var result =
                 await client.auth.signOut();
 
-            if (
-                result.error
-            ) {
+            if (result.error) {
                 throw result.error;
             }
 
-            currentUser =
-                null;
+            currentUser = null;
 
             updateAccountUI();
 
-            dispatchAuthChange();
+            dispatchAuthChanged();
 
-        } catch (
-            error
-        ) {
-
+        } catch (error) {
             console.error(
                 "[NUSHUD LOGOUT]",
                 error
@@ -1528,19 +1096,13 @@
         }
     }
 
-    /* =========================================================
-       SESIÓN
-       ========================================================= */
-
-    function dispatchAuthChange() {
-
+    function dispatchAuthChanged() {
         window.dispatchEvent(
             new CustomEvent(
                 "nushud-auth-changed",
                 {
                     detail: {
-                        user:
-                            currentUser
+                        user: currentUser
                     }
                 }
             )
@@ -1548,16 +1110,13 @@
     }
 
     async function restoreSession() {
-
         var client =
             await getSupabaseClient();
 
         var result =
             await client.auth.getSession();
 
-        if (
-            result.error
-        ) {
+        if (result.error) {
             throw result.error;
         }
 
@@ -1569,70 +1128,76 @@
 
         updateAccountUI();
 
-        dispatchAuthChange();
+        dispatchAuthChanged();
+
+        var previousUserId =
+            currentUser
+                ? currentUser.id
+                : null;
 
         client.auth.onAuthStateChange(
-            function (
-                event,
-                session
-            ) {
+            function (event, session) {
 
-                currentUser =
-                    session &&
-                    session.user
+                var nextUser =
+                    session && session.user
                         ? session.user
                         : null;
 
-                updateAccountUI();
+                var nextUserId =
+                    nextUser
+                        ? nextUser.id
+                        : null;
 
-                dispatchAuthChange();
-            }
-        );
-    }
-
-    /* =========================================================
-       CAMBIO DE IDIOMA
-       ========================================================= */
-
-    function listenLanguageChanges() {
-
-        window.addEventListener(
-            "nushud-language-changed",
-            function () {
-
-                updateAuthLanguage();
+                currentUser =
+                    nextUser;
 
                 updateAccountUI();
 
-                var menu =
-                    document.getElementById(
-                        MENU_ID
-                    );
-
+                /*
+                 * IMPORTANTE:
+                 * solamente avisamos a index.html
+                 * cuando cambia realmente el usuario.
+                 *
+                 * No hacemos render por refrescos
+                 * de token.
+                 */
                 if (
-                    menu &&
-                    menu.classList.contains(
-                        "open"
-                    )
+                    previousUserId !==
+                    nextUserId
                 ) {
-                    openAccountMenu();
+
+                    previousUserId =
+                        nextUserId;
+
+                    dispatchAuthChanged();
                 }
             }
         );
     }
 
-    /* =========================================================
-       ESCAPE HTML
-       ========================================================= */
+    window.addEventListener(
+        "nushud-language-changed",
+        function () {
+            updateAuthLanguage();
+            updateAccountUI();
 
-    function escapeHtml(
-        value
-    ) {
+            var menu =
+                document.getElementById(
+                    MENU_ID
+                );
 
+            if (
+                menu &&
+                menu.classList.contains("open")
+            ) {
+                openAccountMenu();
+            }
+        }
+    );
+
+    function escapeHtml(value) {
         var div =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
         div.textContent =
             String(
@@ -1644,38 +1209,24 @@
         return div.innerHTML;
     }
 
-    /* =========================================================
-       INICIO
-       ========================================================= */
-
     async function init() {
-
         console.log(
             "[NUSHUD AUTH] auth.js cargado"
         );
 
         injectStyles();
-
         createAccountUI();
-
         createAuthModal();
 
-        listenLanguageChanges();
-
         try {
-
             await restoreSession();
-
-        } catch (
-            error
-        ) {
-
+        } catch (error) {
             console.error(
                 "[NUSHUD AUTH INIT]",
                 error
             );
 
-            dispatchAuthChange();
+            dispatchAuthChanged();
         }
     }
 
@@ -1693,7 +1244,6 @@
         document.readyState ===
         "loading"
     ) {
-
         document.addEventListener(
             "DOMContentLoaded",
             init,
@@ -1701,9 +1251,7 @@
                 once: true
             }
         );
-
     } else {
-
         init();
     }
 

@@ -42,7 +42,7 @@ const GROQ_STT =
     "whisper-large-v3-turbo";
 
 const GROQ_TRANSLATION =
-    "llama-3.3-70b-versatile";
+    "openai/gpt-oss-20b";
 
 
 /* =========================================================

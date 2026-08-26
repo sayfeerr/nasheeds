@@ -22,7 +22,9 @@ const SUPABASE_SECRET_KEY =
 const SUPABASE_PUBLISHABLE_KEY =
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     "";
-
+const GROQ_API_KEY =
+    process.env.GROQ_API_KEY ||
+    "";
 const STORAGE_BUCKET =
     "Nasheeds";
 
@@ -48,6 +50,11 @@ if (
         "Faltan SUPABASE_URL o SUPABASE_SECRET_KEY en las variables de entorno."
     );
 
+}
+if (!GROQ_API_KEY) {
+    console.error(
+        "Falta GROQ_API_KEY en las variables de entorno."
+    );
 }
 
 
@@ -856,7 +863,87 @@ function requireAdmin(
         });
 
 }
+async function getAuthenticatedUser(req) {
 
+    const authorization =
+        String(
+            req.headers.authorization ||
+            ""
+        );
+
+    if (
+        !authorization.startsWith("Bearer ")
+    ) {
+        return null;
+    }
+
+    const token =
+        authorization
+            .slice(7)
+            .trim();
+
+    if (!token) {
+        return null;
+    }
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await supabase.auth.getUser(
+                token
+            );
+
+        if (
+            error ||
+            !data ||
+            !data.user
+        ) {
+            return null;
+        }
+
+        return data.user;
+
+    } catch (error) {
+
+        console.error(
+            "[USER AUTH]",
+            error
+        );
+
+        return null;
+    }
+}
+
+
+async function requireUser(
+    req,
+    res,
+    next
+) {
+
+    const user =
+        await getAuthenticatedUser(
+            req
+        );
+
+    if (!user) {
+
+        return res
+            .status(401)
+            .json({
+                error:
+                    "Debes iniciar sesión."
+            });
+    }
+
+    req.user =
+        user;
+
+    return next();
+}
 
 /* =========================================================
    PUBLIC NASHEEDS

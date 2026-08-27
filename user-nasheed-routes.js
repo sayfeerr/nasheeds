@@ -39,34 +39,38 @@ const LANGS = new Set([
 ]);
 
 /*
- * MODELOS
- *
- * Whisper se utiliza SOLO para escuchar/transcribir.
- *
- * GPT-OSS-20B se utiliza SOLO para:
- * 1. Reconstruir árabe cuando Whisper devuelve transliteración latina.
- * 2. Traducir el árabe real a ES/EN/RU.
- *
- * No estamos intentando utilizar un modelo GPT de OpenAI
- * directamente desde Groq.
+ * Whisper Turbo es el modelo de transcripción.
+ * Es bastante más barato que whisper-large-v3.
  */
-
 const GROQ_STT = "whisper-large-v3-turbo";
 
-const GROQ_TRANSLATION = "openai/gpt-oss-20b";
+/*
+ * IMPORTANTE:
+ *
+ * No fijamos aquí un único modelo de chat.
+ *
+ * Tu proyecto puede no tener acceso a un modelo aunque exista
+ * en la documentación de Groq.
+ *
+ * El código consulta /models y selecciona automáticamente
+ * uno de los modelos disponibles para TU API KEY.
+ *
+ * El orden prioriza modelos pequeños/baratos.
+ */
+const CHAT_MODEL_PREFERENCE = [
+    "llama-3.1-8b-instant",
+    "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-120b"
+];
+
+let cachedChatModel = null;
+let cachedChatModelAt = 0;
 
 /*
- * Si quieres priorizar calidad de reconocimiento árabe sobre
- * velocidad/precio, puedes cambiar:
- *
- * whisper-large-v3-turbo
- *
- * por:
- *
- * whisper-large-v3
- *
- * Pero dejamos turbo como opción principal.
+ * Cada cuánto volvemos a comprobar los modelos disponibles.
  */
+const MODEL_CACHE_MS = 10 * 60 * 1000;
 
 /* =========================================================
    UTILIDADES
@@ -213,36 +217,34 @@ function cleanText(value) {
 }
 
 /*
- * Limpieza específica para textos árabes.
- *
- * No elimina letras árabes.
- * Solo elimina caracteres de control innecesarios.
+ * Limpia caracteres que los modelos a veces añaden
+ * alrededor de una respuesta.
  */
-
-function cleanArabicText(value) {
+function cleanModelText(value) {
     return String(value || "")
-        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-        .replace(/\s+/g, " ")
+        .replace(/```[a-zA-Z0-9_-]*/g, "")
+        .replace(/```/g, "")
+        .replace(/\u200B/g, "")
+        .replace(/\u200C/g, "")
+        .replace(/\u200D/g, "")
+        .replace(/\uFEFF/g, "")
         .trim();
 }
 
 /* =========================================================
-   DETECCIÓN DE ÁRABE
+   DETECCIÓN DE ÁRABE / TRANSLITERACIÓN
    ========================================================= */
 
 /*
- * Detecta caracteres del alfabeto árabe.
+ * Rangos Unicode árabes:
  *
- * Esto es MUY importante porque Whisper puede devolver algo como:
- *
- * "Allahumma salli ala Muhammad..."
- *
- * aunque hayamos solicitado language=ar.
- *
- * No vamos a aceptar eso como subtítulo árabe.
+ * U+0600-U+06FF
+ * U+0750-U+077F
+ * U+08A0-U+08FF
+ * U+FB50-U+FDFF
+ * U+FE70-U+FEFF
  */
-
-function countArabicLetters(text) {
+function arabicCharacterCount(text) {
     const value = String(text || "");
 
     const matches = value.match(
@@ -252,7 +254,7 @@ function countArabicLetters(text) {
     return matches ? matches.length : 0;
 }
 
-function countLatinLetters(text) {
+function latinCharacterCount(text) {
     const value = String(text || "");
 
     const matches = value.match(
@@ -262,64 +264,35 @@ function countLatinLetters(text) {
     return matches ? matches.length : 0;
 }
 
-function arabicRatio(text) {
-    const value = String(text || "");
-
-    const arabic = countArabicLetters(value);
-    const latin = countLatinLetters(value);
-
-    const total = arabic + latin;
-
-    if (!total) {
-        return 0;
-    }
-
-    return arabic / total;
+function hasArabic(text) {
+    return arabicCharacterCount(text) > 0;
 }
 
-function isArabicText(text) {
-    const value = cleanArabicText(text);
+function isMostlyLatin(text) {
+    const value = String(text || "").trim();
 
     if (!value) {
         return false;
     }
 
-    const arabic = countArabicLetters(value);
-    const latin = countLatinLetters(value);
+    const arabic = arabicCharacterCount(value);
+    const latin = latinCharacterCount(value);
 
     /*
-     * Un segmento muy corto puede tener pocas letras.
-     * Por eso usamos reglas diferentes dependiendo del tamaño.
+     * Si no hay árabe y hay letras latinas,
+     * es prácticamente seguro que no es escritura árabe.
      */
-
-    if (arabic >= 2 && latin === 0) {
+    if (arabic === 0 && latin >= 3) {
         return true;
     }
 
-    if (arabic >= 3 && arabicRatio(value) >= 0.35) {
-        return true;
-    }
-
-    return false;
-}
-
-function hasMostlyLatinTransliteration(text) {
-    const value = cleanText(text);
-
-    if (!value) {
-        return false;
-    }
-
-    const arabic = countArabicLetters(value);
-    const latin = countLatinLetters(value);
-
-    if (arabic === 0 && latin >= 2) {
-        return true;
-    }
-
+    /*
+     * Si hay muchísimo más latín que árabe,
+     * consideramos que probablemente es transliteración.
+     */
     if (
-        latin >= 5 &&
-        latin > arabic * 2
+        latin >= 8 &&
+        latin > arabic * 2.5
     ) {
         return true;
     }
@@ -327,43 +300,56 @@ function hasMostlyLatinTransliteration(text) {
     return false;
 }
 
-function arabicSegmentStats(segments) {
-    const valid = segments.filter(
-        (segment) =>
-            cleanArabicText(segment.text)
-    );
-
-    if (!valid.length) {
-        return {
-            total: 0,
-            arabic: 0,
-            latin: 0,
-            arabicPercentage: 0
-        };
+function textLooksLikeArabic(segments) {
+    if (!Array.isArray(segments) || !segments.length) {
+        return false;
     }
 
-    let arabicSegments = 0;
-    let latinSegments = 0;
+    const texts = segments
+        .map((segment) =>
+            cleanText(segment?.text)
+        )
+        .filter(Boolean);
 
-    for (const segment of valid) {
-        if (isArabicText(segment.text)) {
-            arabicSegments++;
-        }
-
-        if (hasMostlyLatinTransliteration(segment.text)) {
-            latinSegments++;
-        }
+    if (!texts.length) {
+        return false;
     }
 
-    return {
-        total: valid.length,
-        arabic: arabicSegments,
-        latin: latinSegments,
-        arabicPercentage:
-            Math.round(
-                (arabicSegments / valid.length) * 100
-            )
-    };
+    const allText = texts.join(" ");
+
+    const arabicCount =
+        arabicCharacterCount(allText);
+
+    const latinCount =
+        latinCharacterCount(allText);
+
+    /*
+     * Para considerar que la transcripción es árabe,
+     * exigimos una presencia real de caracteres árabes.
+     */
+    if (arabicCount < 3) {
+        return false;
+    }
+
+    if (
+        latinCount > 0 &&
+        latinCount > arabicCount * 1.5
+    ) {
+        return false;
+    }
+
+    const latinSegments = texts.filter(
+        (text) => isMostlyLatin(text)
+    ).length;
+
+    if (
+        latinSegments >
+        Math.max(2, Math.ceil(texts.length * 0.5))
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 /* =========================================================
@@ -377,15 +363,9 @@ function normalizeSegments(segments) {
 
     return segments
         .map((segment) => ({
-            start: Number(
-                segment?.start
-            ),
-            end: Number(
-                segment?.end
-            ),
-            text: cleanText(
-                segment?.text
-            )
+            start: Number(segment?.start),
+            end: Number(segment?.end),
+            text: cleanText(segment?.text)
         }))
         .filter(
             (segment) =>
@@ -398,6 +378,71 @@ function normalizeSegments(segments) {
             (a, b) =>
                 a.start - b.start
         );
+}
+
+/*
+ * Une segmentos demasiado pequeños cuando son realmente
+ * partes consecutivas de la misma frase.
+ *
+ * NO cambia los timestamps de forma agresiva.
+ */
+function mergeVerySmallSegments(segments) {
+    const normalized =
+        normalizeSegments(segments);
+
+    if (normalized.length <= 1) {
+        return normalized;
+    }
+
+    const result = [];
+
+    for (const segment of normalized) {
+        const previous =
+            result[result.length - 1];
+
+        if (!previous) {
+            result.push({
+                ...segment
+            });
+            continue;
+        }
+
+        const gap =
+            segment.start - previous.end;
+
+        const previousWords =
+            previous.text
+                .split(/\s+/)
+                .filter(Boolean).length;
+
+        /*
+         * Evita crear subtítulos microscópicos.
+         */
+        if (
+            previousWords <= 2 &&
+            gap >= -0.05 &&
+            segment.start - previous.start < 4
+        ) {
+            previous.end =
+                Math.max(
+                    previous.end,
+                    segment.end
+                );
+
+            previous.text =
+                `${previous.text} ${segment.text}`
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+            continue;
+        }
+
+        result.push({
+            ...segment
+        });
+    }
+
+    return result;
 }
 
 /* =========================================================
@@ -417,11 +462,17 @@ function vttTime(value) {
     );
 
     const minutes = Math.floor(
-        (milliseconds % 3600000) / 60000
+        (
+            milliseconds %
+            3600000
+        ) / 60000
     );
 
     const seconds = Math.floor(
-        (milliseconds % 60000) / 1000
+        (
+            milliseconds %
+            60000
+        ) / 1000
     );
 
     const ms =
@@ -562,13 +613,12 @@ async function groqRequest(
                 const waitTime =
                     Number.isFinite(
                         retryAfter
-                    ) &&
-                    retryAfter > 0
+                    )
                         ? retryAfter * 1000
-                        : attempt * 3000;
+                        : attempt * 2500;
 
                 console.warn(
-                    `[GROQ 429] Reintentando ${attempt}/${maxRetries} en ${Math.round(waitTime / 1000)}s...`
+                    `[GROQ RATE LIMIT 429] Reintentando (${attempt}/${maxRetries}) en ${Math.round(waitTime / 1000)}s...`
                 );
 
                 await sleep(waitTime);
@@ -601,6 +651,8 @@ async function groqRequest(
                 error.status =
                     response.status;
 
+                error.body = body;
+
                 throw error;
             }
 
@@ -609,12 +661,11 @@ async function groqRequest(
             lastError = error;
 
             if (
-                attempt < maxRetries &&
-                error?.status !== 401 &&
-                error?.status !== 403
+                error?.status === 429 &&
+                attempt < maxRetries
             ) {
                 await sleep(
-                    attempt * 1500
+                    attempt * 2500
                 );
                 continue;
             }
@@ -630,7 +681,148 @@ async function groqRequest(
 }
 
 /* =========================================================
-   CONTROL DE PROGRESO
+   BUSCAR MODELO DE CHAT DISPONIBLE
+   ========================================================= */
+
+async function getAvailableChatModel(apiKey) {
+    const now = Date.now();
+
+    if (
+        cachedChatModel &&
+        now - cachedChatModelAt <
+            MODEL_CACHE_MS
+    ) {
+        return cachedChatModel;
+    }
+
+    try {
+        const result =
+            await groqRequest(
+                "https://api.groq.com/openai/v1/models",
+                {
+                    method: "GET"
+                },
+                apiKey,
+                2
+            );
+
+        const models =
+            Array.isArray(result?.data)
+                ? result.data
+                : [];
+
+        const availableIds =
+            new Set(
+                models
+                    .map(
+                        (model) =>
+                            String(
+                                model?.id || ""
+                            )
+                    )
+                    .filter(Boolean)
+            );
+
+        console.log(
+            "[GROQ] Modelos de chat disponibles:",
+            [...availableIds].filter(
+                (id) =>
+                    CHAT_MODEL_PREFERENCE.includes(
+                        id
+                    )
+            )
+        );
+
+        for (
+            const preferred of
+            CHAT_MODEL_PREFERENCE
+        ) {
+            if (
+                availableIds.has(
+                    preferred
+                )
+            ) {
+                cachedChatModel =
+                    preferred;
+
+                cachedChatModelAt =
+                    now;
+
+                console.log(
+                    `[GROQ] Modelo de chat seleccionado: ${preferred}`
+                );
+
+                return preferred;
+            }
+        }
+
+        /*
+         * Si ninguno de los modelos preferidos aparece,
+         * buscamos un modelo de texto razonable.
+         */
+        const fallback =
+            models.find((model) => {
+                const id =
+                    String(
+                        model?.id || ""
+                    ).toLowerCase();
+
+                return (
+                    id.includes("llama") ||
+                    id.includes("gpt-oss") ||
+                    id.includes("qwen")
+                );
+            });
+
+        if (fallback?.id) {
+            cachedChatModel =
+                String(fallback.id);
+
+            cachedChatModelAt =
+                now;
+
+            console.warn(
+                `[GROQ] No se encontró un modelo preferido. Usando: ${cachedChatModel}`
+            );
+
+            return cachedChatModel;
+        }
+
+        throw new Error(
+            "Tu API key de Groq no tiene ningún modelo de chat disponible."
+        );
+    } catch (error) {
+        /*
+         * Si /models falla pero el usuario ha definido
+         * manualmente GROQ_TRANSLATION_MODEL,
+         * utilizamos ese modelo.
+         */
+        const envModel =
+            String(
+                process.env.GROQ_TRANSLATION_MODEL ||
+                ""
+            ).trim();
+
+        if (envModel) {
+            console.warn(
+                `[GROQ] No se pudo consultar /models. Usando GROQ_TRANSLATION_MODEL=${envModel}`
+            );
+
+            cachedChatModel =
+                envModel;
+
+            cachedChatModelAt =
+                now;
+
+            return envModel;
+        }
+
+        throw error;
+    }
+}
+
+/* =========================================================
+   CONTROL DE PROGRESO Y CANCELACIÓN
    ========================================================= */
 
 async function updateProgress(
@@ -693,6 +885,12 @@ async function transcribeArabic(
         audioUrl
     );
 
+    /*
+     * MUY IMPORTANTE:
+     *
+     * No usamos audio/translations.
+     * Queremos la transcripción original en árabe.
+     */
     form.append(
         "language",
         "ar"
@@ -713,20 +911,31 @@ async function transcribeArabic(
         "0"
     );
 
+    /*
+     * Prompt MUY estricto.
+     *
+     * El problema anterior era que Whisper podía decidir
+     * escribir la pronunciación árabe usando letras latinas.
+     */
     form.append(
         "prompt",
         [
             "Arabic nasheed lyrics.",
-            "Islamic religious Arabic vocals.",
-            "The output MUST be written using Arabic script.",
+            "The speaker is singing Arabic religious lyrics.",
+            "TRANSCRIBE THE ACTUAL ARABIC SCRIPT.",
+            "Write Arabic letters only for Arabic words.",
             "Do NOT transliterate Arabic into Latin letters.",
+            "Do NOT write phonetic Arabic in English letters.",
             "Do NOT translate the lyrics.",
-            "Do NOT summarize.",
+            "Do NOT summarize the lyrics.",
+            "Do NOT explain anything.",
             "Preserve repeated verses.",
-            "Preserve repeated phrases.",
-            "Preserve Allah, Muhammad and other Arabic religious names in Arabic script.",
-            "The singer may sing rather than speak.",
-            "Return the actual Arabic words heard in the audio."
+            "Preserve repeated words.",
+            "Preserve Islamic and religious expressions.",
+            "Preserve names.",
+            "Preserve Quranic and Arabic phrases.",
+            "Use Arabic Unicode characters whenever the singer is speaking Arabic.",
+            "The output must represent what is actually sung."
         ].join(" ")
     );
 
@@ -742,7 +951,9 @@ async function transcribeArabic(
 
     if (
         !result ||
-        !Array.isArray(result.segments)
+        !Array.isArray(
+            result.segments
+        )
     ) {
         throw new Error(
             "Groq no devolvió segmentos de transcripción."
@@ -752,9 +963,14 @@ async function transcribeArabic(
     const rawSegments =
         result.segments;
 
-    const segments =
+    let segments =
         normalizeSegments(
             rawSegments
+        );
+
+    segments =
+        mergeVerySmallSegments(
+            segments
         );
 
     if (!segments.length) {
@@ -766,7 +982,9 @@ async function transcribeArabic(
     const usable =
         segments.filter(
             (segment) =>
-                cleanText(segment.text)
+                cleanText(
+                    segment.text
+                )
         );
 
     if (!usable.length) {
@@ -775,208 +993,128 @@ async function transcribeArabic(
         );
     }
 
-    const stats =
-        arabicSegmentStats(
-            usable
-        );
-
     console.log(
         "[USER NASHEED] Whisper:",
         {
+            model: GROQ_STT,
             rawSegments:
                 rawSegments.length,
             validSegments:
+                segments.length,
+            usableSegments:
                 usable.length,
-            arabicSegments:
-                stats.arabic,
-            latinSegments:
-                stats.latin,
-            arabicPercentage:
-                stats.arabicPercentage,
+            arabicDetected:
+                textLooksLikeArabic(
+                    usable
+                ),
             duration:
                 result?.duration ?? null
         }
     );
 
+    if (
+        !textLooksLikeArabic(
+            usable
+        )
+    ) {
+        console.warn(
+            "[USER NASHEED] Whisper devolvió principalmente transliteración latina o no produjo suficiente árabe."
+        );
+    }
+
     return usable;
 }
 
 /* =========================================================
-   RECONSTRUIR ÁRABE
+   RECONSTRUIR ÁRABE SI WHISPER TRANSCRIBE EN LATÍN
    ========================================================= */
 
-/*
- * Esta es la parte importante.
- *
- * Si Whisper produce:
- *
- * "Allahumma salli ala Muhammad"
- *
- * NO lo guardamos.
- *
- * Se manda al modelo de texto para intentar convertir:
- *
- * "Allahumma salli ala Muhammad"
- *
- * en:
- *
- * "اللهم صل على محمد"
- *
- * sin traducirlo.
- */
-
-function splitIntoBatches(
+async function reconstructArabicFromLatin(
     segments,
-    maxCharacters = 9000
-) {
-    const batches = [];
-    let current = [];
-    let currentLength = 0;
-
-    for (
-        let i = 0;
-        i < segments.length;
-        i++
-    ) {
-        const text =
-            cleanText(
-                segments[i].text
-            );
-
-        const line =
-            `${i + 1}. ${text}`;
-
-        const nextLength =
-            currentLength +
-            line.length +
-            1;
-
-        if (
-            current.length &&
-            nextLength > maxCharacters
-        ) {
-            batches.push(current);
-            current = [];
-            currentLength = 0;
-        }
-
-        current.push({
-            index: i,
-            text
-        });
-
-        currentLength +=
-            line.length + 1;
-    }
-
-    if (current.length) {
-        batches.push(current);
-    }
-
-    return batches;
-}
-
-function parseNumberedResponse(
-    content
-) {
-    const map = new Map();
-
-    const lines =
-        String(content || "")
-            .split(/\r?\n/)
-            .map((line) =>
-                line.trim()
-            )
-            .filter(Boolean);
-
-    for (const line of lines) {
-        /*
-         * Acepta:
-         *
-         * 1. النص
-         * 2) النص
-         * 3 - النص
-         * 4: النص
-         * **1.** النص
-         */
-
-        const match =
-            line.match(
-                /^\s*\**\s*(\d+)\s*(?:[.)\-:]|\*\*)\s*(?:\*\*)?\s*(.+?)\s*$/
-            );
-
-        if (!match) {
-            continue;
-        }
-
-        const index =
-            parseInt(
-                match[1],
-                10
-            ) - 1;
-
-        const text =
-            cleanArabicText(
-                match[2]
-            );
-
-        if (
-            Number.isInteger(index) &&
-            index >= 0 &&
-            text
-        ) {
-            map.set(
-                index,
-                text
-            );
-        }
-    }
-
-    return map;
-}
-
-async function repairArabicBatch(
-    batch,
     apiKey
 ) {
-    const input =
-        batch
-            .map(
-                (item) =>
-                    `${item.index + 1}. ${item.text}`
-            )
-            .join("\n");
+    const normalized =
+        normalizeSegments(
+            segments
+        );
+
+    if (!normalized.length) {
+        throw new Error(
+            "No hay segmentos para reconstruir."
+        );
+    }
+
+    const model =
+        await getAvailableChatModel(
+            apiKey
+        );
+
+    /*
+     * Mandamos los segmentos uno por uno con ID.
+     *
+     * Esto es importante porque queremos mantener
+     * exactamente los timestamps de Whisper.
+     */
+    const input = normalized
+        .map(
+            (segment, index) =>
+                `${index + 1}|${cleanText(segment.text)}`
+        )
+        .join("\n");
 
     const systemPrompt = `
-You are an expert Arabic language reconstruction system for Arabic nasheed subtitles.
+You are an expert Arabic linguist specializing in Arabic nasheeds and Islamic vocal lyrics.
 
-The input contains Arabic words written incorrectly using Latin-letter transliteration because speech recognition failed to use Arabic script.
+Your task is NOT translation.
 
-Your task is ONLY to convert the transliterated Arabic pronunciation into the correct Arabic SCRIPT.
+The input may be Arabic words written incorrectly using Latin letters because speech recognition produced transliteration.
 
-CRITICAL RULES:
-- Do NOT translate.
-- Do NOT explain.
-- Do NOT summarize.
-- Do NOT invent new lyrics.
-- Do NOT remove repeated phrases.
-- Do NOT change the meaning.
-- Do NOT output Latin transliteration.
-- Do NOT output English.
-- Preserve religious expressions.
-- Preserve proper names.
-- Preserve repeated lines.
-- Use standard written Arabic script.
-- Return ONLY the numbered list.
-- Keep EXACTLY the same numbering.
-- If a line is already Arabic, keep it in Arabic.
-- Do not add punctuation or commentary unless it belongs naturally to the Arabic lyric.
+Convert each Latin transliteration into the most likely ORIGINAL ARABIC SCRIPT.
+
+STRICT RULES:
+
+1. Output Arabic script, NOT Latin transliteration.
+2. Do NOT translate.
+3. Do NOT explain.
+4. Do NOT summarize.
+5. Do NOT invent new verses.
+6. Preserve repeated phrases.
+7. Preserve religious expressions.
+8. Preserve proper names when possible.
+9. Keep exactly the same number of lines.
+10. Keep the exact numeric IDs.
+11. Each output line must use:
+NUMBER|ARABIC TEXT
+12. Do not output markdown.
+13. Do not output code fences.
+14. Do not add introductions.
+15. Do not omit a line.
+16. If a phrase is uncertain, choose the most linguistically plausible Arabic spelling based on the surrounding nasheed context.
+17. NEVER output the Latin transliteration as the final answer.
+18. The final text after | must contain Arabic Unicode characters.
+
+Example:
+
+INPUT:
+1|alhamdu lillahi rabbil alamin
+2|allahumma salli ala muhammad
+
+OUTPUT:
+1|الحمد لله رب العالمين
+2|اللهم صل على محمد
 `.trim();
 
-    const requestBody = {
-        model: GROQ_TRANSLATION,
-        temperature: 0.0,
-        max_completion_tokens: 4000,
+    const body = {
+        model,
+        temperature: 0,
+        max_completion_tokens:
+            Math.min(
+                12000,
+                Math.max(
+                    2000,
+                    normalized.length * 80
+                )
+            ),
         messages: [
             {
                 role: "system",
@@ -985,8 +1123,7 @@ CRITICAL RULES:
             },
             {
                 role: "user",
-                content:
-                    input
+                content: input
             }
         ]
     };
@@ -1001,186 +1138,187 @@ CRITICAL RULES:
                         "application/json"
                 },
                 body:
-                    JSON.stringify(
-                        requestBody
-                    )
+                    JSON.stringify(body)
             },
             apiKey
         );
 
     const rawContent =
-        result
-            ?.choices
-            ?.at(0)
-            ?.message
-            ?.content || "";
+        cleanModelText(
+            result
+                ?.choices?.[0]
+                ?.message
+                ?.content || ""
+        );
 
     if (!rawContent) {
         throw new Error(
-            "El modelo no devolvió texto al reconstruir el árabe."
+            "El modelo de reconstrucción árabe no devolvió texto."
         );
     }
 
-    return parseNumberedResponse(
-        rawContent
-    );
-}
+    const map =
+        new Map();
 
-async function repairArabicSegments(
-    segments,
-    apiKey
-) {
-    const stats =
-        arabicSegmentStats(
-            segments
+    const lines =
+        rawContent
+            .split(/\r?\n/)
+            .map(
+                (line) =>
+                    line.trim()
+            )
+            .filter(Boolean);
+
+    for (const line of lines) {
+        const match =
+            line.match(
+                /^(\d+)\s*\|\s*(.+)$/
+            );
+
+        if (!match) {
+            continue;
+        }
+
+        const index =
+            Number(match[1]) - 1;
+
+        let text =
+            cleanModelText(
+                match[2]
+            );
+
+        /*
+         * El modelo debe devolver árabe.
+         * Si no contiene árabe, NO lo aceptamos.
+         */
+        if (
+            !text ||
+            !hasArabic(text)
+        ) {
+            continue;
+        }
+
+        /*
+         * Elimina accidentalmente numeraciones
+         * repetidas dentro del texto.
+         */
+        text =
+            text.replace(
+                /^\d+\s*[\.\):\-]\s*/,
+                ""
+            ).trim();
+
+        map.set(
+            index,
+            text
         );
+    }
 
     /*
-     * Si prácticamente todo ya está en árabe,
-     * no gastamos otra llamada.
+     * Reconstruimos SOLO si el modelo ha proporcionado
+     * árabe válido.
      */
-
-    if (
-        stats.total > 0 &&
-        stats.arabicPercentage >= 85 &&
-        stats.latin <=
-            Math.max(
-                1,
-                Math.floor(stats.total * 0.10)
-            )
-    ) {
-        console.log(
-            "[USER NASHEED] Whisper devolvió suficiente árabe. No se necesita reparación."
-        );
-
-        return segments.map(
-            (segment) => ({
-                ...segment,
+    const reconstructed =
+        normalized.map(
+            (segment, index) => ({
+                start:
+                    segment.start,
+                end:
+                    segment.end,
                 text:
-                    cleanArabicText(
-                        segment.text
-                    )
+                    map.get(index) ||
+                    ""
             })
         );
-    }
 
-    console.warn(
-        `[USER NASHEED] Whisper devolvió demasiado texto latino (${stats.arabicPercentage}% segmentos árabes). Intentando reconstrucción árabe...`
-    );
-
-    const batches =
-        splitIntoBatches(
-            segments,
-            9000
-        );
-
-    const repaired =
-        new Array(
-            segments.length
-        );
-
-    for (
-        const batch of batches
-    ) {
-        const map =
-            await repairArabicBatch(
-                batch,
-                apiKey
-            );
-
-        for (
-            const item of batch
-        ) {
-            const repairedText =
-                map.get(
-                    item.index
-                );
-
-            if (
-                repairedText &&
-                isArabicText(
-                    repairedText
+    const valid =
+        reconstructed.filter(
+            (segment) =>
+                segment.text &&
+                hasArabic(
+                    segment.text
                 )
-            ) {
-                repaired[item.index] =
-                    repairedText;
-            } else {
-                /*
-                 * Si el modelo no pudo reconstruir
-                 * esa línea, NO guardamos la
-                 * transliteración como si fuera árabe.
-                 */
-                repaired[item.index] =
-                    "";
-            }
-        }
-    }
-
-    const finalSegments =
-        segments
-            .map(
-                (segment, index) => ({
-                    start:
-                        segment.start,
-                    end:
-                        segment.end,
-                    text:
-                        cleanArabicText(
-                            repaired[index]
-                        )
-                })
-            )
-            .filter(
-                (segment) =>
-                    segment.text &&
-                    isArabicText(
-                        segment.text
-                    )
-            );
-
-    if (!finalSegments.length) {
-        throw new Error(
-            "Whisper devolvió principalmente transliteración latina y el modelo de reconstrucción no pudo convertirla a texto árabe."
-        );
-    }
-
-    const finalStats =
-        arabicSegmentStats(
-            finalSegments
         );
 
     console.log(
-        "[USER NASHEED] Árabe reconstruido:",
+        "[USER NASHEED] Reconstrucción árabe:",
         {
+            model,
             original:
-                segments.length,
-            final:
-                finalSegments.length,
-            arabicPercentage:
-                finalStats.arabicPercentage
+                normalized.length,
+            reconstructed:
+                valid.length
         }
     );
 
     /*
-     * Si hemos perdido demasiados segmentos,
-     * preferimos fallar antes que generar un VTT
-     * incompleto silenciosamente.
+     * No permitimos una reconstrucción parcial.
+     *
+     * Si faltan demasiados segmentos,
+     * es mejor fallar que generar subtítulos
+     * inventados o mezclados.
      */
-
-    const minimumAccepted =
-        Math.max(
-            1,
-            Math.floor(
-                segments.length * 0.50
-            )
-        );
+    const coverage =
+        valid.length /
+        normalized.length;
 
     if (
-        finalSegments.length <
-        minimumAccepted
+        coverage < 0.70
     ) {
         throw new Error(
-            `La reconstrucción árabe fue insuficiente: ${finalSegments.length}/${segments.length} segmentos recuperados. No se generará un VTT incompleto.`
+            "El modelo de reconstrucción no pudo convertir suficientemente la transliteración a árabe."
+        );
+    }
+
+    /*
+     * Para los pocos segmentos que falten,
+     * conservamos el original SOLO si contiene árabe.
+     *
+     * Nunca guardamos transliteración latina como árabe.
+     */
+    const finalSegments =
+        reconstructed.map(
+            (segment, index) => {
+                if (
+                    segment.text &&
+                    hasArabic(
+                        segment.text
+                    )
+                ) {
+                    return segment;
+                }
+
+                const original =
+                    normalized[index];
+
+                if (
+                    original &&
+                    hasArabic(
+                        original.text
+                    )
+                ) {
+                    return {
+                        start:
+                            original.start,
+                        end:
+                            original.end,
+                        text:
+                            original.text
+                    };
+                }
+
+                return null;
+            }
+        ).filter(Boolean);
+
+    if (
+        !finalSegments.length ||
+        !textLooksLikeArabic(
+            finalSegments
+        )
+    ) {
+        throw new Error(
+            "La reconstrucción árabe no produjo una transcripción suficientemente fiable."
         );
     }
 
@@ -1188,10 +1326,69 @@ async function repairArabicSegments(
 }
 
 /* =========================================================
-   TRADUCCIÓN
+   OBTENER ÁRABE DEFINITIVO
    ========================================================= */
 
-async function translateBatch(
+async function getReliableArabicTranscript(
+    audioUrl,
+    apiKey
+) {
+    const firstPass =
+        await transcribeArabic(
+            audioUrl,
+            apiKey
+        );
+
+    /*
+     * CASO IDEAL:
+     * Whisper ya devolvió árabe.
+     */
+    if (
+        textLooksLikeArabic(
+            firstPass
+        )
+    ) {
+        console.log(
+            "[USER NASHEED] Whisper produjo árabe directamente. No se necesita reconstrucción."
+        );
+
+        return firstPass;
+    }
+
+    /*
+     * CASO PROBLEMÁTICO:
+     * Whisper produjo transliteración.
+     *
+     * Aquí intentamos convertirla a escritura árabe.
+     */
+    console.warn(
+        "[USER NASHEED] Iniciando segunda pasada para convertir transliteración a árabe..."
+    );
+
+    const reconstructed =
+        await reconstructArabicFromLatin(
+            firstPass,
+            apiKey
+        );
+
+    if (
+        !textLooksLikeArabic(
+            reconstructed
+        )
+    ) {
+        throw new Error(
+            "Whisper devolvió principalmente transliteración latina y el modelo de reconstrucción no pudo convertirla a texto árabe."
+        );
+    }
+
+    return reconstructed;
+}
+
+/* =========================================================
+   TRADUCCIÓN BATCH
+   ========================================================= */
+
+async function translateAllBatch(
     segments,
     language,
     apiKey
@@ -1211,38 +1408,70 @@ async function translateBatch(
         );
     }
 
-    const input =
-        segments
-            .map(
-                (segment, index) =>
-                    `${index + 1}. ${cleanArabicText(segment.text)}`
-            )
-            .join("\n");
+    const normalized =
+        normalizeSegments(
+            segments
+        );
+
+    if (!normalized.length) {
+        throw new Error(
+            "No hay segmentos para traducir."
+        );
+    }
+
+    /*
+     * IMPORTANTE:
+     * La traducción recibe el árabe definitivo.
+     */
+    const inputLines =
+        normalized.map(
+            (segment, index) =>
+                `${index + 1}|${cleanText(segment.text)}`
+        );
+
+    const model =
+        await getAvailableChatModel(
+            apiKey
+        );
 
     const systemPrompt = `
-You are a professional Arabic-to-${targetLanguage} translator for Islamic nasheed lyrics.
+You are a professional translator of Arabic nasheed lyrics.
 
-Translate the Arabic lyrics into natural ${targetLanguage}.
+Translate Arabic lyrics into ${targetLanguage}.
 
-CRITICAL RULES:
-- Translate the MEANING.
-- Do NOT transliterate Arabic.
-- Do NOT reproduce Arabic using Latin letters.
-- Do NOT explain the translation.
-- Do NOT summarize.
-- Do NOT add commentary.
-- Preserve religious meaning.
-- Preserve repeated verses.
-- Preserve repeated phrases.
-- Preserve proper names appropriately.
-- Keep exactly the same numbering.
-- Return ONLY the numbered translated lines.
+This is a translation task, NOT transliteration.
+
+STRICT RULES:
+
+1. Translate the MEANING.
+2. NEVER transliterate Arabic pronunciation into Latin letters.
+3. NEVER reproduce Arabic words using Latin spelling unless a proper name absolutely requires it.
+4. Preserve religious meaning.
+5. Preserve repeated phrases.
+6. Do not summarize.
+7. Do not explain.
+8. Do not add commentary.
+9. Keep exactly the same number of lines.
+10. Keep exactly the same numeric IDs.
+11. Output ONLY:
+NUMBER|TRANSLATION
+12. Do not use markdown.
+13. Do not use code blocks.
+14. Do not omit lines.
+15. Do not change the order.
 `.trim();
 
     const requestBody = {
-        model: GROQ_TRANSLATION,
-        temperature: 0.1,
-        max_completion_tokens: 6000,
+        model,
+        temperature: 0,
+        max_completion_tokens:
+            Math.min(
+                12000,
+                Math.max(
+                    2000,
+                    normalized.length * 80
+                )
+            ),
         messages: [
             {
                 role: "system",
@@ -1252,7 +1481,7 @@ CRITICAL RULES:
             {
                 role: "user",
                 content:
-                    input
+                    inputLines.join("\n")
             }
         ]
     };
@@ -1292,11 +1521,26 @@ CRITICAL RULES:
                 error.message
             );
 
+            /*
+             * Si el modelo no existe/no está permitido,
+             * limpiamos la caché para volver a consultar
+             * /models en el siguiente intento.
+             */
+            if (
+                error.status === 400 ||
+                error.status === 401 ||
+                error.status === 403 ||
+                error.status === 404
+            ) {
+                cachedChatModel = null;
+                cachedChatModelAt = 0;
+            }
+
             if (
                 attempt < 3
             ) {
                 await sleep(
-                    attempt * 2000
+                    1500 * attempt
                 );
             }
         }
@@ -1312,87 +1556,150 @@ CRITICAL RULES:
     }
 
     const rawContent =
-        result
-            ?.choices
-            ?.at(0)
-            ?.message
-            ?.content || "";
+        cleanModelText(
+            result
+                ?.choices?.[0]
+                ?.message
+                ?.content || ""
+        );
 
-    if (!rawContent.trim()) {
+    if (!rawContent) {
         throw new Error(
-            `El modelo no devolvió traducción para ${targetLanguage}.`
+            `El modelo no devolvió la traducción a ${targetLanguage}.`
         );
     }
 
+    const cleanLines =
+        rawContent
+            .split(/\r?\n/)
+            .map(
+                (line) =>
+                    line.trim()
+            )
+            .filter(Boolean);
+
     const translatedMap =
-        parseNumberedResponse(
-            rawContent
-        );
+        new Map();
+
+    for (const line of cleanLines) {
+        /*
+         * Formato principal:
+         * 1|Translation
+         */
+        let match =
+            line.match(
+                /^(\d+)\s*\|\s*(.+)$/
+            );
+
+        /*
+         * Compatibilidad con:
+         * 1. Translation
+         * 1) Translation
+         * 1** Translation
+         */
+        if (!match) {
+            match =
+                line.match(
+                    /^(\d+)\s*(?:\*\*|\*|\.|\)|:|-)\s*(.+)$/
+                );
+        }
+
+        if (!match) {
+            continue;
+        }
+
+        const index =
+            parseInt(
+                match[1],
+                10
+            ) - 1;
+
+        let text =
+            cleanModelText(
+                match[2]
+            );
+
+        text =
+            text.replace(
+                /^\s*[\|\-:]\s*/,
+                ""
+            );
+
+        text =
+            cleanText(text);
+
+        if (
+            index >= 0 &&
+            index < normalized.length &&
+            text
+        ) {
+            translatedMap.set(
+                index,
+                text
+            );
+        }
+    }
 
     /*
-     * Para traducciones usamos un parser
-     * específico más permisivo.
+     * Si el modelo no ha respetado el formato,
+     * intentamos una segunda lectura muy conservadora.
      */
-
     if (
-        translatedMap.size === 0
+        translatedMap.size <
+        Math.ceil(
+            normalized.length * 0.70
+        )
     ) {
-        const lines =
-            rawContent
-                .split(/\r?\n/)
-                .map((line) =>
-                    line.trim()
-                )
-                .filter(Boolean);
+        const fallbackLines =
+            cleanLines.filter(
+                (line) =>
+                    !/^```/.test(
+                        line
+                    )
+            );
 
         for (
-            const line of lines
+            let i = 0;
+            i < fallbackLines.length &&
+            i < normalized.length;
+            i++
         ) {
-            const match =
-                line.match(
-                    /^\s*\**\s*(\d+)\s*(?:[.)\-:]|\*\*)\s*(?:\*\*)?\s*(.+?)\s*$/
-                );
-
-            if (!match) {
+            if (
+                translatedMap.has(i)
+            ) {
                 continue;
             }
 
-            const index =
-                parseInt(
-                    match[1],
-                    10
-                ) - 1;
+            const candidate =
+                fallbackLines[i]
+                    .replace(
+                        /^\d+\s*[\.\)\:\|\-]\s*/,
+                        ""
+                    )
+                    .trim();
 
-            const text =
-                cleanText(
-                    match[2]
-                );
-
-            if (
-                index >= 0 &&
-                index < segments.length &&
-                text
-            ) {
+            if (candidate) {
                 translatedMap.set(
-                    index,
-                    text
+                    i,
+                    cleanText(
+                        candidate
+                    )
                 );
             }
         }
     }
 
     /*
-     * No hacemos fallback a segment.text.
+     * MUY IMPORTANTE:
      *
-     * Esto es MUY importante.
+     * Si una traducción falta, NO ponemos el árabe
+     * dentro del VTT de traducción.
      *
-     * Antes, si la traducción fallaba,
-     * tu código podía acabar poniendo el
-     * árabe como "traducción".
+     * Eso provocaba mezclas y subtítulos
+     * aparentemente "desconfigurados".
      */
-
     const translated =
-        segments.map(
+        normalized.map(
             (segment, index) => ({
                 start:
                     segment.start,
@@ -1405,62 +1712,181 @@ CRITICAL RULES:
             })
         );
 
-    const valid =
+    const validTranslated =
         translated.filter(
             (segment) =>
                 segment.text
         );
 
-    if (!valid.length) {
-        throw new Error(
-            `No se pudo obtener ninguna línea válida traducida a ${targetLanguage}.`
-        );
-    }
-
-    /*
-     * No permitimos que se haya perdido más
-     * de la mitad del contenido.
-     */
-
-    const minimumAccepted =
-        Math.max(
-            1,
-            Math.floor(
-                segments.length * 0.50
-            )
-        );
-
     if (
-        valid.length <
-        minimumAccepted
+        validTranslated.length <
+        Math.ceil(
+            normalized.length * 0.70
+        )
     ) {
         throw new Error(
-            `La traducción a ${targetLanguage} fue incompleta: ${valid.length}/${segments.length} líneas.`
+            `La traducción a ${targetLanguage} devolvió demasiados segmentos incompletos.`
         );
     }
 
     /*
-     * Para mantener la sincronización,
-     * conservamos todos los segmentos originales
-     * y, si una línea no llegó, hacemos que falle
-     * en lugar de desplazar subtítulos.
+     * Para que nunca haya huecos:
+     * si falta una línea concreta, intentamos mantener
+     * el índice y reutilizar una cadena vacía no sirve.
+     *
+     * En este punto hacemos una segunda petición solo
+     * si faltan líneas.
      */
-
-    for (
-        let i = 0;
-        i < translated.length;
-        i++
+    if (
+        validTranslated.length !==
+        normalized.length
     ) {
-        if (
-            !translated[i].text
-        ) {
-            throw new Error(
-                `Falta la traducción de la línea ${i + 1} en ${targetLanguage}.`
-            );
+        console.warn(
+            `[TRANSLATION] ${language}: faltan ${normalized.length - validTranslated.length} segmentos. Se hará una segunda pasada de reparación.`
+        );
+
+        const missing =
+            normalized
+                .map(
+                    (segment, index) => ({
+                        segment,
+                        index
+                    })
+                )
+                .filter(
+                    (item) =>
+                        !translatedMap.has(
+                            item.index
+                        )
+                );
+
+        if (missing.length) {
+            const repairInput =
+                missing
+                    .map(
+                        (item) =>
+                            `${item.index + 1}|${item.segment.text}`
+                    )
+                    .join("\n");
+
+            const repairBody = {
+                model,
+                temperature: 0,
+                max_completion_tokens:
+                    Math.max(
+                        500,
+                        missing.length * 80
+                    ),
+                messages: [
+                    {
+                        role: "system",
+                        content: `
+Translate these Arabic nasheed lines into ${targetLanguage}.
+
+Output ONLY:
+NUMBER|TRANSLATION
+
+Do not transliterate.
+Do not explain.
+Do not omit any number.
+Do not use markdown.
+                        `.trim()
+                    },
+                    {
+                        role: "user",
+                        content:
+                            repairInput
+                    }
+                ]
+            };
+
+            try {
+                const repaired =
+                    await groqRequest(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body:
+                                JSON.stringify(
+                                    repairBody
+                                )
+                        },
+                        apiKey,
+                        3
+                    );
+
+                const repairText =
+                    cleanModelText(
+                        repaired
+                            ?.choices?.[0]
+                            ?.message
+                            ?.content || ""
+                    );
+
+                for (
+                    const line of
+                    repairText.split(
+                        /\r?\n/
+                    )
+                ) {
+                    const match =
+                        line
+                            .trim()
+                            .match(
+                                /^(\d+)\s*\|\s*(.+)$/
+                            );
+
+                    if (!match) {
+                        continue;
+                    }
+
+                    const index =
+                        Number(
+                            match[1]
+                        ) - 1;
+
+                    const text =
+                        cleanText(
+                            match[2]
+                        );
+
+                    if (
+                        index >= 0 &&
+                        index <
+                            normalized.length &&
+                        text
+                    ) {
+                        translatedMap.set(
+                            index,
+                            text
+                        );
+                    }
+                }
+            } catch (repairError) {
+                console.warn(
+                    "[TRANSLATION REPAIR] No se pudo reparar la traducción:",
+                    repairError.message
+                );
+            }
         }
     }
 
-    return translated;
+    return normalized.map(
+        (segment, index) => ({
+            start:
+                segment.start,
+            end:
+                segment.end,
+            text:
+                translatedMap.get(
+                    index
+                ) || "[...]"
+        })
+    );
 }
 
 /* =========================================================
@@ -1509,7 +1935,9 @@ async function privateTrack(
         )
     ) {
         if (
-            language.startsWith("__")
+            language.startsWith(
+                "__"
+            )
         ) {
             continue;
         }
@@ -1555,11 +1983,9 @@ async function privateTrack(
 
         subtitles,
 
-        warning:
-            false,
+        warning: false,
 
-        private:
-            true,
+        private: true,
 
         status:
             row.status,
@@ -1585,7 +2011,10 @@ function registerUserNasheedRoutes({
 
     app.get(
         "/api/user-nasheeds",
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
             const currentUser =
                 await getUser(
                     req,
@@ -1632,22 +2061,28 @@ function registerUserNasheedRoutes({
                 return res.json({
                     nasheeds:
                         (
-                            data || []
+                            data ||
+                            []
                         ).map(
                             (item) => ({
                                 id:
                                     Number(
                                         item.id
                                     ),
+
                                 title:
                                     item.title,
+
                                 status:
                                     item.status,
+
                                 error:
                                     item.error_message ||
                                     null,
+
                                 created_at:
                                     item.created_at,
+
                                 upload_day:
                                     item.upload_day
                             })
@@ -1675,7 +2110,10 @@ function registerUserNasheedRoutes({
 
     app.post(
         "/api/user-nasheeds/prepare",
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
             const currentUser =
                 await getUser(
                     req,
@@ -1696,11 +2134,13 @@ function registerUserNasheedRoutes({
             try {
                 const title =
                     String(
-                        req.body?.title || ""
+                        req.body?.title ||
+                        ""
                     ).trim();
 
                 const audio =
-                    req.body?.audio || {};
+                    req.body?.audio ||
+                    {};
 
                 const cover =
                     req.body?.cover ||
@@ -1718,7 +2158,8 @@ function registerUserNasheedRoutes({
 
                 const audioType =
                     String(
-                        audio.type || ""
+                        audio.type ||
+                        ""
                     );
 
                 if (
@@ -1770,7 +2211,8 @@ function registerUserNasheedRoutes({
 
                     const coverType =
                         String(
-                            cover.type || ""
+                            cover.type ||
+                            ""
                         );
 
                     if (
@@ -1814,7 +2256,9 @@ function registerUserNasheedRoutes({
                         )
                         .maybeSingle();
 
-                if (existing.error) {
+                if (
+                    existing.error
+                ) {
                     throw existing.error;
                 }
 
@@ -1822,7 +2266,8 @@ function registerUserNasheedRoutes({
                     existing.data &&
                     (
                         String(
-                            existing.data.status
+                            existing.data.status ||
+                            ""
                         ).startsWith(
                             "processing"
                         ) ||
@@ -1835,10 +2280,12 @@ function registerUserNasheedRoutes({
                         .json({
                             error:
                                 "Ya tienes una subida para hoy.",
+
                             id:
                                 Number(
                                     existing.data.id
                                 ),
+
                             status:
                                 existing.data.status
                         });
@@ -1865,16 +2312,21 @@ function registerUserNasheedRoutes({
                             )
                             .update({
                                 title,
+
                                 audio_path:
                                     "",
+
                                 cover_path:
                                     null,
+
                                 subtitles: {
                                     __requested:
                                         translations
                                 },
+
                                 status:
                                     "processing_0%",
+
                                 error_message:
                                     null
                             })
@@ -1887,7 +2339,9 @@ function registerUserNasheedRoutes({
                                 currentUser.id
                             );
 
-                    if (reset.error) {
+                    if (
+                        reset.error
+                    ) {
                         throw reset.error;
                     }
                 }
@@ -1901,26 +2355,37 @@ function registerUserNasheedRoutes({
                             .insert({
                                 user_id:
                                     currentUser.id,
+
                                 title,
+
                                 audio_path:
                                     "",
+
                                 cover_path:
                                     null,
+
                                 subtitles: {
                                     __requested:
                                         translations
                                 },
+
                                 status:
                                     "processing_0%",
+
                                 error_message:
                                     null,
+
                                 upload_day:
                                     uploadDay
                             })
-                            .select("id")
+                            .select(
+                                "id"
+                            )
                             .single();
 
-                    if (inserted.error) {
+                    if (
+                        inserted.error
+                    ) {
                         throw inserted.error;
                     }
 
@@ -1959,12 +2424,13 @@ function registerUserNasheedRoutes({
                             }
                         );
 
-                if (audioSigned.error) {
+                if (
+                    audioSigned.error
+                ) {
                     throw audioSigned.error;
                 }
 
-                let coverSigned =
-                    null;
+                let coverSigned = null;
 
                 if (coverPath) {
                     coverSigned =
@@ -1994,6 +2460,7 @@ function registerUserNasheedRoutes({
                         .update({
                             audio_path:
                                 audioPath,
+
                             cover_path:
                                 coverPath
                         })
@@ -2006,7 +2473,9 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
-                if (updated.error) {
+                if (
+                    updated.error
+                ) {
                     throw updated.error;
                 }
 
@@ -2092,7 +2561,10 @@ function registerUserNasheedRoutes({
 
     app.post(
         "/api/user-nasheeds/:id/cancel",
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
             const currentUser =
                 await getUser(
                     req,
@@ -2114,7 +2586,9 @@ function registerUserNasheedRoutes({
                 );
 
             if (
-                !Number.isSafeInteger(id)
+                !Number.isSafeInteger(
+                    id
+                )
             ) {
                 return res
                     .status(400)
@@ -2160,7 +2634,10 @@ function registerUserNasheedRoutes({
 
     app.post(
         "/api/user-nasheeds/:id/process",
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
             const currentUser =
                 await getUser(
                     req,
@@ -2191,7 +2668,9 @@ function registerUserNasheedRoutes({
                 );
 
             if (
-                !Number.isSafeInteger(id)
+                !Number.isSafeInteger(
+                    id
+                )
             ) {
                 return res
                     .status(400)
@@ -2203,11 +2682,8 @@ function registerUserNasheedRoutes({
 
             try {
                 /*
-                 * =================================================
-                 * 5%
-                 * =================================================
+                 * 1. Comprobamos cancelación.
                  */
-
                 await checkIfCanceled(
                     supabase,
                     id,
@@ -2218,15 +2694,12 @@ function registerUserNasheedRoutes({
                     supabase,
                     id,
                     currentUser.id,
-                    5
+                    10
                 );
 
                 /*
-                 * =================================================
-                 * CARGAR REGISTRO
-                 * =================================================
+                 * 2. Cargamos la fila.
                  */
-
                 const query =
                     await supabase
                         .from(
@@ -2258,7 +2731,9 @@ function registerUserNasheedRoutes({
                 const row =
                     query.data;
 
-                if (!row.audio_path) {
+                if (
+                    !row.audio_path
+                ) {
                     return res
                         .status(400)
                         .json({
@@ -2268,11 +2743,8 @@ function registerUserNasheedRoutes({
                 }
 
                 /*
-                 * =================================================
-                 * URL TEMPORAL DEL AUDIO
-                 * =================================================
+                 * 3. URL temporal del audio.
                  */
-
                 const signedAudio =
                     await supabase
                         .storage
@@ -2288,12 +2760,6 @@ function registerUserNasheedRoutes({
                     throw signedAudio.error;
                 }
 
-                /*
-                 * =================================================
-                 * 15%
-                 * =================================================
-                 */
-
                 await checkIfCanceled(
                     supabase,
                     id,
@@ -2304,7 +2770,7 @@ function registerUserNasheedRoutes({
                     supabase,
                     id,
                     currentUser.id,
-                    15
+                    25
                 );
 
                 console.log(
@@ -2313,91 +2779,35 @@ function registerUserNasheedRoutes({
                 );
 
                 /*
-                 * =================================================
-                 * WHISPER
-                 * =================================================
+                 * 4. TRANSCRIPCIÓN ÁRABE FIABLE.
+                 *
+                 * Primero Whisper.
+                 * Si devuelve transliteración,
+                 * segunda pasada para reconstruir árabe.
                  */
-
-                let whisperSegments =
-                    await transcribeArabic(
+                const arabic =
+                    await getReliableArabicTranscript(
                         signedAudio
                             .data
                             .signedUrl,
                         groqApiKey
                     );
 
-                /*
-                 * =================================================
-                 * 35%
-                 * =================================================
-                 */
-
-                await checkIfCanceled(
-                    supabase,
-                    id,
-                    currentUser.id
-                );
-
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    35
-                );
-
-                console.log(
-                    "[USER NASHEED] Segmentos Whisper:",
-                    whisperSegments.length
-                );
-
-                /*
-                 * =================================================
-                 * REPARAR ÁRABE
-                 * =================================================
-                 */
-
-                const arabic =
-                    await repairArabicSegments(
-                        whisperSegments,
-                        groqApiKey
-                    );
-
-                console.log(
-                    "[USER NASHEED] Segmentos árabes finales:",
-                    arabic.length
-                );
-
-                /*
-                 * Verificación final.
-                 *
-                 * No permitimos generar ar.vtt
-                 * si vuelve a ser transliteración.
-                 */
-
-                const finalArabicStats =
-                    arabicSegmentStats(
-                        arabic
-                    );
-
-                console.log(
-                    "[USER NASHEED] Verificación árabe final:",
-                    finalArabicStats
-                );
-
                 if (
-                    finalArabicStats.arabicPercentage <
-                    70
+                    !arabic.length ||
+                    !textLooksLikeArabic(
+                        arabic
+                    )
                 ) {
                     throw new Error(
-                        "La transcripción final no contiene suficiente texto árabe real."
+                        "No se obtuvo una transcripción árabe fiable."
                     );
                 }
 
-                /*
-                 * =================================================
-                 * 50%
-                 * =================================================
-                 */
+                console.log(
+                    "[USER NASHEED] Segmentos árabes definitivos:",
+                    arabic.length
+                );
 
                 await checkIfCanceled(
                     supabase,
@@ -2413,11 +2823,8 @@ function registerUserNasheedRoutes({
                 );
 
                 /*
-                 * =================================================
-                 * PREFIX
-                 * =================================================
+                 * 5. Prefix del almacenamiento.
                  */
-
                 const prefix =
                     row.audio_path
                         .split("/")
@@ -2436,10 +2843,6 @@ function registerUserNasheedRoutes({
                  * =================================================
                  */
 
-                console.log(
-                    "[USER NASHEED] Generando ar.vtt..."
-                );
-
                 const arabicPath =
                     `${prefix}/subtitles/ar.vtt`;
 
@@ -2448,6 +2851,9 @@ function registerUserNasheedRoutes({
                         arabic
                     );
 
+                /*
+                 * UTF-8 explícito.
+                 */
                 const arabicUpload =
                     await supabase
                         .storage
@@ -2476,19 +2882,16 @@ function registerUserNasheedRoutes({
                 subtitlePaths.ar =
                     arabicPath;
 
-                console.log(
-                    "[USER NASHEED] ar.vtt guardado correctamente."
-                );
-
                 /*
                  * =================================================
-                 * IDIOMAS SOLICITADOS
+                 * TRADUCCIONES
                  * =================================================
                  */
 
                 const requested =
                     normalizeLanguages(
-                        row.subtitles
+                        row
+                            .subtitles
                             ?.__requested
                     );
 
@@ -2497,14 +2900,20 @@ function registerUserNasheedRoutes({
                     requested
                 );
 
-                /*
-                 * =================================================
-                 * TRADUCCIONES
-                 * =================================================
-                 */
-
                 const totalLangs =
                     requested.length;
+
+                /*
+                 * Si no se solicitó ninguna traducción,
+                 * saltamos directamente al 95%.
+                 */
+                if (
+                    totalLangs === 0
+                ) {
+                    console.log(
+                        "[USER NASHEED] No se solicitaron traducciones."
+                    );
+                }
 
                 for (
                     let i = 0;
@@ -2514,6 +2923,13 @@ function registerUserNasheedRoutes({
                     const language =
                         requested[i];
 
+                    if (
+                        language ===
+                        "ar"
+                    ) {
+                        continue;
+                    }
+
                     await checkIfCanceled(
                         supabase,
                         id,
@@ -2521,16 +2937,14 @@ function registerUserNasheedRoutes({
                     );
 
                     const progressPct =
-                        totalLangs > 0
-                            ? Math.round(
-                                50 +
-                                (
-                                    (i + 1) /
-                                    totalLangs
-                                ) *
-                                40
-                            )
-                            : 90;
+                        Math.round(
+                            50 +
+                            (
+                                (i + 1) /
+                                totalLangs
+                            ) *
+                            40
+                        );
 
                     await updateProgress(
                         supabase,
@@ -2543,13 +2957,21 @@ function registerUserNasheedRoutes({
                         `[USER NASHEED] Traduciendo a ${language}...`
                     );
 
+                    /*
+                     * Traducción SIEMPRE desde el árabe.
+                     * Nunca desde la transliteración.
+                     */
                     const translated =
-                        await translateBatch(
+                        await translateAllBatch(
                             arabic,
                             language,
                             groqApiKey
                         );
 
+                    /*
+                     * El VTT de traducción conserva
+                     * exactamente los timestamps del árabe.
+                     */
                     const translationPath =
                         `${prefix}/subtitles/${language}.vtt`;
 
@@ -2587,15 +3009,11 @@ function registerUserNasheedRoutes({
                         language
                     ] =
                         translationPath;
-
-                    console.log(
-                        `[USER NASHEED] ${language}.vtt guardado correctamente.`
-                    );
                 }
 
                 /*
                  * =================================================
-                 * 95%
+                 * GUARDAR COMO READY
                  * =================================================
                  */
 
@@ -2611,12 +3029,6 @@ function registerUserNasheedRoutes({
                     currentUser.id,
                     95
                 );
-
-                /*
-                 * =================================================
-                 * READY
-                 * =================================================
-                 */
 
                 const saved =
                     await supabase
@@ -2642,12 +3054,41 @@ function registerUserNasheedRoutes({
                             currentUser.id
                         );
 
-                if (saved.error) {
+                if (
+                    saved.error
+                ) {
                     throw saved.error;
                 }
 
+                await updateProgress(
+                    supabase,
+                    id,
+                    currentUser.id,
+                    100
+                );
+
+                /*
+                 * Volvemos a dejar ready después del 100%.
+                 */
+                await supabase
+                    .from(
+                        "user_nasheeds"
+                    )
+                    .update({
+                        status:
+                            "ready"
+                    })
+                    .eq(
+                        "id",
+                        id
+                    )
+                    .eq(
+                        "user_id",
+                        currentUser.id
+                    );
+
                 console.log(
-                    "[USER NASHEED] PROCESO COMPLETADO:",
+                    "[USER NASHEED] PROCESAMIENTO COMPLETADO:",
                     row.title
                 );
 
@@ -2665,6 +3106,7 @@ function registerUserNasheedRoutes({
                 });
 
             } catch (error) {
+
                 if (
                     error.message ===
                     "PROCESO_CANCELADO"
@@ -2735,7 +3177,10 @@ function registerUserNasheedRoutes({
 
     app.get(
         "/api/nasheeds",
-        async (req, res) => {
+        async (
+            req,
+            res
+        ) => {
             try {
                 const publicRows =
                     await supabase

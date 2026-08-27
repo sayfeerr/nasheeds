@@ -781,7 +781,6 @@ async function translateSingleSegment(
     language,
     apiKey
 ) {
-
     const languageNames = {
         es: "Spanish",
         en: "English",
@@ -789,13 +788,9 @@ async function translateSingleSegment(
     };
 
     const targetLanguage =
-        languageNames[
-            language
-        ];
+        languageNames[language];
 
-    if (
-        !targetLanguage
-    ) {
+    if (!targetLanguage) {
         throw new Error(
             `Idioma no soportado: ${language}`
         );
@@ -804,66 +799,43 @@ async function translateSingleSegment(
     const sourceText =
         cleanText(text);
 
-    if (
-        !sourceText
-    ) {
+    if (!sourceText) {
         throw new Error(
             "El segmento árabe está vacío."
         );
     }
 
     const requestBody = {
+        model: GROQ_TRANSLATION,
 
-        model:
-            GROQ_TRANSLATION,
+        temperature: 0,
 
-        temperature:
-            0,
+        max_completion_tokens: 256,
 
-        max_completion_tokens:
-            512,
-
-        include_reasoning:
-            false,
+        include_reasoning: false,
 
         messages: [
-
             {
-                role:
-                    "system",
+                role: "user",
 
                 content:
-                    `Translate Arabic nasheed lyrics into ${targetLanguage}.
+                    `Translate the following Arabic nasheed lyric into ${targetLanguage}.
 
-IMPORTANT:
 Return ONLY the translation.
 
 Rules:
-- Translate every part of the Arabic text.
+- Translate everything.
 - Do not summarize.
-- Do not omit words or phrases.
-- Do not invent content.
+- Do not omit anything.
+- Do not add anything.
 - Preserve the religious meaning.
-- Preserve names and religious terms correctly.
 - Preserve repetitions.
-- Keep the same general meaning and tone.
-- Do not explain anything.
-- Do not add notes.
-- Do not add quotation marks.
+- Do not explain.
 - Do not use markdown.
-- Do not use code fences.
 - Do not return the Arabic original.
-- Do not return an empty response.
 
-The response must contain only the ${targetLanguage} translation.`
-            },
-
-            {
-                role:
-                    "user",
-
-                content:
-                    sourceText
+Arabic:
+${sourceText}`
             }
         ]
     };
@@ -872,8 +844,7 @@ The response must contain only the ${targetLanguage} translation.`
         await groqRequest(
             "https://api.groq.com/openai/v1/chat/completions",
             {
-                method:
-                    "POST",
+                method: "POST",
 
                 headers: {
                     "Content-Type":
@@ -888,73 +859,65 @@ The response must contain only the ${targetLanguage} translation.`
             apiKey
         );
 
+    const message =
+        result?.choices?.[0]?.message;
+
+    console.log(
+        "[GROQ TRANSLATION DEBUG]",
+        JSON.stringify(
+            {
+                language,
+                model: GROQ_TRANSLATION,
+                finish_reason:
+                    result?.choices?.[0]?.finish_reason,
+                content:
+                    message?.content ?? null,
+                reasoning:
+                    message?.reasoning
+                        ? "[present]"
+                        : null,
+                usage:
+                    result?.usage || null
+            },
+            null,
+            2
+        )
+    );
+
     let translation =
-        result
-            ?.choices
-            ?.[0]
-            ?.message
-            ?.content ||
-        "";
+        message?.content || "";
 
     translation =
-        String(
-            translation
-        )
+        String(translation)
             .trim()
-
             .replace(
                 /^```(?:text)?\s*/i,
                 ""
             )
-
             .replace(
                 /\s*```$/i,
                 ""
             )
-
             .trim()
-
             .replace(
                 /^["“”]+/,
                 ""
             )
-
             .replace(
                 /["“”]+$/,
                 ""
             )
-
             .trim();
 
-    if (
-        !translation
-    ) {
-
-        console.error(
-            "[GROQ TRANSLATION EMPTY]",
-            {
-                language,
-                segment:
-                    sourceText,
-                response:
-                    result
-            }
-        );
-
+    if (!translation) {
         throw new Error(
-            `Groq no devolvió traducción al ${targetLanguage}.`
+            `Groq devolvió content vacío. finish_reason=${result?.choices?.[0]?.finish_reason || "unknown"}`
         );
     }
 
-    /*
-     * No aceptar el árabe original
-     * como traducción.
-     */
     if (
-        translation ===
-        sourceText
+        translation === sourceText
     ) {
-
         throw new Error(
             `Groq devolvió el texto original sin traducir al ${targetLanguage}.`
         );

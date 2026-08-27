@@ -39,7 +39,7 @@ const LANGS = new Set([
 ]);
 
 const GROQ_STT = "whisper-large-v3-turbo";
-const GROQ_TRANSLATION = "llama-3.3-70b-versatile";
+const GROQ_TRANSLATION = "llama-3.1-8b-instant";
 
 /*
  * Número máximo de segmentos enviados al modelo de traducción

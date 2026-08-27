@@ -773,7 +773,7 @@ async function transcribeArabic(
     return usable;
 }
 /* =========================================================
-   TRADUCCIÓN DIRECTA
+   TRADUCCIÓN DE UN SEGMENTO
    ========================================================= */
 
 async function translateSingleSegment(
@@ -805,34 +805,65 @@ async function translateSingleSegment(
         );
     }
 
+    /*
+     * GPT-OSS es un modelo de razonamiento.
+     *
+     * IMPORTANTE:
+     * max_completion_tokens incluye los tokens
+     * utilizados por el razonamiento.
+     *
+     * 256 era demasiado poco y podía producir:
+     *
+     * finish_reason = length
+     *
+     * antes de generar la traducción.
+     */
+
     const requestBody = {
-        model: GROQ_TRANSLATION,
+        model:
+            GROQ_TRANSLATION,
 
-        temperature: 0,
+        temperature:
+            0.2,
 
-        max_completion_tokens: 256,
+        max_completion_tokens:
+            1024,
 
-        include_reasoning: false,
+        /*
+         * Reducimos el razonamiento al mínimo
+         * porque traducir una línea no necesita
+         * razonamiento complejo.
+         */
+        reasoning_effort:
+            "low",
+
+        include_reasoning:
+            false,
 
         messages: [
             {
                 role: "user",
 
                 content:
-                    `Translate the following Arabic nasheed lyric into ${targetLanguage}.
+                    `Translate this Arabic nasheed lyric into ${targetLanguage}.
 
 Return ONLY the translation.
 
-Rules:
-- Translate everything.
-- Do not summarize.
-- Do not omit anything.
-- Do not add anything.
-- Preserve the religious meaning.
-- Preserve repetitions.
-- Do not explain.
-- Do not use markdown.
-- Do not return the Arabic original.
+DO NOT:
+- explain
+- summarize
+- add notes
+- add markdown
+- add quotation marks
+- return Arabic
+- invent text
+
+DO:
+- translate every part
+- preserve repetitions
+- preserve religious meaning
+- preserve names and religious expressions
+- keep the translation natural
 
 Arabic:
 ${sourceText}`
@@ -844,7 +875,8 @@ ${sourceText}`
         await groqRequest(
             "https://api.groq.com/openai/v1/chat/completions",
             {
-                method: "POST",
+                method:
+                    "POST",
 
                 headers: {
                     "Content-Type":
@@ -859,75 +891,110 @@ ${sourceText}`
             apiKey
         );
 
+    const choice =
+        result?.choices?.[0];
+
     const message =
-        result?.choices?.[0]?.message;
+        choice?.message;
 
     console.log(
-        "[GROQ TRANSLATION DEBUG]",
-        JSON.stringify(
-            {
-                language,
-                model: GROQ_TRANSLATION,
-                finish_reason:
-                    result?.choices?.[0]?.finish_reason,
-                content:
-                    message?.content ?? null,
-                reasoning:
-                    message?.reasoning
-                        ? "[present]"
-                        : null,
-                usage:
-                    result?.usage || null
-            },
-            null,
-            2
-        )
+        "[GROQ TRANSLATION]",
+        {
+            language,
+            finish_reason:
+                choice?.finish_reason,
+            has_content:
+                Boolean(
+                    message?.content
+                ),
+            usage:
+                result?.usage || null
+        }
     );
 
     let translation =
         message?.content || "";
 
     translation =
-        String(translation)
+        String(
+            translation
+        )
             .trim()
+
+            /*
+             * Elimina posibles bloques
+             * markdown.
+             */
             .replace(
                 /^```(?:text)?\s*/i,
                 ""
             )
+
             .replace(
                 /\s*```$/i,
                 ""
             )
+
             .trim()
+
+            /*
+             * Elimina comillas exteriores.
+             */
             .replace(
                 /^["“”]+/,
                 ""
             )
+
             .replace(
                 /["“”]+$/,
                 ""
             )
+
             .trim();
 
-    if (!translation) {
-        throw new Error(
-            `Groq devolvió content vacío. finish_reason=${result?.choices?.[0]?.finish_reason || "unknown"}`
-        );
+    /*
+     * Si hay contenido, lo aceptamos.
+     */
+    if (
+        translation
+    ) {
+
+        /*
+         * No aceptar el árabe exactamente igual.
+         */
+        if (
+            translation !==
+            sourceText
+        ) {
+            return translation;
+        }
     }
+
+    /*
+     * Si llegamos aquí significa que:
+     *
+     * - content está vacío
+     * - o devolvió exactamente el árabe
+     */
 
     if (
-        translation === sourceText
+        choice?.finish_reason ===
+        "length"
     ) {
+
         throw new Error(
-            `Groq devolvió el texto original sin traducir al ${targetLanguage}.`
+            "Groq agotó los tokens antes de devolver la traducción."
         );
     }
 
-    return translation;
+    throw new Error(
+        `Groq no devolvió una traducción válida al ${targetLanguage}.`
+    );
 }
 
+
 /* =========================================================
-   TRADUCIR TODOS
+   TRADUCIR TODOS LOS SEGMENTOS
    ========================================================= */
 
 async function translateAll(
@@ -935,9 +1002,6 @@ async function translateAll(
     language,
     apiKey
 ) {
-
-    const output = [];
-
     if (
         !Array.isArray(
             segments
@@ -948,6 +1012,12 @@ async function translateAll(
             "No hay segmentos para traducir."
         );
     }
+
+    const output = [];
+
+    console.log(
+        `[TRANSLATION] ${language}: ${segments.length} segmentos`
+    );
 
     for (
         let i = 0;
@@ -975,6 +1045,10 @@ async function translateAll(
 
             try {
 
+                console.log(
+                    `[TRANSLATION] ${language} segmento ${i + 1}/${segments.length} intento ${attempt}`
+                );
+
                 translated =
                     await translateSingleSegment(
                         segment.text,
@@ -1001,30 +1075,23 @@ async function translateAll(
                     error;
 
                 console.error(
-                    `[GROQ ${language}] segmento ${i + 1}/${segments.length}, intento ${attempt}:`,
+                    `[TRANSLATION ERROR] ${language} segmento ${i + 1}/${segments.length} intento ${attempt}:`,
                     error.message
                 );
 
                 /*
-                 * Espera progresiva:
-                 *
-                 * 1 → 1 segundo
-                 * 2 → 2 segundos
-                 * 3 → 3 segundos
-                 * 4 → 5 segundos
+                 * Espera antes de volver a intentarlo.
                  */
                 if (
                     attempt < 5
                 ) {
 
                     const delay =
-                        attempt === 1
-                            ? 1000
-                            : attempt === 2
-                                ? 2000
-                                : attempt === 3
-                                    ? 3000
-                                    : 5000;
+                        Math.min(
+                            attempt *
+                                1500,
+                            6000
+                        );
 
                     await new Promise(
                         resolve =>
@@ -1038,20 +1105,15 @@ async function translateAll(
         }
 
         /*
-         * SI FALLA:
-         *
-         * NO generamos un subtítulo vacío.
-         * NO fingimos que está traducido.
-         *
-         * La generación completa se detiene
-         * para que nunca se guarde un VTT incompleto.
+         * Si después de 5 intentos no tenemos
+         * traducción, NO guardamos un subtítulo vacío.
          */
         if (
             !translated
         ) {
 
             throw new Error(
-                `La traducción ${language} no pudo recuperar el segmento ${i + 1} de ${segments.length}: ${
+                `La traducción no pudo recuperar el segmento ${i + 1} de ${segments.length}: ${
                     lastError?.message ||
                     "respuesta vacía"
                 }`
@@ -1059,8 +1121,10 @@ async function translateAll(
         }
 
         /*
-         * Guardamos exactamente los mismos
-         * tiempos que tenía el segmento árabe.
+         * MUY IMPORTANTE:
+         *
+         * Conservamos exactamente los tiempos
+         * originales de Whisper.
          */
         output.push({
 
@@ -1075,16 +1139,16 @@ async function translateAll(
         });
 
         console.log(
-            `[GROQ ${language}] segmento ${i + 1}/${segments.length} traducido`
+            `[TRANSLATION] ${language} segmento ${i + 1}/${segments.length} OK`
         );
     }
 
     /*
-     * GUARDIA FINAL
+     * COMPROBACIÓN FINAL
      *
-     * Si había 37 segmentos árabes,
-     * DEBEN existir exactamente 37
-     * segmentos traducidos.
+     * 34 segmentos árabes
+     * =
+     * 34 segmentos traducidos.
      */
     if (
         output.length !==
@@ -1097,7 +1161,7 @@ async function translateAll(
     }
 
     /*
-     * Comprobación adicional de tiempos.
+     * Comprobamos también los tiempos.
      */
     for (
         let i = 0;
@@ -1107,20 +1171,34 @@ async function translateAll(
 
         if (
             output[i].start !==
-            segments[i].start ||
+                segments[i].start ||
             output[i].end !==
-            segments[i].end
+                segments[i].end
         ) {
 
             throw new Error(
                 `Los tiempos del segmento ${i + 1} no coinciden con la transcripción original.`
             );
         }
+
+        if (
+            !cleanText(
+                output[i].text
+            )
+        ) {
+
+            throw new Error(
+                `El segmento traducido ${i + 1} está vacío.`
+            );
+        }
     }
+
+    console.log(
+        `[TRANSLATION] ${language}: ${output.length}/${segments.length} segmentos completados correctamente`
+    );
 
     return output;
 }
-
 
 /* =========================================================
    SIGNED URL

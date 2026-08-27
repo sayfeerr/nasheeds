@@ -41,12 +41,15 @@ const LANGS = new Set([
 const GROQ_STT =
     "whisper-large-v3-turbo";
 
+// Cambiado a un modelo ultrarrápido y ligero para no agotar la cuota TPM gratuita de 8,000 tokens
 const GROQ_TRANSLATION =
-    "openai/gpt-oss-20b";
+    "llama-3.1-8b-instant";
 
 /* =========================================================
    UTILIDADES
    ========================================================= */
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function day() {
 
@@ -528,79 +531,89 @@ function makeVTT(
 }
 
 /* =========================================================
-   GROQ REQUEST
+   GROQ REQUEST (CON REINTENTOS PARA RATE LIMIT HTTP 429)
    ========================================================= */
 
 async function groqRequest(
     url,
     options,
-    apiKey
+    apiKey,
+    maxRetries = 5
 ) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const response =
+            await fetch(
+                url,
+                {
+                    ...options,
 
-    const response =
-        await fetch(
-            url,
-            {
-                ...options,
+                    headers: {
 
-                headers: {
+                        ...(options.headers || {}),
 
-                    ...(options.headers || {}),
+                        Authorization:
+                            `Bearer ${apiKey}`
 
-                    Authorization:
-                        `Bearer ${apiKey}`
+                    }
+
+                }
+            );
+
+        if (response.status === 429 && attempt < maxRetries) {
+            const waitTime = attempt * 2000;
+            console.warn(
+                `[GROQ RATE LIMIT 429] Cuota por minuto alcanzada. Reintentando (${attempt}/${maxRetries}) en ${waitTime / 1000}s...`
+            );
+            await sleep(waitTime);
+            continue;
+        }
+
+        const raw =
+            await response.text();
+
+        let body;
+
+        try {
+
+            body =
+                JSON.parse(
+                    raw
+                );
+
+        } catch {
+
+            body = {
+
+                error: {
+
+                    message:
+                        raw
 
                 }
 
-            }
-        );
+            };
 
-    const raw =
-        await response.text();
+        }
 
-    let body;
+        if (
+            !response.ok
+        ) {
 
-    try {
+            const error =
+                new Error(
+                    body?.error?.message ||
+                    `Groq HTTP ${response.status}`
+                );
 
-        body =
-            JSON.parse(
-                raw
-            );
+            error.status =
+                response.status;
 
-    } catch {
+            throw error;
 
-        body = {
+        }
 
-            error: {
-
-                message:
-                    raw
-
-            }
-
-        };
-
+        return body;
     }
-
-    if (
-        !response.ok
-    ) {
-
-        const error =
-            new Error(
-                body?.error?.message ||
-                `Groq HTTP ${response.status}`
-            );
-
-        error.status =
-            response.status;
-
-        throw error;
-
-    }
-
-    return body;
-
 }
 
 
@@ -772,6 +785,7 @@ async function transcribeArabic(
 
     return usable;
 }
+
 /* =========================================================
    TRADUCCIÓN DE UN SEGMENTO
    ========================================================= */
@@ -802,12 +816,11 @@ async function translateSingleSegment(
     const requestBody = {
         model: GROQ_TRANSLATION,
         temperature: 0.1,
-        // Incrementamos tokens para evitar el corte por reasoning interno
-        max_completion_tokens: 2048,
+        max_completion_tokens: 300,
         messages: [
             {
                 role: "system",
-                content: `You are a translator. Translate Arabic nasheed lyrics directly to ${targetLanguage}. Output ONLY the translated string without commentary, reasoning, quotes, or markdown format.`
+                content: `You are a translator. Translate Arabic nasheed lyrics directly to ${targetLanguage}. Output ONLY the translated text without commentary, reasoning, quotes, or markdown format.`
             },
             {
                 role: "user",
@@ -815,6 +828,9 @@ async function translateSingleSegment(
             }
         ]
     };
+
+    // Pausa preventiva de 300ms entre llamadas
+    await sleep(300);
 
     const result = await groqRequest(
         "https://api.groq.com/openai/v1/chat/completions",
@@ -846,7 +862,7 @@ async function translateSingleSegment(
     }
 
     if (choice?.finish_reason === "length") {
-        throw new Error("Groq agotó los tokens en razonamiento antes de emitir la traducción.");
+        throw new Error("Groq agotó los tokens antes de emitir la traducción.");
     }
 
     throw new Error(`Groq no devolvió una traducción válida al ${targetLanguage}.`);
@@ -953,13 +969,7 @@ async function translateAll(
                             6000
                         );
 
-                    await new Promise(
-                        resolve =>
-                            setTimeout(
-                                resolve,
-                                delay
-                            )
-                    );
+                    await sleep(delay);
                 }
             }
         }

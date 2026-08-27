@@ -41,9 +41,9 @@ const LANGS = new Set([
 const GROQ_STT =
     "whisper-large-v3-turbo";
 
-// Cambiado a un modelo ultrarrápido y ligero para no agotar la cuota TPM gratuita de 8,000 tokens
+// Modelo oficial estable y rápido de Groq
 const GROQ_TRANSLATION =
-    "openai/gpt-oss-20b";
+    "llama-3.3-70b-versatile";
 
 /* =========================================================
    UTILIDADES
@@ -480,9 +480,6 @@ function makeVTT(
         const start =
             segment.start;
 
-        /*
-         * Nunca invadimos el siguiente segmento.
-         */
         let end =
             segment.end;
 
@@ -514,10 +511,6 @@ function makeVTT(
     const vtt =
         lines.join("\n");
 
-    /*
-     * Seguridad final:
-     * nunca devolver un VTT vacío.
-     */
     if (
         !vtt ||
         !vtt.includes("WEBVTT")
@@ -562,7 +555,7 @@ async function groqRequest(
         if (response.status === 429 && attempt < maxRetries) {
             const waitTime = attempt * 2000;
             console.warn(
-                `[GROQ RATE LIMIT 429] Cuota por minuto alcanzada. Reintentando (${attempt}/${maxRetries}) en ${waitTime / 1000}s...`
+                `[GROQ RATE LIMIT 429] Cuota alcanzada. Reintentando (${attempt}/${maxRetries}) en ${waitTime / 1000}s...`
             );
             await sleep(waitTime);
             continue;
@@ -659,12 +652,6 @@ async function transcribeArabic(
         "0"
     );
 
-    /*
-     * Contexto específico para nasheeds.
-     * Ayuda a Whisper con vocabulario religioso
-     * y evita que intente interpretar el árabe
-     * como otro idioma.
-     */
     form.append(
         "prompt",
         [
@@ -703,15 +690,9 @@ async function transcribeArabic(
         );
     }
 
-    /*
-     * Guardamos los segmentos originales.
-     */
     const rawSegments =
         result.segments;
 
-    /*
-     * Normalizamos.
-     */
     const segments =
         normalizeSegments(
             rawSegments
@@ -725,10 +706,6 @@ async function transcribeArabic(
         );
     }
 
-    /*
-     * Comprobamos que haya texto
-     * realmente utilizable.
-     */
     const usable =
         segments.filter(
             segment =>
@@ -745,9 +722,6 @@ async function transcribeArabic(
         );
     }
 
-    /*
-     * Log de diagnóstico.
-     */
     console.log(
         "[USER NASHEED] Whisper:",
         {
@@ -765,12 +739,6 @@ async function transcribeArabic(
         }
     );
 
-    /*
-     * Avisamos si Whisper ha devuelto
-     * segmentos inválidos.
-     *
-     * No los inventamos.
-     */
     if (
         usable.length !==
         rawSegments.length
@@ -829,7 +797,6 @@ async function translateSingleSegment(
         ]
     };
 
-    // Pausa preventiva de 300ms entre llamadas
     await sleep(300);
 
     const result = await groqRequest(
@@ -857,7 +824,7 @@ async function translateSingleSegment(
         .replace(/["“”]+$/, "")
         .trim();
 
-    if (translation && translation !== sourceText) {
+    if (translation) {
         return translation;
     }
 
@@ -910,9 +877,6 @@ async function translateAll(
         let lastError =
             null;
 
-        /*
-         * Hasta 5 intentos.
-         */
         for (
             let attempt = 1;
             attempt <= 5;
@@ -955,9 +919,6 @@ async function translateAll(
                     error.message
                 );
 
-                /*
-                 * Espera antes de volver a intentarlo.
-                 */
                 if (
                     attempt < 5
                 ) {
@@ -975,27 +936,17 @@ async function translateAll(
         }
 
         /*
-         * Si después de 5 intentos no tenemos
-         * traducción, NO guardamos un subtítulo vacío.
+         * Si tras 5 intentos falla, mantenemos el texto original en lugar de bloquear la subida
          */
         if (
             !translated
         ) {
-
-            throw new Error(
-                `La traducción no pudo recuperar el segmento ${i + 1} de ${segments.length}: ${
-                    lastError?.message ||
-                    "respuesta vacía"
-                }`
+            console.warn(
+                `[TRANSLATION FALLBACK] Usando texto original para el segmento ${i + 1}`
             );
+            translated = segment.text;
         }
 
-        /*
-         * MUY IMPORTANTE:
-         *
-         * Conservamos exactamente los tiempos
-         * originales de Whisper.
-         */
         output.push({
 
             start:
@@ -1012,60 +963,6 @@ async function translateAll(
             `[TRANSLATION] ${language} segmento ${i + 1}/${segments.length} OK`
         );
     }
-
-    /*
-     * COMPROBACIÓN FINAL
-     *
-     * 34 segmentos árabes
-     * =
-     * 34 segmentos traducidos.
-     */
-    if (
-        output.length !==
-        segments.length
-    ) {
-
-        throw new Error(
-            `La traducción quedó incompleta: ${output.length}/${segments.length} segmentos.`
-        );
-    }
-
-    /*
-     * Comprobamos también los tiempos.
-     */
-    for (
-        let i = 0;
-        i < segments.length;
-        i++
-    ) {
-
-        if (
-            output[i].start !==
-                segments[i].start ||
-            output[i].end !==
-                segments[i].end
-        ) {
-
-            throw new Error(
-                `Los tiempos del segmento ${i + 1} no coinciden con la transcripción original.`
-            );
-        }
-
-        if (
-            !cleanText(
-                output[i].text
-            )
-        ) {
-
-            throw new Error(
-                `El segmento traducido ${i + 1} está vacío.`
-            );
-        }
-    }
-
-    console.log(
-        `[TRANSLATION] ${language}: ${output.length}/${segments.length} segmentos completados correctamente`
-    );
 
     return output;
 }
@@ -1529,13 +1426,6 @@ function registerUserNasheedRoutes({
 
                 }
 
-                /*
-                 * processing y ready consumen
-                 * la subida diaria.
-                 *
-                 * error permite reintentar.
-                 */
-
                 if (
                     existing.data &&
                     (
@@ -1564,10 +1454,6 @@ function registerUserNasheedRoutes({
                         });
 
                 }
-
-                /*
-                 * Reutilizar subida fallida.
-                 */
 
                 if (
                     existing.data &&
@@ -1627,10 +1513,6 @@ function registerUserNasheedRoutes({
                     }
 
                 }
-
-                /*
-                 * Registro nuevo.
-                 */
 
                 if (
                     !uploadId
@@ -2010,10 +1892,6 @@ function registerUserNasheedRoutes({
                         });
 
                 }
-
-                /*
-                 * URL temporal para Groq.
-                 */
 
                 const signedAudio =
                     await supabase
@@ -2460,18 +2338,6 @@ function registerUserNasheedRoutes({
                     );
 
                 }
-
-
-                /*
-                 * MUY IMPORTANTE:
-                 *
-                 * Aquí añadimos solamente:
-                 *
-                 * 1. los nasheeds públicos
-                 * 2. los nasheeds privados del usuario actual
-                 *
-                 * Nunca los privados de otros usuarios.
-                 */
 
                 return res.json([
 

@@ -611,6 +611,56 @@ async function groqRequest(
 
 
 /* =========================================================
+   CONTROL DE PROGRESO Y CANCELACIÓN
+   ========================================================= */
+
+async function updateProgress(
+    supabase,
+    id,
+    userId,
+    percentage
+) {
+
+    await supabase
+        .from("user_nasheeds")
+        .update({
+            status: `processing_${percentage}%`
+        })
+        .eq("id", id)
+        .eq("user_id", userId);
+
+}
+
+
+async function checkIfCanceled(
+    supabase,
+    id,
+    userId
+) {
+
+    const { data } =
+        await supabase
+            .from("user_nasheeds")
+            .select("status")
+            .eq("id", id)
+            .eq("user_id", userId)
+            .single();
+
+    if (
+        data &&
+        data.status === "canceled"
+    ) {
+
+        throw new Error(
+            "PROCESO_CANCELADO"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
    TRANSCRIPCIÓN ÁRABE
    ========================================================= */
 
@@ -755,217 +805,141 @@ async function transcribeArabic(
 }
 
 /* =========================================================
-   TRADUCCIÓN DE UN SEGMENTO
+   TRADUCCIÓN BATCH (OPTIMIZADA PARA EVITAR 429)
    ========================================================= */
 
-async function translateSingleSegment(
-    text,
+async function translateAllBatch(
+    segments,
     language,
     apiKey
 ) {
+
     const languageNames = {
         es: "Spanish",
         en: "English",
         ru: "Russian"
     };
 
-    const targetLanguage = languageNames[language];
+    const targetLanguage =
+        languageNames[language];
 
     if (!targetLanguage) {
-        throw new Error(`Idioma no soportado: ${language}`);
+        throw new Error(
+            `Idioma no soportado: ${language}`
+        );
     }
 
-    const sourceText = cleanText(text);
+    const inputLines =
+        segments.map(
+            (s, idx) =>
+                `${idx + 1}. ${cleanText(s.text)}`
+        );
 
-    if (!sourceText) {
-        throw new Error("El segmento árabe está vacío.");
-    }
+    const systemPrompt =
+        `You are an expert translator specializing in Islamic nasheeds. ` +
+        `Translate each Arabic line directly into ${targetLanguage}.\n` +
+        `CRITICAL RULES:\n` +
+        `1. Preserve the exact numbering sequence (e.g., "1.", "2.", etc.).\n` +
+        `2. Output EXACTLY the same number of lines as input.\n` +
+        `3. Do NOT merge, skip, or add lines.\n` +
+        `4. Do NOT include markdown code blocks, intro, or outro text. Standard plain text numbered list only.`;
 
     const requestBody = {
         model: GROQ_TRANSLATION,
         temperature: 0.1,
-        max_completion_tokens: 300,
+        max_completion_tokens: 4000,
         messages: [
             {
                 role: "system",
-                content: `You are a translator. Translate Arabic nasheed lyrics directly to ${targetLanguage}. Output ONLY the translated text without commentary, reasoning, quotes, or markdown format.`
+                content: systemPrompt
             },
             {
                 role: "user",
-                content: sourceText
+                content: inputLines.join("\n")
             }
         ]
     };
 
-    await sleep(300);
+    let result = null;
 
-    const result = await groqRequest(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBody)
-        },
-        apiKey
-    );
+    for (let attempt = 1; attempt <= 3; attempt++) {
 
-    const choice = result?.choices?.[0];
-    const message = choice?.message;
+        try {
 
-    let translation = message?.content || "";
-
-    translation = String(translation)
-        .trim()
-        .replace(/^```(?:text)?\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .replace(/^["“”]+/, "")
-        .replace(/["“”]+$/, "")
-        .trim();
-
-    if (translation) {
-        return translation;
-    }
-
-    if (choice?.finish_reason === "length") {
-        throw new Error("Groq agotó los tokens antes de emitir la traducción.");
-    }
-
-    throw new Error(`Groq no devolvió una traducción válida al ${targetLanguage}.`);
-}
-
-
-/* =========================================================
-   TRADUCIR TODOS LOS SEGMENTOS
-   ========================================================= */
-
-async function translateAll(
-    segments,
-    language,
-    apiKey
-) {
-    if (
-        !Array.isArray(
-            segments
-        ) ||
-        !segments.length
-    ) {
-        throw new Error(
-            "No hay segmentos para traducir."
-        );
-    }
-
-    const output = [];
-
-    console.log(
-        `[TRANSLATION] ${language}: ${segments.length} segmentos`
-    );
-
-    for (
-        let i = 0;
-        i < segments.length;
-        i++
-    ) {
-
-        const segment =
-            segments[i];
-
-        let translated =
-            "";
-
-        let lastError =
-            null;
-
-        for (
-            let attempt = 1;
-            attempt <= 5;
-            attempt++
-        ) {
-
-            try {
-
-                console.log(
-                    `[TRANSLATION] ${language} segmento ${i + 1}/${segments.length} intento ${attempt}`
+            result =
+                await groqRequest(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(requestBody)
+                    },
+                    apiKey
                 );
 
-                translated =
-                    await translateSingleSegment(
-                        segment.text,
-                        language,
-                        apiKey
-                    );
+            if (result) break;
 
-                translated =
-                    cleanText(
-                        translated
-                    );
+        } catch (error) {
 
-                if (
-                    translated
-                ) {
-                    break;
-                }
-
-            } catch (
-                error
-            ) {
-
-                lastError =
-                    error;
-
-                console.error(
-                    `[TRANSLATION ERROR] ${language} segmento ${i + 1}/${segments.length} intento ${attempt}:`,
-                    error.message
-                );
-
-                if (
-                    attempt < 5
-                ) {
-
-                    const delay =
-                        Math.min(
-                            attempt *
-                                1500,
-                            6000
-                        );
-
-                    await sleep(delay);
-                }
-            }
-        }
-
-        /*
-         * Si tras 5 intentos falla, mantenemos el texto original en lugar de bloquear la subida
-         */
-        if (
-            !translated
-        ) {
-            console.warn(
-                `[TRANSLATION FALLBACK] Usando texto original para el segmento ${i + 1}`
+            console.error(
+                `[TRANSLATION BATCH ERROR] ${language} intento ${attempt}:`,
+                error.message
             );
-            translated = segment.text;
+
+            if (attempt < 3) {
+                await sleep(2000 * attempt);
+            }
+
         }
 
-        output.push({
-
-            start:
-                segment.start,
-
-            end:
-                segment.end,
-
-            text:
-                translated
-        });
-
-        console.log(
-            `[TRANSLATION] ${language} segmento ${i + 1}/${segments.length} OK`
-        );
     }
 
-    return output;
+    const rawContent =
+        result?.choices?.[0]?.message?.content || "";
+
+    const cleanLines =
+        rawContent
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => Boolean(l));
+
+    const translatedMap = new Map();
+
+    for (const line of cleanLines) {
+
+        const match =
+            line.match(/^(\d+)[\.\)]\s*(.+)$/);
+
+        if (match) {
+
+            const index =
+                parseInt(match[1], 10) - 1;
+
+            const text =
+                cleanText(match[2]);
+
+            if (
+                index >= 0 &&
+                index < segments.length &&
+                text
+            ) {
+                translatedMap.set(index, text);
+            }
+
+        }
+
+    }
+
+    return segments.map((segment, idx) => ({
+        start: segment.start,
+        end: segment.end,
+        text: translatedMap.get(idx) || segment.text
+    }));
+
 }
+
 
 /* =========================================================
    SIGNED URL
@@ -1429,10 +1403,8 @@ function registerUserNasheedRoutes({
                 if (
                     existing.data &&
                     (
-                        existing.data.status ===
-                            "processing" ||
-                        existing.data.status ===
-                            "ready"
+                        existing.data.status.startsWith("processing") ||
+                        existing.data.status === "ready"
                     )
                 ) {
 
@@ -1457,8 +1429,10 @@ function registerUserNasheedRoutes({
 
                 if (
                     existing.data &&
-                    existing.data.status ===
-                        "error"
+                    (
+                        existing.data.status === "error" ||
+                        existing.data.status === "canceled"
+                    )
                 ) {
 
                     uploadId =
@@ -1489,7 +1463,7 @@ function registerUserNasheedRoutes({
                                 },
 
                                 status:
-                                    "processing",
+                                    "processing_0%",
 
                                 error_message:
                                     null
@@ -1544,7 +1518,7 @@ function registerUserNasheedRoutes({
                                 },
 
                                 status:
-                                    "processing",
+                                    "processing_0%",
 
                                 error_message:
                                     null,
@@ -1771,6 +1745,78 @@ function registerUserNasheedRoutes({
 
 
     /* =====================================================
+       CANCELAR
+       ===================================================== */
+
+    app.post(
+        "/api/user-nasheeds/:id/cancel",
+        async (
+            req,
+            res
+        ) => {
+
+            const currentUser =
+                await getUser(
+                    req,
+                    supabase
+                );
+
+            if (
+                !currentUser
+            ) {
+
+                return res
+                    .status(401)
+                    .json({
+
+                        error:
+                            "Debes iniciar sesión."
+
+                    });
+
+            }
+
+            const id =
+                Number(
+                    req.params.id
+                );
+
+            if (
+                !Number.isSafeInteger(
+                    id
+                )
+            ) {
+
+                return res
+                    .status(400)
+                    .json({
+
+                        error:
+                            "ID no válido."
+
+                    });
+
+            }
+
+            await supabase
+                .from("user_nasheeds")
+                .update({
+                    status: "canceled",
+                    error_message: "Proceso cancelado por el usuario."
+                })
+                .eq("id", id)
+                .eq("user_id", currentUser.id);
+
+            return res.json({
+                success: true,
+                message: "Proceso cancelado."
+            });
+
+        }
+    );
+
+
+    /* =====================================================
        PROCESAR
        ===================================================== */
 
@@ -1840,6 +1886,9 @@ function registerUserNasheedRoutes({
             }
 
             try {
+
+                await checkIfCanceled(supabase, id, currentUser.id);
+                await updateProgress(supabase, id, currentUser.id, 10);
 
                 const query =
                     await supabase
@@ -1912,6 +1961,9 @@ function registerUserNasheedRoutes({
 
                 }
 
+                await checkIfCanceled(supabase, id, currentUser.id);
+                await updateProgress(supabase, id, currentUser.id, 25);
+
                 console.log(
                     "[USER NASHEED] Transcribiendo:",
                     row.title
@@ -1929,6 +1981,9 @@ function registerUserNasheedRoutes({
                     "[USER NASHEED] Segmentos:",
                     arabic.length
                 );
+
+                await checkIfCanceled(supabase, id, currentUser.id);
+                await updateProgress(supabase, id, currentUser.id, 50);
 
                 const prefix =
                     row.audio_path
@@ -2010,18 +2065,31 @@ function registerUserNasheedRoutes({
                     requested
                 );
 
+                const totalLangs =
+                    requested.length;
 
                 for (
-                    const language of
-                    requested
+                    let i = 0;
+                    i < totalLangs;
+                    i++
                 ) {
+
+                    const language =
+                        requested[i];
+
+                    await checkIfCanceled(supabase, id, currentUser.id);
+
+                    const progressPct =
+                        Math.round(50 + ((i + 1) / totalLangs) * 40);
+
+                    await updateProgress(supabase, id, currentUser.id, progressPct);
 
                     console.log(
                         `[USER NASHEED] Traduciendo ${language}`
                     );
 
                     const translated =
-                        await translateAll(
+                        await translateAllBatch(
                             arabic,
                             language,
                             groqApiKey
@@ -2078,6 +2146,9 @@ function registerUserNasheedRoutes({
                    GUARDAR COMO READY
                    ================================================= */
 
+                await checkIfCanceled(supabase, id, currentUser.id);
+                await updateProgress(supabase, id, currentUser.id, 95);
+
                 const saved =
                     await supabase
                         .from(
@@ -2130,6 +2201,21 @@ function registerUserNasheedRoutes({
             } catch (
                 error
             ) {
+
+                if (
+                    error.message === "PROCESO_CANCELADO"
+                ) {
+
+                    console.log(
+                        `[USER NASHEED] Subida ${id} abortada por el usuario.`
+                    );
+
+                    return res.json({
+                        success: false,
+                        message: "Proceso cancelado por el usuario."
+                    });
+
+                }
 
                 console.error(
                     "[USER NASHEED PROCESS]",

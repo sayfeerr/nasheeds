@@ -43,7 +43,7 @@ const GROQ_STT =
 
 // Cambiado a un modelo ultrarrápido y ligero para no agotar la cuota TPM gratuita de 8,000 tokens
 const GROQ_TRANSLATION =
-    "llama-3.3-70b-versatile";
+    "openai/gpt-oss-20b";
 
 /* =========================================================
    UTILIDADES

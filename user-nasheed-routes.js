@@ -44,7 +44,6 @@ const GROQ_STT =
 const GROQ_TRANSLATION =
     "openai/gpt-oss-20b";
 
-
 /* =========================================================
    UTILIDADES
    ========================================================= */
@@ -448,18 +447,22 @@ function makeVTT(
             segments
         );
 
+    if (
+        !validSegments.length
+    ) {
+        throw new Error(
+            "No hay segmentos válidos para crear el VTT."
+        );
+    }
+
     const lines = [
         "WEBVTT",
         ""
     ];
 
-    const MAX_GAP_EXTENSION =
-        15;
-
     for (
         let i = 0;
-        i <
-            validSegments.length;
+        i < validSegments.length;
         i++
     ) {
 
@@ -469,50 +472,29 @@ function makeVTT(
         const next =
             validSegments[
                 i + 1
-            ] ||
-            null;
+            ] || null;
 
-        let start =
+        const start =
             segment.start;
 
+        /*
+         * Nunca invadimos el siguiente segmento.
+         */
         let end =
             segment.end;
 
         if (
             next &&
-            next.start >
-                end
+            end > next.start
         ) {
-
-            const gap =
-                next.start -
-                end;
-
-            if (
-                gap <=
-                MAX_GAP_EXTENSION
-            ) {
-
-                end =
-                    next.start;
-
-            } else {
-
-                end =
-                    segment.end +
-                    MAX_GAP_EXTENSION;
-
-            }
-
+            end =
+                next.start;
         }
 
         if (
-            end <=
-            start
+            end <= start
         ) {
-
             continue;
-
         }
 
         lines.push(
@@ -523,18 +505,27 @@ function makeVTT(
             segment.text
         );
 
-        lines.push(
-            ""
-        );
-
+        lines.push("");
     }
 
-    return lines.join(
-        "\n"
-    );
+    const vtt =
+        lines.join("\n");
 
+    /*
+     * Seguridad final:
+     * nunca devolver un VTT vacío.
+     */
+    if (
+        !vtt ||
+        !vtt.includes("WEBVTT")
+    ) {
+        throw new Error(
+            "No se pudo generar el archivo VTT."
+        );
+    }
+
+    return vtt;
 }
-
 
 /* =========================================================
    GROQ REQUEST
@@ -646,8 +637,33 @@ async function transcribeArabic(
     );
 
     form.append(
+        "timestamp_granularities[]",
+        "segment"
+    );
+
+    form.append(
         "temperature",
         "0"
+    );
+
+    /*
+     * Contexto específico para nasheeds.
+     * Ayuda a Whisper con vocabulario religioso
+     * y evita que intente interpretar el árabe
+     * como otro idioma.
+     */
+    form.append(
+        "prompt",
+        [
+            "Arabic nasheed lyrics.",
+            "Religious Arabic vocals.",
+            "Preserve Arabic words accurately.",
+            "Do not translate the lyrics.",
+            "Do not summarize.",
+            "Keep repeated verses and repeated phrases.",
+            "Keep religious expressions and proper names.",
+            "The audio may contain singing."
+        ].join(" ")
     );
 
     const result =
@@ -659,31 +675,103 @@ async function transcribeArabic(
 
                 body:
                     form
-
             },
             apiKey
         );
 
+    if (
+        !result ||
+        !Array.isArray(
+            result.segments
+        )
+    ) {
+        throw new Error(
+            "Groq no devolvió segmentos de transcripción."
+        );
+    }
+
+    /*
+     * Guardamos los segmentos originales.
+     */
+    const rawSegments =
+        result.segments;
+
+    /*
+     * Normalizamos.
+     */
     const segments =
         normalizeSegments(
-            result?.segments
+            rawSegments
         );
 
     if (
         !segments.length
     ) {
-
         throw new Error(
-            "La IA no devolvió segmentos de transcripción."
+            "La IA no devolvió segmentos de transcripción válidos."
         );
-
     }
 
-    return segments;
+    /*
+     * Comprobamos que haya texto
+     * realmente utilizable.
+     */
+    const usable =
+        segments.filter(
+            segment =>
+                cleanText(
+                    segment.text
+                )
+        );
 
+    if (
+        !usable.length
+    ) {
+        throw new Error(
+            "La transcripción no contiene texto utilizable."
+        );
+    }
+
+    /*
+     * Log de diagnóstico.
+     */
+    console.log(
+        "[USER NASHEED] Whisper:",
+        {
+            rawSegments:
+                rawSegments.length,
+
+            validSegments:
+                segments.length,
+
+            usableSegments:
+                usable.length,
+
+            duration:
+                result?.duration ?? null
+        }
+    );
+
+    /*
+     * Avisamos si Whisper ha devuelto
+     * segmentos inválidos.
+     *
+     * No los inventamos.
+     */
+    if (
+        usable.length !==
+        rawSegments.length
+    ) {
+
+        console.warn(
+            "[USER NASHEED] Whisper descartó segmentos inválidos:",
+            rawSegments.length -
+            usable.length
+        );
+    }
+
+    return usable;
 }
-
-
 /* =========================================================
    TRADUCCIÓN DIRECTA
    ========================================================= */
@@ -695,16 +783,9 @@ async function translateSingleSegment(
 ) {
 
     const languageNames = {
-
-        es:
-            "Spanish",
-
-        en:
-            "English",
-
-        ru:
-            "Russian"
-
+        es: "Spanish",
+        en: "English",
+        ru: "Russian"
     };
 
     const targetLanguage =
@@ -712,25 +793,23 @@ async function translateSingleSegment(
             language
         ];
 
-    if (!targetLanguage) {
-
+    if (
+        !targetLanguage
+    ) {
         throw new Error(
             `Idioma no soportado: ${language}`
         );
-
     }
 
     const sourceText =
-        cleanText(
-            text
-        );
+        cleanText(text);
 
-    if (!sourceText) {
-
+    if (
+        !sourceText
+    ) {
         throw new Error(
             "El segmento árabe está vacío."
         );
-
     }
 
     const requestBody = {
@@ -741,68 +820,70 @@ async function translateSingleSegment(
         temperature:
             0,
 
-        max_tokens:
+        max_completion_tokens:
             512,
+
+        include_reasoning:
+            false,
 
         messages: [
 
             {
-
                 role:
                     "system",
 
                 content:
                     `Translate Arabic nasheed lyrics into ${targetLanguage}.
 
+IMPORTANT:
 Return ONLY the translation.
 
 Rules:
-- Translate the Arabic text into ${targetLanguage}.
-- Do not return Arabic.
+- Translate every part of the Arabic text.
+- Do not summarize.
+- Do not omit words or phrases.
+- Do not invent content.
+- Preserve the religious meaning.
+- Preserve names and religious terms correctly.
+- Preserve repetitions.
+- Keep the same general meaning and tone.
 - Do not explain anything.
 - Do not add notes.
-- Do not add quotation marks around the answer.
+- Do not add quotation marks.
 - Do not use markdown.
 - Do not use code fences.
-- Preserve the religious meaning faithfully.
-- Return only the translated text.`
+- Do not return the Arabic original.
+- Do not return an empty response.
 
+The response must contain only the ${targetLanguage} translation.`
             },
 
             {
-
                 role:
                     "user",
 
                 content:
                     sourceText
-
             }
-
         ]
-
     };
 
     const result =
         await groqRequest(
             "https://api.groq.com/openai/v1/chat/completions",
             {
-
                 method:
                     "POST",
 
                 headers: {
-
                     "Content-Type":
                         "application/json"
-
                 },
 
                 body:
                     JSON.stringify(
                         requestBody
                     )
-
             },
             apiKey
         );
@@ -820,37 +901,55 @@ Rules:
             translation
         )
             .trim()
+
             .replace(
                 /^```(?:text)?\s*/i,
                 ""
             )
+
             .replace(
                 /\s*```$/i,
                 ""
             )
+
             .trim()
+
             .replace(
                 /^["“”]+/,
                 ""
             )
+
             .replace(
                 /["“”]+$/,
                 ""
             )
+
             .trim();
 
-    if (!translation) {
+    if (
+        !translation
+    ) {
+
+        console.error(
+            "[GROQ TRANSLATION EMPTY]",
+            {
+                language,
+                segment:
+                    sourceText,
+                response:
+                    result
+            }
+        );
 
         throw new Error(
             `Groq no devolvió traducción al ${targetLanguage}.`
         );
-
     }
 
     /*
-     * Evitamos aceptar exactamente el árabe.
+     * No aceptar el árabe original
+     * como traducción.
      */
-
     if (
         translation ===
         sourceText
@@ -859,13 +958,10 @@ Rules:
         throw new Error(
             `Groq devolvió el texto original sin traducir al ${targetLanguage}.`
         );
-
     }
 
     return translation;
-
 }
-
 
 /* =========================================================
    TRADUCIR TODOS
@@ -879,10 +975,20 @@ async function translateAll(
 
     const output = [];
 
+    if (
+        !Array.isArray(
+            segments
+        ) ||
+        !segments.length
+    ) {
+        throw new Error(
+            "No hay segmentos para traducir."
+        );
+    }
+
     for (
         let i = 0;
-        i <
-            segments.length;
+        i < segments.length;
         i++
     ) {
 
@@ -896,12 +1002,11 @@ async function translateAll(
             null;
 
         /*
-         * Tres intentos por segmento.
+         * Hasta 5 intentos.
          */
-
         for (
             let attempt = 1;
-            attempt <= 3;
+            attempt <= 5;
             attempt++
         ) {
 
@@ -914,12 +1019,15 @@ async function translateAll(
                         apiKey
                     );
 
+                translated =
+                    cleanText(
+                        translated
+                    );
+
                 if (
                     translated
                 ) {
-
                     break;
-
                 }
 
             } catch (
@@ -930,40 +1038,67 @@ async function translateAll(
                     error;
 
                 console.error(
-                    `[GROQ ${language}] segmento ${i}, intento ${attempt}:`,
+                    `[GROQ ${language}] segmento ${i + 1}/${segments.length}, intento ${attempt}:`,
                     error.message
                 );
 
+                /*
+                 * Espera progresiva:
+                 *
+                 * 1 → 1 segundo
+                 * 2 → 2 segundos
+                 * 3 → 3 segundos
+                 * 4 → 5 segundos
+                 */
                 if (
-                    attempt <
-                    3
+                    attempt < 5
                 ) {
+
+                    const delay =
+                        attempt === 1
+                            ? 1000
+                            : attempt === 2
+                                ? 2000
+                                : attempt === 3
+                                    ? 3000
+                                    : 5000;
 
                     await new Promise(
                         resolve =>
                             setTimeout(
                                 resolve,
-                                700
+                                delay
                             )
                     );
-
                 }
-
             }
-
         }
 
-        if (!translated) {
+        /*
+         * SI FALLA:
+         *
+         * NO generamos un subtítulo vacío.
+         * NO fingimos que está traducido.
+         *
+         * La generación completa se detiene
+         * para que nunca se guarde un VTT incompleto.
+         */
+        if (
+            !translated
+        ) {
 
             throw new Error(
-                `La traducción ${language} no pudo recuperar el segmento ${i}: ${
+                `La traducción ${language} no pudo recuperar el segmento ${i + 1} de ${segments.length}: ${
                     lastError?.message ||
                     "respuesta vacía"
                 }`
             );
-
         }
 
+        /*
+         * Guardamos exactamente los mismos
+         * tiempos que tenía el segmento árabe.
+         */
         output.push({
 
             start:
@@ -974,17 +1109,53 @@ async function translateAll(
 
             text:
                 translated
-
         });
 
         console.log(
             `[GROQ ${language}] segmento ${i + 1}/${segments.length} traducido`
         );
+    }
 
+    /*
+     * GUARDIA FINAL
+     *
+     * Si había 37 segmentos árabes,
+     * DEBEN existir exactamente 37
+     * segmentos traducidos.
+     */
+    if (
+        output.length !==
+        segments.length
+    ) {
+
+        throw new Error(
+            `La traducción quedó incompleta: ${output.length}/${segments.length} segmentos.`
+        );
+    }
+
+    /*
+     * Comprobación adicional de tiempos.
+     */
+    for (
+        let i = 0;
+        i < segments.length;
+        i++
+    ) {
+
+        if (
+            output[i].start !==
+            segments[i].start ||
+            output[i].end !==
+            segments[i].end
+        ) {
+
+            throw new Error(
+                `Los tiempos del segmento ${i + 1} no coinciden con la transcripción original.`
+            );
+        }
     }
 
     return output;
-
 }
 
 

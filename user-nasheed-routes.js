@@ -787,209 +787,69 @@ async function translateSingleSegment(
         ru: "Russian"
     };
 
-    const targetLanguage =
-        languageNames[language];
+    const targetLanguage = languageNames[language];
 
     if (!targetLanguage) {
-        throw new Error(
-            `Idioma no soportado: ${language}`
-        );
+        throw new Error(`Idioma no soportado: ${language}`);
     }
 
-    const sourceText =
-        cleanText(text);
+    const sourceText = cleanText(text);
 
     if (!sourceText) {
-        throw new Error(
-            "El segmento árabe está vacío."
-        );
+        throw new Error("El segmento árabe está vacío.");
     }
 
-    /*
-     * GPT-OSS es un modelo de razonamiento.
-     *
-     * IMPORTANTE:
-     * max_completion_tokens incluye los tokens
-     * utilizados por el razonamiento.
-     *
-     * 256 era demasiado poco y podía producir:
-     *
-     * finish_reason = length
-     *
-     * antes de generar la traducción.
-     */
-
     const requestBody = {
-        model:
-            GROQ_TRANSLATION,
-
-        temperature:
-            0.2,
-
-        max_completion_tokens:
-            1024,
-
-        /*
-         * Reducimos el razonamiento al mínimo
-         * porque traducir una línea no necesita
-         * razonamiento complejo.
-         */
-        reasoning_effort:
-            "low",
-
-        include_reasoning:
-            false,
-
+        model: GROQ_TRANSLATION,
+        temperature: 0.1,
+        // Incrementamos tokens para evitar el corte por reasoning interno
+        max_completion_tokens: 2048,
         messages: [
             {
+                role: "system",
+                content: `You are a translator. Translate Arabic nasheed lyrics directly to ${targetLanguage}. Output ONLY the translated string without commentary, reasoning, quotes, or markdown format.`
+            },
+            {
                 role: "user",
-
-                content:
-                    `Translate this Arabic nasheed lyric into ${targetLanguage}.
-
-Return ONLY the translation.
-
-DO NOT:
-- explain
-- summarize
-- add notes
-- add markdown
-- add quotation marks
-- return Arabic
-- invent text
-
-DO:
-- translate every part
-- preserve repetitions
-- preserve religious meaning
-- preserve names and religious expressions
-- keep the translation natural
-
-Arabic:
-${sourceText}`
+                content: sourceText
             }
         ]
     };
 
-    const result =
-        await groqRequest(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-                method:
-                    "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body:
-                    JSON.stringify(
-                        requestBody
-                    )
-            },
-            apiKey
-        );
-
-    const choice =
-        result?.choices?.[0];
-
-    const message =
-        choice?.message;
-
-    console.log(
-        "[GROQ TRANSLATION]",
+    const result = await groqRequest(
+        "https://api.groq.com/openai/v1/chat/completions",
         {
-            language,
-            finish_reason:
-                choice?.finish_reason,
-            has_content:
-                Boolean(
-                    message?.content
-                ),
-            usage:
-                result?.usage || null
-        }
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        },
+        apiKey
     );
 
-    let translation =
-        message?.content || "";
+    const choice = result?.choices?.[0];
+    const message = choice?.message;
 
-    translation =
-        String(
-            translation
-        )
-            .trim()
+    let translation = message?.content || "";
 
-            /*
-             * Elimina posibles bloques
-             * markdown.
-             */
-            .replace(
-                /^```(?:text)?\s*/i,
-                ""
-            )
+    translation = String(translation)
+        .trim()
+        .replace(/^```(?:text)?\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .replace(/^["“”]+/, "")
+        .replace(/["“”]+$/, "")
+        .trim();
 
-            .replace(
-                /\s*```$/i,
-                ""
-            )
-
-            .trim()
-
-            /*
-             * Elimina comillas exteriores.
-             */
-            .replace(
-                /^["“”]+/,
-                ""
-            )
-
-            .replace(
-                /["“”]+$/,
-                ""
-            )
-
-            .trim();
-
-    /*
-     * Si hay contenido, lo aceptamos.
-     */
-    if (
-        translation
-    ) {
-
-        /*
-         * No aceptar el árabe exactamente igual.
-         */
-        if (
-            translation !==
-            sourceText
-        ) {
-            return translation;
-        }
+    if (translation && translation !== sourceText) {
+        return translation;
     }
 
-    /*
-     * Si llegamos aquí significa que:
-     *
-     * - content está vacío
-     * - o devolvió exactamente el árabe
-     */
-
-    if (
-        choice?.finish_reason ===
-        "length"
-    ) {
-
-        throw new Error(
-            "Groq agotó los tokens antes de devolver la traducción."
-        );
+    if (choice?.finish_reason === "length") {
+        throw new Error("Groq agotó los tokens en razonamiento antes de emitir la traducción.");
     }
 
-    throw new Error(
-        `Groq no devolvió una traducción válida al ${targetLanguage}.`
-    );
+    throw new Error(`Groq no devolvió una traducción válida al ${targetLanguage}.`);
 }
 
 

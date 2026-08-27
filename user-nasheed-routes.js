@@ -41,7 +41,6 @@ const LANGS = new Set([
 const GROQ_STT =
     "whisper-large-v3-turbo";
 
-// Modelo oficial estable y rápido de Groq
 const GROQ_TRANSLATION =
     "llama-3.3-70b-versatile";
 
@@ -805,7 +804,7 @@ async function transcribeArabic(
 }
 
 /* =========================================================
-   TRADUCCIÓN BATCH (OPTIMIZADA PARA EVITAR 429)
+   TRADUCCIÓN BATCH (CORREGIDA)
    ========================================================= */
 
 async function translateAllBatch(
@@ -836,13 +835,13 @@ async function translateAllBatch(
         );
 
     const systemPrompt =
-        `You are an expert translator specializing in Islamic nasheeds. ` +
-        `Translate each Arabic line directly into ${targetLanguage}.\n` +
-        `CRITICAL RULES:\n` +
-        `1. Preserve the exact numbering sequence (e.g., "1.", "2.", etc.).\n` +
-        `2. Output EXACTLY the same number of lines as input.\n` +
-        `3. Do NOT merge, skip, or add lines.\n` +
-        `4. Do NOT include markdown code blocks, intro, or outro text. Standard plain text numbered list only.`;
+        `You are a translator. Translate the following Arabic sentences into ${targetLanguage}.\n` +
+        `RULES:\n` +
+        `- Do NOT transliterate phonetics into Latin alphabet.\n` +
+        `- Provide the actual MEANING and translation in ${targetLanguage}.\n` +
+        `- Maintain the exact line numbers (1., 2., etc.).\n` +
+        `- Keep translations concise and natural.\n` +
+        `- Do NOT add markdown code blocks, intros, or extra text. Output only the numbered list.`;
 
     const requestBody = {
         model: GROQ_TRANSLATION,
@@ -2003,7 +2002,7 @@ function registerUserNasheedRoutes({
 
 
                 /* =================================================
-                   ÁRABE
+                   SUBTÍTULO ÁRABE (SIEMPRE MANTIENE EL ÁRABE ORIGINAL)
                    ================================================= */
 
                 const arabicPath =
@@ -2050,7 +2049,7 @@ function registerUserNasheedRoutes({
 
 
                 /* =================================================
-                   TRADUCCIONES
+                   TRADUCCIONES (ES, EN, RU)
                    ================================================= */
 
                 const requested =
@@ -2077,6 +2076,8 @@ function registerUserNasheedRoutes({
                     const language =
                         requested[i];
 
+                    if (language === "ar") continue;
+
                     await checkIfCanceled(supabase, id, currentUser.id);
 
                     const progressPct =
@@ -2085,7 +2086,7 @@ function registerUserNasheedRoutes({
                     await updateProgress(supabase, id, currentUser.id, progressPct);
 
                     console.log(
-                        `[USER NASHEED] Traduciendo ${language}`
+                        `[USER NASHEED] Traduciendo a ${language}...`
                     );
 
                     const translated =

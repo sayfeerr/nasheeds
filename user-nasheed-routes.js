@@ -346,21 +346,25 @@ async function reconstructArabicText(segments, apiKey) {
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    const inputBlock = batch.map((s, i) => `[${i}] ${cleanText(s.text)}`).join("\n");
-    
-    const systemPrompt = `You are a professional translator. Translate the following Arabic subtitle lines into ${targetLanguage}.
-RULES:
-1. Translate each line accurately.
-2. Keep the exact same number of lines (${batch.length}).
-3. Start every line with its exact original bracketed index, e.g., "[0] translated text".
-4. Output ONLY the translated lines. No intro, no markdown blocks, no extra text.`;
+    const textsToTranslate = batch.map(s => cleanText(s.text));
+
+    const systemPrompt = `You are a professional translator. Translate the following array of Arabic nasheed lyrics into ${targetLanguage}.
+CRITICAL RULES:
+1. Translate natively and accurately. Do not transliterate Arabic.
+2. You MUST return a valid JSON object containing an array called "translations".
+3. The "translations" array must contain EXACTLY ${batch.length} items, matching the exact order of the input lines.
+Format required:
+{
+  "translations": ["traducción línea 1", "traducción línea 2", ...]
+}`;
 
     const requestBody = {
         model: GROQ_TRANSLATION,
         temperature: 0.1,
+        response_format: { type: "json_object" },
         messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: inputBlock }
+            { role: "user", content: JSON.stringify({ lines: textsToTranslate }) }
         ]
     };
 
@@ -374,53 +378,30 @@ RULES:
 
             const rawContent = result?.choices?.[0]?.message?.content;
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const responseLines = rawContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-                const translationMap = new Map();
+                // Limpiamos cualquier bloque de código markdown si la IA lo llega a incluir
+                const cleanJsonStr = rawContent.replace(/```json/gi, "").replace(/```/g, "").trim();
+                const parsed = JSON.parse(cleanJsonStr);
+                const translatedList = parsed.translations || parsed.result || [];
 
-                for (const line of responseLines) {
-                    const match = line.match(/^\[(\d+)\]\s*(.*)/);
-                    if (match) {
-                        const idx = Number(match[1]);
-                        const text = cleanText(match[2]);
-                        if (text) translationMap.set(idx, text);
-                    }
+                if (Array.isArray(translatedList) && translatedList.length > 0) {
+                    return batch.map((segment, index) => {
+                        const translated = cleanText(translatedList[index]);
+                        return {
+                            start: segment.start,
+                            end: segment.end,
+                            // Si una línea específica falla, muestra un texto limpio en lugar de romper o mostrar árabe
+                            text: translated || "[Traducción no disponible]"
+                        };
+                    });
                 }
-
-                return batch.map((segment, index) => {
-                    let translated = translationMap.get(index);
-                    // Plan B por posición si omitió corchetes
-                    if (!translated && responseLines[index]) {
-                        translated = cleanText(responseLines[index].replace(/^\[?\d+\]?\s*/, ""));
-                    }
-                    return {
-                        start: segment.start,
-                        end: segment.end,
-                        text: translated && !translated.includes("You are a professional") ? translated : "[Traducción no disponible]"
-                    };
-                });
             }
         } catch (error) {
-            console.error(`Error en bloque de traducción (intento ${attempt}):`, error);
+            console.error(`Error en JSON de traducción (intento ${attempt}):`, error);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
     
     return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
-}
-
-async function translateAllBatch(segments, language, apiKey) {
-    const languageNames = { es: "Spanish", en: "English", ru: "Russian" };
-    const targetLanguage = languageNames[language];
-    if (!targetLanguage) throw new Error(`Idioma no soportado: ${language}`);
-    
-    const allTranslated = [];
-    for (let i = 0; i < segments.length; i += 50) {
-        const batch = segments.slice(i, i + 50);
-        const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
-        allTranslated.push(...translatedBatch);
-        if (i + 50 < segments.length) await sleep(400); 
-    }
-    return allTranslated;
 }
 
 /* =========================================================

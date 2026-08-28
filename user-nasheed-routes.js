@@ -40,12 +40,11 @@ const LANGS = new Set([
 
 const GROQ_STT = "whisper-large-v3-turbo";
 const GROQ_TRANSLATION = "llama-3.1-8b-instant";
-
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 const GROQ_MAX_RETRIES = 3;
 const GROQ_TIMEOUT_MS = 60000;
-const GROQ_MIN_REQUEST_INTERVAL = 1200;
+const GROQ_MIN_REQUEST_INTERVAL = 1500; // Subido para dar respiro a Groq
 
 let lastGroqRequestAt = 0;
 
@@ -53,68 +52,27 @@ let lastGroqRequestAt = 0;
    UTILIDADES
    ========================================================= */
 
-const sleep = (ms) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function day() {
-    return new Date()
-        .toISOString()
-        .slice(0, 10);
+    return new Date().toISOString().slice(0, 10);
 }
 
 function rnd() {
-    return crypto
-        .randomBytes(10)
-        .toString("hex");
+    return crypto.randomBytes(10).toString("hex");
 }
 
 function ext(type, name) {
-    const extension =
-        String(name || "")
-            .split(".")
-            .pop()
-            .toLowerCase();
-
-    const allowed = [
-        "mp3",
-        "m4a",
-        "mp4",
-        "mpga",
-        "mpeg",
-        "ogg",
-        "wav",
-        "webm",
-        "flac",
-        "jpg",
-        "jpeg",
-        "png",
-        "webp"
-    ];
-
-    if (allowed.includes(extension)) {
-        return extension === "jpeg"
-            ? "jpg"
-            : extension;
-    }
-
+    const extension = String(name || "").split(".").pop().toLowerCase();
+    const allowed = ["mp3", "m4a", "mp4", "mpga", "mpeg", "ogg", "wav", "webm", "flac", "jpg", "jpeg", "png", "webp"];
+    if (allowed.includes(extension)) return extension === "jpeg" ? "jpg" : extension;
+    
     const byMime = {
-        "audio/mpeg": "mp3",
-        "audio/mp3": "mp3",
-        "audio/mp4": "m4a",
-        "audio/x-m4a": "m4a",
-        "audio/m4a": "m4a",
-        "audio/ogg": "ogg",
-        "audio/wav": "wav",
-        "audio/x-wav": "wav",
-        "audio/webm": "webm",
-        "audio/flac": "flac",
-        "video/mp4": "mp4",
-        "video/webm": "webm",
-        "image/jpeg": "jpg",
-        "image/png": "png",
-        "image/webp": "webp"
+        "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/mp4": "m4a", "audio/x-m4a": "m4a",
+        "audio/m4a": "m4a", "audio/ogg": "ogg", "audio/wav": "wav", "audio/x-wav": "wav",
+        "audio/webm": "webm", "audio/flac": "flac", "video/mp4": "mp4", "video/webm": "webm",
+        "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"
     };
-
     return byMime[type] || "bin";
 }
 
@@ -123,38 +81,14 @@ function ext(type, name) {
    ========================================================= */
 
 async function getUser(req, supabase) {
-    const authorization =
-        String(
-            req.headers.authorization || ""
-        );
-
-    if (!authorization.startsWith("Bearer ")) {
-        return null;
-    }
-
-    const token =
-        authorization
-            .slice(7)
-            .trim();
-
-    if (!token) {
-        return null;
-    }
+    const authorization = String(req.headers.authorization || "");
+    if (!authorization.startsWith("Bearer ")) return null;
+    const token = authorization.slice(7).trim();
+    if (!token) return null;
 
     try {
-        const {
-            data,
-            error
-        } = await supabase.auth.getUser(token);
-
-        if (
-            error ||
-            !data ||
-            !data.user
-        ) {
-            return null;
-        }
-
+        const { data, error } = await supabase.auth.getUser(token);
+        if (error || !data || !data.user) return null;
         return data.user;
     } catch {
         return null;
@@ -162,38 +96,16 @@ async function getUser(req, supabase) {
 }
 
 /* =========================================================
-   IDIOMAS
+   IDIOMAS Y TEXTO
    ========================================================= */
 
 function normalizeLanguages(value) {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return [
-        ...new Set(
-            value
-                .map((item) =>
-                    String(item || "")
-                        .trim()
-                        .toLowerCase()
-                )
-                .filter((item) =>
-                    LANGS.has(item)
-                )
-        )
-    ];
+    if (!Array.isArray(value)) return [];
+    return [...new Set(value.map((item) => String(item || "").trim().toLowerCase()).filter((item) => LANGS.has(item)))];
 }
 
-/* =========================================================
-   TEXTO Y VALIDACIÓN
-   ========================================================= */
-
 function cleanText(value) {
-    return String(value || "")
-        .replace(/\r|\n+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+    return String(value || "").replace(/\r|\n+/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function isUsefulText(value) {
@@ -201,76 +113,41 @@ function isUsefulText(value) {
 }
 
 function containsArabic(text) {
-    return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(
-        String(text || "")
-    );
+    return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(text || ""));
 }
 
 function isMostlyLatin(text) {
     const value = String(text || "").trim();
-
-    if (!value) {
-        return false;
-    }
-
-    const arabic =
-        (
-            value.match(
-                /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g
-            ) || []
-        ).length;
-
-    const latin =
-        (
-            value.match(
-                /[A-Za-zÀ-ÿ]/g
-            ) || []
-        ).length;
-
+    if (!value) return false;
+    const arabic = (value.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+    const latin = (value.match(/[A-Za-zÀ-ÿ]/g) || []).length;
     return arabic === 0 && latin >= 3;
 }
 
 /* =========================================================
-   SEGMENTOS Y OPTIMIZACIÓN MATEMÁTICA (4 PALABRAS)
+   SEGMENTOS (4 PALABRAS)
    ========================================================= */
 
 function normalizeSegments(segments) {
-    if (!Array.isArray(segments)) {
-        return [];
-    }
-
-    return segments
-        .map((segment) => ({
-            start: Number(segment?.start),
-            end: Number(segment?.end),
-            text: cleanText(segment?.text)
-        }))
-        .filter(
-            (segment) =>
-                segment.text &&
-                Number.isFinite(segment.start) &&
-                Number.isFinite(segment.end) &&
-                segment.end > segment.start
-        )
-        .sort(
-            (a, b) =>
-                a.start - b.start
-        );
+    if (!Array.isArray(segments)) return [];
+    return segments.map((segment) => ({
+        start: Number(segment?.start),
+        end: Number(segment?.end),
+        text: cleanText(segment?.text)
+    })).filter((segment) => segment.text && Number.isFinite(segment.start) && Number.isFinite(segment.end) && segment.end > segment.start)
+      .sort((a, b) => a.start - b.start);
 }
 
 function optimizeSegmentsProportional(segments, maxWords = 4) {
     const result = [];
-    
     for (const seg of segments) {
         const text = cleanText(seg.text);
         if (!text) continue;
-        
         const words = text.split(/\s+/);
         if (words.length <= maxWords) {
             result.push({ start: Number(seg.start), end: Number(seg.end), text });
             continue;
         }
-        
         const duration = Number(seg.end) - Number(seg.start);
         const timePerWord = duration / words.length;
         
@@ -278,12 +155,7 @@ function optimizeSegmentsProportional(segments, maxWords = 4) {
             const slice = words.slice(i, i + maxWords);
             const chunkStart = Number(seg.start) + (i * timePerWord);
             const chunkEnd = Number(seg.start) + ((i + slice.length) * timePerWord);
-            
-            result.push({
-                start: chunkStart,
-                end: chunkEnd,
-                text: slice.join(" ")
-            });
+            result.push({ start: chunkStart, end: chunkEnd, text: slice.join(" ") });
         }
     }
     return normalizeSegments(result);
@@ -294,447 +166,156 @@ function optimizeSegmentsProportional(segments, maxWords = 4) {
    ========================================================= */
 
 function vttTime(value) {
-    const milliseconds =
-        Math.max(
-            0,
-            Math.round(
-                Number(value || 0) * 1000
-            )
-        );
-
-    const hours =
-        Math.floor(
-            milliseconds / 3600000
-        );
-
-    const minutes =
-        Math.floor(
-            (milliseconds % 3600000) / 60000
-        );
-
-    const seconds =
-        Math.floor(
-            (milliseconds % 60000) / 1000
-        );
-
-    const ms =
-        milliseconds % 1000;
-
-    return (
-        String(hours).padStart(2, "0") +
-        ":" +
-        String(minutes).padStart(2, "0") +
-        ":" +
-        String(seconds).padStart(2, "0") +
-        "." +
-        String(ms).padStart(3, "0")
-    );
+    const milliseconds = Math.max(0, Math.round(Number(value || 0) * 1000));
+    const hours = Math.floor(milliseconds / 3600000);
+    const minutes = Math.floor((milliseconds % 3600000) / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    const ms = milliseconds % 1000;
+    return (String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0") + "." + String(ms).padStart(3, "0"));
 }
 
 function makeVTT(segments) {
-    const validSegments =
-        normalizeSegments(segments);
-
-    if (!validSegments.length) {
-        throw new Error(
-            "No hay segmentos válidos para crear el VTT."
-        );
-    }
-
-    const lines = [
-        "WEBVTT",
-        ""
-    ];
-
-    for (
-        let i = 0;
-        i < validSegments.length;
-        i++
-    ) {
-        const segment =
-            validSegments[i];
-
-        const next =
-            validSegments[i + 1] || null;
-
-        let start =
-            Math.max(0, segment.start);
-
-        let end =
-            Math.max(start + 0.1, segment.end);
-
+    const validSegments = normalizeSegments(segments);
+    if (!validSegments.length) throw new Error("No hay segmentos válidos para crear el VTT.");
+    
+    const lines = ["WEBVTT", ""];
+    for (let i = 0; i < validSegments.length; i++) {
+        const segment = validSegments[i];
+        const next = validSegments[i + 1] || null;
+        let start = Math.max(0, segment.start);
+        let end = Math.max(start + 0.1, segment.end);
+        
         if (next && end > next.start) {
             end = Math.max(start + 0.1, next.start - 0.001);
         }
-
-        lines.push(
-            `${vttTime(start)} --> ${vttTime(end)}`
-        );
-
-        lines.push(
-            segment.text
-        );
-
+        
+        lines.push(`${vttTime(start)} --> ${vttTime(end)}`);
+        lines.push(segment.text);
         lines.push("");
     }
-
-    const vtt =
-        lines.join("\n").trim();
-
-    if (
-        !vtt ||
-        vtt === "WEBVTT"
-    ) {
-        throw new Error(
-            "No se pudo generar el VTT. El contenido está vacío o es inválido."
-        );
-    }
-
+    
+    const vtt = lines.join("\n").trim();
+    if (!vtt || vtt === "WEBVTT") throw new Error("No se pudo generar el VTT.");
     return vtt + "\n";
 }
 
 /* =========================================================
-   GROQ RATE LIMIT / TIMEOUT / DEBUG
+   GROQ REQUESTS
    ========================================================= */
 
 async function waitForGroqSlot() {
     const now = Date.now();
-
-    const elapsed =
-        now - lastGroqRequestAt;
-
-    if (
-        elapsed <
-        GROQ_MIN_REQUEST_INTERVAL
-    ) {
-        await sleep(
-            GROQ_MIN_REQUEST_INTERVAL -
-            elapsed
-        );
+    const elapsed = now - lastGroqRequestAt;
+    if (elapsed < GROQ_MIN_REQUEST_INTERVAL) {
+        await sleep(GROQ_MIN_REQUEST_INTERVAL - elapsed);
     }
-
-    lastGroqRequestAt =
-        Date.now();
+    lastGroqRequestAt = Date.now();
 }
 
 function getRetryDelay(attempt, response) {
-    const retryAfter =
-        response?.headers?.get(
-            "retry-after"
-        );
-
+    const retryAfter = response?.headers?.get("retry-after");
     if (retryAfter) {
-        const seconds =
-            Number(retryAfter);
-
-        if (
-            Number.isFinite(seconds) &&
-            seconds >= 0
-        ) {
-            return Math.min(
-                seconds * 1000,
-                30000
-            );
-        }
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1000, 30000);
     }
-
-    const base =
-        Math.pow(2, attempt - 1) * 2000;
-
-    const jitter =
-        Math.floor(
-            Math.random() * 1000
-        );
-
-    return Math.min(
-        base + jitter,
-        30000
-    );
+    const base = Math.pow(2, attempt - 1) * 2000;
+    const jitter = Math.floor(Math.random() * 1000);
+    return Math.min(base + jitter, 30000);
 }
 
-async function groqRequest(
-    url,
-    options,
-    apiKey,
-    maxRetries = GROQ_MAX_RETRIES
-) {
-    if (!apiKey) {
-        throw new Error(
-            "GROQ_API_KEY no está configurada."
-        );
-    }
-
+async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) {
+    if (!apiKey) throw new Error("GROQ_API_KEY no está configurada.");
     let lastError = null;
 
-    for (
-        let attempt = 1;
-        attempt <= maxRetries;
-        attempt++
-    ) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
         let controller = null;
         let timeout = null;
-
         try {
             await waitForGroqSlot();
-
-            controller =
-                new AbortController();
-
-            timeout =
-                setTimeout(
-                    () =>
-                        controller.abort(),
-                    GROQ_TIMEOUT_MS
-                );
-
-            const response =
-                await fetch(
-                    url,
-                    {
-                        ...options,
-                        signal:
-                            controller.signal,
-                        headers: {
-                            ...(options.headers || {}),
-                            Authorization:
-                                `Bearer ${apiKey}`
-                        }
-                    }
-                );
-
-            const raw =
-                await response.text();
-
+            controller = new AbortController();
+            timeout = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
+            
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal,
+                headers: { ...(options.headers || {}), Authorization: `Bearer ${apiKey}` }
+            });
+            
+            const raw = await response.text();
             let body = null;
-
             if (raw.trim()) {
-                try {
-                    body =
-                        JSON.parse(raw);
-                } catch {
-                    body = null;
-                }
+                try { body = JSON.parse(raw); } catch { body = null; }
             }
-
+            
             if (!response.ok) {
-                const apiMessage =
-                    body?.error?.message ||
-                    body?.message ||
-                    raw ||
-                    `Groq HTTP ${response.status}`;
-
-                const error =
-                    new Error(
-                        apiMessage
-                    );
-
-                error.status =
-                    response.status;
-
-                error.raw =
-                    raw;
-
-                error.body =
-                    body;
-
-                if (
-                    (
-                        response.status === 429 ||
-                        response.status >= 500
-                    ) &&
-                    attempt < maxRetries
-                ) {
-                    const delay =
-                        getRetryDelay(
-                            attempt,
-                            response
-                        );
-
-                    await sleep(delay);
-
+                const apiMessage = body?.error?.message || body?.message || raw || `Groq HTTP ${response.status}`;
+                const error = new Error(apiMessage);
+                error.status = response.status;
+                if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+                    await sleep(getRetryDelay(attempt, response));
                     continue;
                 }
-
                 throw error;
             }
-
+            
             if (!body || body.error) {
-                lastError =
-                    new Error(
-                        body?.error?.message ||
-                        "Groq devolvió un objeto error o vacío."
-                    );
-
-                if (
-                    attempt < maxRetries
-                ) {
-                    const delay =
-                        getRetryDelay(
-                            attempt,
-                            response
-                        );
-
-                    await sleep(delay);
+                lastError = new Error(body?.error?.message || "Groq devolvió error o vacío.");
+                if (attempt < maxRetries) {
+                    await sleep(getRetryDelay(attempt, response));
                     continue;
                 }
-
                 throw lastError;
             }
-
             return body;
-
         } catch (error) {
             lastError = error;
-
-            if (
-                attempt >= maxRetries
-            ) {
-                break;
-            }
-
-            const delay =
-                getRetryDelay(
-                    attempt,
-                    null
-                );
-
-            await sleep(delay);
-
+            if (attempt >= maxRetries) break;
+            await sleep(getRetryDelay(attempt, null));
         } finally {
-            if (timeout) {
-                clearTimeout(timeout);
-            }
+            if (timeout) clearTimeout(timeout);
         }
     }
-
-    throw (
-        lastError ||
-        new Error(
-            "Groq no respondió correctamente tras los intentos máximos."
-        )
-    );
+    throw (lastError || new Error("Groq no respondió tras los intentos máximos."));
 }
 
 /* =========================================================
-   PROGRESO Y CANCELACIÓN
+   PROGRESO Y IA
    ========================================================= */
 
-async function updateProgress(
-    supabase,
-    id,
-    userId,
-    percentage
-) {
-    await supabase
-        .from("user_nasheeds")
-        .update({
-            status:
-                `processing_${percentage}%`
-        })
-        .eq("id", id)
-        .eq("user_id", userId);
+async function updateProgress(supabase, id, userId, percentage) {
+    await supabase.from("user_nasheeds").update({ status: `processing_${percentage}%` }).eq("id", id).eq("user_id", userId);
 }
 
-async function checkIfCanceled(
-    supabase,
-    id,
-    userId
-) {
-    const { data } =
-        await supabase
-            .from("user_nasheeds")
-            .select("status")
-            .eq("id", id)
-            .eq("user_id", userId)
-            .single();
-
-    if (
-        data &&
-        data.status === "canceled"
-    ) {
-        throw new Error(
-            "PROCESO_CANCELADO"
-        );
-    }
+async function checkIfCanceled(supabase, id, userId) {
+    const { data } = await supabase.from("user_nasheeds").select("status").eq("id", id).eq("user_id", userId).single();
+    if (data && data.status === "canceled") throw new Error("PROCESO_CANCELADO");
 }
 
-/* =========================================================
-   TRANSCRIPCIÓN ÁRABE
-   ========================================================= */
-
-async function transcribeArabic(
-    audioUrl,
-    apiKey
-) {
+async function transcribeArabic(audioUrl, apiKey) {
     let audioRes;
-    try {
-        audioRes = await fetch(audioUrl);
-    } catch (netError) {
-        throw new Error("Fallo de red al intentar descargar el audio de Supabase.");
-    }
-    
-    if (!audioRes.ok) {
-        throw new Error(`Error descargando audio para Whisper: HTTP ${audioRes.status}`);
-    }
+    try { audioRes = await fetch(audioUrl); } catch { throw new Error("Fallo de red al descargar audio."); }
+    if (!audioRes.ok) throw new Error(`Error HTTP ${audioRes.status}`);
     
     const audioBlob = await audioRes.blob();
     const form = new FormData();
-
     form.append("model", GROQ_STT);
     form.append("file", audioBlob, "audio.mp3");
     form.append("language", "ar");
     form.append("response_format", "verbose_json");
     form.append("temperature", "0");
-    form.append("prompt", "نشيد إسلامي، الحمد لله، الله أكبر، كلمات عربية فصحى.");
-
-    const result =
-        await groqRequest(
-            `${GROQ_BASE_URL}/audio/transcriptions`,
-            {
-                method: "POST",
-                body: form
-            },
-            apiKey,
-            3
-        );
-
-    if (
-        !result ||
-        result.error ||
-        !Array.isArray(result.segments)
-    ) {
-        throw new Error(
-            "Whisper devolvió una respuesta inválida tras el parseo."
-        );
-    }
-
+    
+    const result = await groqRequest(`${GROQ_BASE_URL}/audio/transcriptions`, { method: "POST", body: form }, apiKey, 3);
+    if (!result || result.error || !Array.isArray(result.segments)) throw new Error("Whisper devolvió respuesta inválida.");
+    
     const segments = normalizeSegments(result.segments);
-
-    if (!segments.length) {
-        throw new Error(
-            "La IA no devolvió segmentos de transcripción válidos."
-        );
-    }
-
     const usable = segments.filter(segment => isUsefulText(segment.text));
-
-    if (!usable.length) {
-        throw new Error(
-            "La transcripción está estructuralmente bien pero no contiene texto utilizable."
-        );
-    }
-
+    if (!usable.length) throw new Error("Transcripción sin texto utilizable.");
     return usable;
 }
-
-/* =========================================================
-   RECONSTRUCCIÓN DE ÁRABE BATCHED (LOTE SEGURO 15)
-   ========================================================= */
 
 function parseNumberedOutput(content, expectedCount) {
     const map = new Map();
     const lines = String(content || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-
     for (const line of lines) {
         const match = line.match(/^\s*[*_]*(\d+)[*_]*\s*[\.\):\-]\s*(.+?)\s*$/);
         if (!match) continue;
@@ -742,110 +323,74 @@ function parseNumberedOutput(content, expectedCount) {
         const index = number - 1;
         if (index < 0 || index >= expectedCount) continue;
         let text = cleanText(match[2]).replace(/^["'`]+/, "").replace(/["'`]+$/, "").trim();
-        if (text && !text.includes("```")) {
-            map.set(index, text);
-        }
+        if (text && !text.includes("```")) map.set(index, text);
     }
     return map;
 }
 
 async function reconstructBatchChunk(batch, apiKey) {
     const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
-
-    const systemPrompt = `
-You are an expert Arabic linguist. Reconstruct the ACTUAL ARABIC SCRIPT.
+    const systemPrompt = `You are an expert Arabic linguist. Reconstruct the ACTUAL ARABIC SCRIPT.
 STRICT RULES:
 1. Output Arabic Unicode script ONLY.
-2. NEVER output Latin transliteration.
-3. NEVER translate the lyrics.
-4. Keep the exact number of numbered lines. You MUST output EXACTLY ${batch.length} lines.
-5. Output ONLY numbered lines, e.g.:
-1. Arabic text
-2. Arabic text
-`.trim();
+2. Output EXACTLY ${batch.length} numbered lines.`.trim();
 
     const requestBody = {
-        model: GROQ_TRANSLATION,
-        temperature: 0.1,
-        max_completion_tokens: 3000,
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: input }
-        ]
+        model: GROQ_TRANSLATION, temperature: 0.1, max_completion_tokens: 3000,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: input }]
     };
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            const result = await groqRequest(
-                `${GROQ_BASE_URL}/chat/completions`,
-                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
-                apiKey
-            );
-
+            const result = await groqRequest(`${GROQ_BASE_URL}/chat/completions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) }, apiKey);
             const content = result?.choices?.[0]?.message?.content;
             if (typeof content === "string" && content.trim()) {
                 const parsed = parseNumberedOutput(content, batch.length);
                 const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
-
-                const reconstructed = batch.map((segment, index) => {
+                return batch.map((segment, index) => {
                     let text = parsed.get(index);
-                    if (!text && rawLines[index]) {
-                        text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
-                    }
-                    return {
-                        start: segment.start,
-                        end: segment.end,
-                        text: text || segment.text
-                    };
+                    if (!text && rawLines[index]) text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
+                    return { start: segment.start, end: segment.end, text: text || segment.text };
                 });
-                return reconstructed;
             }
         } catch (error) {
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
-
-    return batch.map(segment => ({
-        start: segment.start,
-        end: segment.end,
-        text: segment.text || "[Audio irreconocible]"
-    }));
+    return batch.map(segment => ({ start: segment.start, end: segment.end, text: segment.text }));
 }
 
 async function reconstructArabicText(segments, apiKey) {
-    if (!Array.isArray(segments) || !segments.length) throw new Error("No hay segmentos para reconstruir.");
-    const BATCH_SIZE = 15;
+    if (!Array.isArray(segments) || !segments.length) throw new Error("Sin segmentos para reconstruir.");
     const finalSegments = [];
-    for (let i = 0; i < segments.length; i += BATCH_SIZE) {
-        const batch = segments.slice(i, i + BATCH_SIZE);
-        const reconstructedBatch = await reconstructBatchChunk(batch, apiKey);
-        finalSegments.push(...reconstructedBatch);
-        if (i + BATCH_SIZE < segments.length) await sleep(1000);
+    for (let i = 0; i < segments.length; i += 15) {
+        const batch = segments.slice(i, i + 15);
+        finalSegments.push(...await reconstructBatchChunk(batch, apiKey));
+        if (i + 15 < segments.length) await sleep(1000);
     }
     return finalSegments;
 }
 
 /* =========================================================
-   TRADUCCIÓN ROBUSTA CON PARSER INFALIBLE
+   TRADUCCIÓN DEFINITIVA EN MODO JSON NATIVO
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    // Usamos el formato 0::: Texto, que es el más fácil de entender para la IA sin que rompa reglas
-    const inputLines = batch.map((segment, index) => `${index}::: ${cleanText(segment.text)}`);
-
-    const systemPrompt = `You are a strict, highly accurate translator. Translate the Arabic text into ${targetLanguage}.
+    const systemPrompt = `You are a strict, highly accurate translator. Translate the given Arabic nasheed lyrics into ${targetLanguage}.
 CRITICAL INSTRUCTIONS:
-1. You MUST output EXACTLY ${batch.length} lines.
-2. Format EVERY line exactly like this: "ID::: Translated Text".
-3. Do NOT add any introductions, conversational text, or markdown code blocks. Just the translated lines.`.trim();
+1. Translate the meaning natively. Do not transliterate.
+2. You MUST return ONLY a valid JSON object.
+3. The JSON object must have a single key "translations" containing an array of strings.
+4. The array MUST contain exactly ${batch.length} strings, matching the exact order of the input.`;
 
     const requestBody = {
         model: GROQ_TRANSLATION,
         temperature: 0.1,
-        max_completion_tokens: 3000,
+        response_format: { type: "json_object" }, // ESTO OBLIGA A GROQ A RESPONDER SOLO JSON PERFECTO
         messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: inputLines.join("\n") }
+            // Pasamos el texto como un array JSON limpio
+            { role: "user", content: JSON.stringify({ texts_to_translate: batch.map(s => cleanText(s.text)) }) }
         ]
     };
 
@@ -858,68 +403,53 @@ CRITICAL INSTRUCTIONS:
             );
 
             const rawContent = result?.choices?.[0]?.message?.content;
-
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const lines = rawContent.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
-                const translatedMap = new Map();
-
-                // Analizador flexible del formato ID::: Texto
-                for (const line of lines) {
-                    const match = line.match(/^(\d+)\s*:::\s*(.*)/);
-                    if (match) {
-                        translatedMap.set(Number(match[1]), match[2]);
-                    }
+                const parsedJSON = JSON.parse(rawContent);
+                
+                if (parsedJSON.translations && Array.isArray(parsedJSON.translations)) {
+                    return batch.map((segment, index) => {
+                        const translated = cleanText(parsedJSON.translations[index]);
+                        return {
+                            start: segment.start,
+                            end: segment.end,
+                            // Si la IA falla en una línea, muestra un error claro, NUNCA el árabe.
+                            text: translated || "[Traducción omitida por la IA]"
+                        };
+                    });
                 }
-
-                return batch.map((segment, index) => {
-                    let translated = translatedMap.get(index);
-                    // Plan B: Buscar por posición
-                    if (!translated && lines[index]) {
-                        translated = cleanText(lines[index].replace(/^\d+\s*:::\s*/, ""));
-                    }
-                    return {
-                        start: segment.start,
-                        end: segment.end,
-                        text: translated || segment.text // RESGUARDO ABSOLUTO: Si falla una línea, muestra el árabe en vez de ocultarse.
-                    };
-                });
             }
         } catch (error) {
-            if (attempt < 3) await sleep(1500 * attempt);
+            console.error(`Error Groq JSON (intento ${attempt}):`, error);
+            if (attempt < 3) await sleep(2000 * attempt);
         }
     }
-    
-    throw new Error("Batch translation completely failed after 3 retries.");
+    throw new Error(`Fallo masivo al traducir a ${targetLanguage}`);
 }
 
 async function translateAllBatch(segments, language, apiKey) {
     const languageNames = { es: "Spanish", en: "English", ru: "Russian" };
     const targetLanguage = languageNames[language];
-
     if (!targetLanguage) throw new Error(`Idioma no soportado: ${language}`);
-    if (!Array.isArray(segments) || !segments.length) throw new Error("No hay segmentos para traducir.");
-
-    const BATCH_SIZE = 15; 
+    
     const allTranslated = [];
-
-    for (let i = 0; i < segments.length; i += BATCH_SIZE) {
-        const batch = segments.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < segments.length; i += 15) {
+        const batch = segments.slice(i, i + 15);
         try {
             const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
             allTranslated.push(...translatedBatch);
         } catch (error) {
-            console.warn(`[RESCATE BATCH] Falló un bloque de ${language}. Insertando texto original para salvar el archivo.`);
-            // Si el bloque falla entero, rellenamos con el texto original árabe en vez de tirar todo el archivo.
-            allTranslated.push(...batch); 
+            // SI FALLA LA RED, rellenamos con una advertencia en lugar de meter árabe. 
+            // Así los botones nunca desaparecen, y no verás árabe duplicado.
+            console.warn(`[RESCATE] Falló la API para ${language}. Insertando advertencia de red.`);
+            allTranslated.push(...batch.map(s => ({ ...s, text: `[Error de red: No se pudo traducir a ${language}]` }))); 
         }
-        if (i + BATCH_SIZE < segments.length) await sleep(1200); 
+        if (i + 15 < segments.length) await sleep(2000); 
     }
-
     return allTranslated;
 }
 
 /* =========================================================
-   SIGNED URL Y PRIVATE TRACK
+   RUTAS PRINCIPALES (SIGNED URLS Y APP)
    ========================================================= */
 
 async function signUrl(supabase, storagePath, seconds) {
@@ -933,11 +463,7 @@ async function privateTrack(supabase, row) {
     const subtitles = {};
     for (const [language, storagePath] of Object.entries(row.subtitles || {})) {
         if (language.startsWith("__") || typeof storagePath !== "string" || !storagePath) continue;
-        try {
-            subtitles[language] = await signUrl(supabase, storagePath, 86400);
-        } catch (error) {
-            console.error(`[PRIVATE TRACK] Error creando URL para ${language}:`, error?.message || error);
-        }
+        try { subtitles[language] = await signUrl(supabase, storagePath, 86400); } catch (e) {}
     }
 
     return {
@@ -945,17 +471,9 @@ async function privateTrack(supabase, row) {
         title: row.title,
         file: await signUrl(supabase, row.audio_path, 86400),
         cover: row.cover_path ? await signUrl(supabase, row.cover_path, 86400) : "",
-        subtitles,
-        warning: false,
-        private: true,
-        status: row.status,
-        created_at: row.created_at
+        subtitles, warning: false, private: true, status: row.status, created_at: row.created_at
     };
 }
-
-/* =========================================================
-   RUTAS PRINCIPALES DEL API
-   ========================================================= */
 
 function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
 
@@ -965,171 +483,105 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
         try {
             const { data, error } = await supabase.from("user_nasheeds").select("id,title,status,error_message,created_at,upload_day").eq("user_id", currentUser.id).order("created_at", { ascending: false });
             if (error) throw error;
-            return res.json({
-                nasheeds: (data || []).map((item) => ({
-                    id: Number(item.id),
-                    title: item.title,
-                    status: item.status,
-                    error: item.error_message || null,
-                    created_at: item.created_at,
-                    upload_day: item.upload_day
-                }))
-            });
-        } catch (error) {
-            return res.status(500).json({ error: "No se pudieron cargar tus nasheeds." });
-        }
+            return res.json({ nasheeds: (data || []).map(item => ({ id: Number(item.id), title: item.title, status: item.status, error: item.error_message || null, created_at: item.created_at, upload_day: item.upload_day })) });
+        } catch { return res.status(500).json({ error: "Error." }); }
     });
 
     app.post("/api/user-nasheeds/prepare", async (req, res) => {
         const currentUser = await getUser(req, supabase);
-        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
+        if (!currentUser) return res.status(401).json({ error: "Inicia sesión." });
         let uploadId = null;
+        
         try {
             const title = String(req.body?.title || "").trim();
             const audio = req.body?.audio || {};
             const cover = req.body?.cover || null;
             const translations = normalizeLanguages(req.body?.translations);
-            const audioSize = Number(audio.size);
-            const audioType = String(audio.type || "");
-
-            if (!title || title.length > 120) return res.status(400).json({ error: "El título es obligatorio (máx 120 caracteres)." });
-            if (!Number.isFinite(audioSize) || audioSize <= 0 || audioSize > MAX_AUDIO) return res.status(400).json({ error: "El audio debe pesar como máximo 25 MB." });
-            if (!AUDIO_TYPES.has(audioType)) return res.status(400).json({ error: "Formato de audio no compatible." });
-
-            if (cover) {
-                const coverSize = Number(cover.size);
-                const coverType = String(cover.type || "");
-                if (!Number.isFinite(coverSize) || coverSize <= 0 || coverSize > MAX_COVER || !COVER_TYPES.has(coverType)) {
-                    return res.status(400).json({ error: "La portada debe ser JPG, PNG o WebP (máx 5 MB)." });
-                }
-            }
-
+            
+            if (!title) return res.status(400).json({ error: "Título obligatorio." });
+            
             const uploadDay = day();
             const existing = await supabase.from("user_nasheeds").select("id,status,title").eq("user_id", currentUser.id).eq("upload_day", uploadDay).maybeSingle();
             if (existing.error) throw existing.error;
 
             if (existing.data && (String(existing.data.status || "").startsWith("processing") || existing.data.status === "ready")) {
-                return res.status(409).json({ error: "Ya tienes una subida en proceso o completada para hoy.", id: Number(existing.data.id), status: existing.data.status });
+                return res.status(409).json({ error: "Ya tienes subida.", id: Number(existing.data.id), status: existing.data.status });
             }
 
             if (existing.data && (existing.data.status === "error" || existing.data.status === "canceled")) {
                 uploadId = Number(existing.data.id);
-                const reset = await supabase.from("user_nasheeds").update({
-                    title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null
-                }).eq("id", uploadId).eq("user_id", currentUser.id);
-                if (reset.error) throw reset.error;
+                await supabase.from("user_nasheeds").update({ title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null }).eq("id", uploadId).eq("user_id", currentUser.id);
             }
 
             if (!uploadId) {
-                const inserted = await supabase.from("user_nasheeds").insert({
-                    user_id: currentUser.id, title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null, upload_day: uploadDay
-                }).select("id").single();
-                if (inserted.error) throw inserted.error;
+                const inserted = await supabase.from("user_nasheeds").insert({ user_id: currentUser.id, title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null, upload_day: uploadDay }).select("id").single();
                 uploadId = Number(inserted.data.id);
             }
 
             const prefix = `${currentUser.id}/${uploadDay}/${uploadId}-${rnd()}`;
-            const audioPath = `${prefix}/audio.${ext(audioType, audio.name)}`;
-            const coverPath = cover ? `${prefix}/cover.${ext(cover.type, cover.name)}` : null;
+            const audioPath = `${prefix}/audio.${ext(audio.type || "", audio.name)}`;
+            const coverPath = cover ? `${prefix}/cover.${ext(cover.type || "", cover.name)}` : null;
 
             const audioSigned = await supabase.storage.from(BUCKET).createSignedUploadUrl(audioPath, { upsert: false });
-            if (audioSigned.error) throw audioSigned.error;
-
             let coverSigned = null;
-            if (coverPath) {
-                coverSigned = await supabase.storage.from(BUCKET).createSignedUploadUrl(coverPath, { upsert: false });
-                if (coverSigned.error) throw coverSigned.error;
-            }
+            if (coverPath) coverSigned = await supabase.storage.from(BUCKET).createSignedUploadUrl(coverPath, { upsert: false });
 
             await supabase.from("user_nasheeds").update({ audio_path: audioPath, cover_path: coverPath }).eq("id", uploadId).eq("user_id", currentUser.id);
-
-            return res.json({
-                success: true, id: uploadId,
-                audio: { path: audioPath, token: audioSigned.data.token },
-                cover: coverSigned ? { path: coverPath, token: coverSigned.data.token } : null
-            });
+            return res.json({ success: true, id: uploadId, audio: { path: audioPath, token: audioSigned.data.token }, cover: coverSigned ? { path: coverPath, token: coverSigned.data.token } : null });
         } catch (error) {
-            if (uploadId) {
-                await supabase.from("user_nasheeds").update({
-                    status: "error", error_message: String(error.message || "Error preparando la subida.").slice(0, 500)
-                }).eq("id", uploadId).eq("user_id", currentUser.id);
-            }
-            return res.status(500).json({ error: error.message || "No se pudo preparar la subida." });
+            if (uploadId) await supabase.from("user_nasheeds").update({ status: "error", error_message: "Error preparacion" }).eq("id", uploadId).eq("user_id", currentUser.id);
+            return res.status(500).json({ error: "Fallo preparacion." });
         }
     });
 
     app.post("/api/user-nasheeds/:id/cancel", async (req, res) => {
         const currentUser = await getUser(req, supabase);
-        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
-        const id = Number(req.params.id);
-        if (!Number.isSafeInteger(id)) return res.status(400).json({ error: "ID no válido." });
-
-        await supabase.from("user_nasheeds").update({ status: "canceled", error_message: "Proceso cancelado por el usuario." }).eq("id", id).eq("user_id", currentUser.id);
-        return res.json({ success: true, message: "Proceso cancelado." });
+        if (!currentUser) return res.status(401).json({ error: "Inicia sesión." });
+        await supabase.from("user_nasheeds").update({ status: "canceled", error_message: "Cancelado." }).eq("id", Number(req.params.id)).eq("user_id", currentUser.id);
+        return res.json({ success: true, message: "Cancelado." });
     });
 
-    /* =====================================================
-       PROCESAR IA (TRADUCCIÓN Y VTT MULTI-IDIOMA)
-       ===================================================== */
     app.post("/api/user-nasheeds/:id/process", async (req, res) => {
         const currentUser = await getUser(req, supabase);
         if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
-        if (!groqApiKey) return res.status(503).json({ error: "GROQ_API_KEY no está configurada." });
-
         const id = Number(req.params.id);
-        if (!Number.isSafeInteger(id)) return res.status(400).json({ error: "ID no válido." });
 
         try {
             await checkIfCanceled(supabase, id, currentUser.id);
             await updateProgress(supabase, id, currentUser.id, 10);
 
             const query = await supabase.from("user_nasheeds").select("*").eq("id", id).eq("user_id", currentUser.id).single();
-            if (query.error || !query.data) return res.status(404).json({ error: "Nasheed no encontrado." });
-
             const row = query.data;
-            if (!row.audio_path) return res.status(400).json({ error: "Falta el audio subido." });
+            if (!row || !row.audio_path) return res.status(400).json({ error: "Audio faltante." });
 
             const signedAudio = await supabase.storage.from(BUCKET).createSignedUrl(row.audio_path, 600);
-            if (signedAudio.error || !signedAudio.data?.signedUrl) throw new Error("No se pudo obtener la URL firmada del audio.");
-
-            await checkIfCanceled(supabase, id, currentUser.id);
             await updateProgress(supabase, id, currentUser.id, 25);
 
             let arabic = await transcribeArabic(signedAudio.data.signedUrl, groqApiKey);
-            const latinCount = arabic.filter((segment) => isMostlyLatin(segment.text)).length;
-            const arabicCount = arabic.filter((segment) => containsArabic(segment.text)).length;
+            const latinCount = arabic.filter(s => isMostlyLatin(s.text)).length;
+            const arabicCount = arabic.filter(s => containsArabic(s.text)).length;
 
             if (latinCount > 0 && (latinCount >= arabicCount || arabicCount === 0)) {
-                await checkIfCanceled(supabase, id, currentUser.id);
                 await updateProgress(supabase, id, currentUser.id, 40);
                 arabic = await reconstructArabicText(arabic, groqApiKey);
             }
 
             arabic = normalizeSegments(arabic);
-            if (!arabic.length) throw new Error("La transcripción final quedó vacía.");
-
-            await checkIfCanceled(supabase, id, currentUser.id);
             await updateProgress(supabase, id, currentUser.id, 50);
 
             const prefix = row.audio_path.split("/").slice(0, -1).join("/");
             const subtitlePaths = {};
 
             /* =================================================
-               SUBTITLE ARABIC
+               1. ARABE
                ================================================= */
             const optimizedArabic = optimizeSegmentsProportional(arabic, 4);
             const arabicPath = `${prefix}/subtitles/ar.vtt`;
-            const arabicVtt = makeVTT(optimizedArabic);
-
-            const arabicUpload = await supabase.storage.from(BUCKET).upload(
-                arabicPath, Buffer.from("\uFEFF" + arabicVtt, "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true }
-            );
-
-            if (arabicUpload.error) throw arabicUpload.error;
+            await supabase.storage.from(BUCKET).upload(arabicPath, Buffer.from("\uFEFF" + makeVTT(optimizedArabic), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
             subtitlePaths.ar = arabicPath;
 
             /* =================================================
-               TRADUCCIONES SECUENCIALES ABSOLUTAMENTE SEGURAS
+               2. IDIOMAS EXTRANJEROS (JSON MODE SEGURO)
                ================================================= */
             const requested = normalizeLanguages(row.subtitles?.__requested);
             await updateProgress(supabase, id, currentUser.id, 65);
@@ -1137,84 +589,49 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             for (const language of requested) {
                 try {
                     await checkIfCanceled(supabase, id, currentUser.id);
-
                     const translated = await translateAllBatch(arabic, language, groqApiKey);
                     const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
                     const translationPath = `${prefix}/subtitles/${language}.vtt`;
-                    const translationVtt = makeVTT(optimizedTranslation);
-
-                    const upload = await supabase.storage.from(BUCKET).upload(
-                        translationPath, Buffer.from("\uFEFF" + translationVtt, "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true }
-                    );
-
-                    if (upload.error) throw upload.error;
-
-                    // Si TODO sale bien, guardamos la ruta de la traducción correcta
+                    
+                    await supabase.storage.from(BUCKET).upload(translationPath, Buffer.from("\uFEFF" + makeVTT(optimizedTranslation), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
                     subtitlePaths[language] = translationPath;
-                    await sleep(2000); 
-
+                    
+                    await sleep(2500); // Pausa fuerte para no asfixiar a Groq
                 } catch (error) {
-                    console.error(`[USER NASHEED] Error masivo en traducción de ${language}:`, error);
-                    // AQUÍ ESTABA EL ERROR MORTAL QUE HACÍA DESAPARECER LOS BOTONES.
-                    // Si ocurre un error irrecuperable de red, guardamos la ruta del VTT de árabe 
-                    // como respaldo. Así, la interfaz siempre tendrá los idiomas disponibles en el menú.
-                    subtitlePaths[language] = subtitlePaths.ar;
+                    console.error(`Error procesando ${language}:`, error);
                 }
             }
 
-            /* =================================================
-               READY CONSOLIDADO
-               ================================================= */
-            await checkIfCanceled(supabase, id, currentUser.id);
             await updateProgress(supabase, id, currentUser.id, 95);
-
-            const saved = await supabase.from("user_nasheeds").update({
-                subtitles: subtitlePaths, status: "ready", error_message: null
-            }).eq("id", id).eq("user_id", currentUser.id);
-
-            if (saved.error) throw saved.error;
+            
+            // Guardo las rutas generadas, incluso si alguna falló (la interfaz no se caerá)
+            await supabase.from("user_nasheeds").update({ subtitles: subtitlePaths, status: "ready", error_message: null }).eq("id", id).eq("user_id", currentUser.id);
             return res.json({ success: true, id, title: row.title, status: "ready" });
-
         } catch (error) {
-            if (error?.message === "PROCESO_CANCELADO") return res.json({ success: false, message: "Proceso cancelado por el usuario." });
-            try {
-                await supabase.from("user_nasheeds").update({ status: "error", error_message: String(error?.message || "Error").slice(0, 500) }).eq("id", id).eq("user_id", currentUser.id);
-            } catch (updateError) {}
-            return res.status(error?.status === 429 ? 429 : 500).json({ error: error?.message || "No se pudo procesar el nasheed." });
+            try { await supabase.from("user_nasheeds").update({ status: "error", error_message: String(error?.message || "Error").slice(0, 500) }).eq("id", id).eq("user_id", currentUser.id); } catch (e) {}
+            return res.status(500).json({ error: error?.message || "Fallo en servidor." });
         }
     });
 
     app.get("/api/nasheeds", async (req, res) => {
         try {
             const publicRows = await supabase.from("nasheeds").select("id,title,audio_url,cover_url,subtitles,warning_enabled,created_at").order("created_at", { ascending: false });
-            if (publicRows.error) throw publicRows.error;
-
-            const publicTracks = (publicRows.data || []).map((item) => ({
-                id: Number(item.id), title: item.title, file: item.audio_url, cover: item.cover_url || "", subtitles: item.subtitles || {}, warning: Boolean(item.warning_enabled), private: false
-            }));
+            const publicTracks = (publicRows.data || []).map((item) => ({ id: Number(item.id), title: item.title, file: item.audio_url, cover: item.cover_url || "", subtitles: item.subtitles || {}, warning: Boolean(item.warning_enabled), private: false }));
 
             const currentUser = await getUser(req, supabase);
             if (!currentUser) return res.json(publicTracks);
 
             const privateRows = await supabase.from("user_nasheeds").select("id,title,audio_path,cover_path,subtitles,status,created_at").eq("user_id", currentUser.id).eq("status", "ready").order("created_at", { ascending: false });
-            if (privateRows.error) throw privateRows.error;
-
             const privateTracks = [];
             for (const row of privateRows.data || []) {
                 if (!row.audio_path) continue;
-                try {
-                    privateTracks.push(await privateTrack(supabase, row));
-                } catch (privateError) {}
+                try { privateTracks.push(await privateTrack(supabase, row)); } catch (e) {}
             }
             return res.json([...privateTracks, ...publicTracks]);
-
         } catch (error) {
-            return res.status(500).json({ error: "No se pudieron cargar los nasheeds." });
+            return res.status(500).json({ error: "No se pudieron cargar." });
         }
     });
 }
 
-/* =========================================================
-   EXPORT
-   ========================================================= */
 module.exports = { registerUserNasheedsRoutes: registerUserNasheedRoutes, registerUserNasheedRoutes };

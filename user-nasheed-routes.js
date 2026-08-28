@@ -728,107 +728,38 @@ async function transcribeArabic(
 }
 
 /* =========================================================
-   PARSER DE RESPUESTAS NUMERADAS
-   ========================================================= */
-
-function parseNumberedOutput(
-    content,
-    expectedCount
-) {
-    const map =
-        new Map();
-
-    const lines =
-        String(content || "")
-            .split(/\r?\n/)
-            .map(
-                (line) =>
-                    line.trim()
-            )
-            .filter(Boolean);
-
-    for (
-        const line of lines
-    ) {
-        const match =
-            line.match(
-                /^\s*[*_]*(\d+)[*_]*\s*[\.\):\-]\s*(.+?)\s*$/
-            );
-
-        if (!match) {
-            continue;
-        }
-
-        const number =
-            Number(
-                match[1]
-            );
-
-        const index =
-            number - 1;
-
-        if (
-            index < 0 ||
-            index >= expectedCount
-        ) {
-            continue;
-        }
-
-        let text =
-            cleanText(
-                match[2]
-            );
-
-        text =
-            text
-                .replace(
-                    /^["'`]+/,
-                    ""
-                )
-                .replace(
-                    /["'`]+$/,
-                    ""
-                )
-                .trim();
-
-        if (
-            text &&
-            !text.includes("```")
-        ) {
-            map.set(
-                index,
-                text
-            );
-        }
-    }
-
-    return map;
-}
-
-/* =========================================================
    RECONSTRUCCIÓN DE ÁRABE BATCHED (LOTE SEGURO 15)
    ========================================================= */
 
+function parseNumberedOutput(content, expectedCount) {
+    const map = new Map();
+    const lines = String(content || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+
+    for (const line of lines) {
+        const match = line.match(/^\s*[*_]*(\d+)[*_]*\s*[\.\):\-]\s*(.+?)\s*$/);
+        if (!match) continue;
+        const number = Number(match[1]);
+        const index = number - 1;
+        if (index < 0 || index >= expectedCount) continue;
+        let text = cleanText(match[2]).replace(/^["'`]+/, "").replace(/["'`]+$/, "").trim();
+        if (text && !text.includes("```")) {
+            map.set(index, text);
+        }
+    }
+    return map;
+}
+
 async function reconstructBatchChunk(batch, apiKey) {
-    const input =
-        batch
-            .map(
-                (segment, index) =>
-                    `${index + 1}. ${cleanText(segment.text)}`
-            )
-            .join("\n");
+    const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
 
     const systemPrompt = `
-You are an expert Arabic linguist.
-Reconstruct the ACTUAL ARABIC SCRIPT.
-
+You are an expert Arabic linguist. Reconstruct the ACTUAL ARABIC SCRIPT.
 STRICT RULES:
 1. Output Arabic Unicode script ONLY.
 2. NEVER output Latin transliteration.
 3. NEVER translate the lyrics.
 4. Keep the exact number of numbered lines. You MUST output EXACTLY ${batch.length} lines.
-5. Each line must contain ONLY the reconstructed Arabic text.
-6. Output ONLY numbered lines, e.g.:
+5. Output ONLY numbered lines, e.g.:
 1. Arabic text
 2. Arabic text
 `.trim();
@@ -847,16 +778,11 @@ STRICT RULES:
         try {
             const result = await groqRequest(
                 `${GROQ_BASE_URL}/chat/completions`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(requestBody)
-                },
+                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
                 apiKey
             );
 
             const content = result?.choices?.[0]?.message?.content;
-
             if (typeof content === "string" && content.trim()) {
                 const parsed = parseNumberedOutput(content, batch.length);
                 const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
@@ -872,12 +798,7 @@ STRICT RULES:
                         text: text || segment.text
                     };
                 });
-
-                const arabicSegments = reconstructed.filter(seg => containsArabic(seg.text)).length;
-
-                if (arabicSegments >= Math.max(1, Math.floor(batch.length * 0.5))) {
-                    return reconstructed;
-                }
+                return reconstructed;
             }
         } catch (error) {
             if (attempt < 3) await sleep(1500 * attempt);
@@ -892,43 +813,31 @@ STRICT RULES:
 }
 
 async function reconstructArabicText(segments, apiKey) {
-    if (!Array.isArray(segments) || !segments.length) {
-        throw new Error("No hay segmentos para reconstruir.");
-    }
-
+    if (!Array.isArray(segments) || !segments.length) throw new Error("No hay segmentos para reconstruir.");
     const BATCH_SIZE = 15;
     const finalSegments = [];
-
     for (let i = 0; i < segments.length; i += BATCH_SIZE) {
         const batch = segments.slice(i, i + BATCH_SIZE);
         const reconstructedBatch = await reconstructBatchChunk(batch, apiKey);
         finalSegments.push(...reconstructedBatch);
         if (i + BATCH_SIZE < segments.length) await sleep(1000);
     }
-
     return finalSegments;
 }
 
 /* =========================================================
-   TRADUCCIÓN ROBUSTA CON BATCHING SEGURO Y PARSER TOLERANTE
+   TRADUCCIÓN ROBUSTA CON PARSER INFALIBLE
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    const inputLines = batch.map(
-        (segment, index) => `[ID:${index}] ${cleanText(segment.text)}`
-    );
+    // Usamos el formato 0::: Texto, que es el más fácil de entender para la IA sin que rompa reglas
+    const inputLines = batch.map((segment, index) => `${index}::: ${cleanText(segment.text)}`);
 
-    const systemPrompt = `
-You are a professional translator.
-Translate the Arabic lyrics directly into ${targetLanguage}.
-
-STRICT RULES:
-1. Translate the MEANING natively.
-2. Do NOT transliterate Arabic.
-3. Keep the exact structure matching the input count. You MUST output EXACTLY ${batch.length} lines.
-4. Start EVERY single line with its original [ID:X] tag.
-5. Output ONLY the translated lines with their tags.
-`.trim();
+    const systemPrompt = `You are a strict, highly accurate translator. Translate the Arabic text into ${targetLanguage}.
+CRITICAL INSTRUCTIONS:
+1. You MUST output EXACTLY ${batch.length} lines.
+2. Format EVERY line exactly like this: "ID::: Translated Text".
+3. Do NOT add any introductions, conversational text, or markdown code blocks. Just the translated lines.`.trim();
 
     const requestBody = {
         model: GROQ_TRANSLATION,
@@ -944,48 +853,34 @@ STRICT RULES:
         try {
             const result = await groqRequest(
                 `${GROQ_BASE_URL}/chat/completions`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(requestBody)
-                },
+                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
                 apiKey
             );
 
             const rawContent = result?.choices?.[0]?.message?.content;
 
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const lines = rawContent
-                    .split(/\r?\n/)
-                    .map(l => cleanText(l))
-                    .filter(Boolean);
-
-                // MAPA FLEXIBLE: Lee [ID:0], [ID: 0], ID:0, etc. sin importar variaciones de la IA
+                const lines = rawContent.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
                 const translatedMap = new Map();
+
+                // Analizador flexible del formato ID::: Texto
                 for (const line of lines) {
-                    const tagMatch = line.match(/\[?ID\s*:\s*(\d+)\]?\s*(.*)/i);
-                    if (tagMatch) {
-                        const id = Number(tagMatch[1]);
-                        const text = cleanText(tagMatch[2]);
-                        if (text) {
-                            translatedMap.set(id, text);
-                        }
+                    const match = line.match(/^(\d+)\s*:::\s*(.*)/);
+                    if (match) {
+                        translatedMap.set(Number(match[1]), match[2]);
                     }
                 }
 
                 return batch.map((segment, index) => {
                     let translated = translatedMap.get(index);
-
-                    // Plan B por posición de línea si la IA falló por completo con el ID
+                    // Plan B: Buscar por posición
                     if (!translated && lines[index]) {
-                        translated = cleanText(lines[index].replace(/\[?ID\s*:\s*\d+\]?/gi, ""));
+                        translated = cleanText(lines[index].replace(/^\d+\s*:::\s*/, ""));
                     }
-
                     return {
                         start: segment.start,
                         end: segment.end,
-                        // Si todo falla, devuelve el texto original en lugar de "Traducción no disponible"
-                        text: translated || segment.text 
+                        text: translated || segment.text // RESGUARDO ABSOLUTO: Si falla una línea, muestra el árabe en vez de ocultarse.
                     };
                 });
             }
@@ -993,133 +888,68 @@ STRICT RULES:
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
+    
+    throw new Error("Batch translation completely failed after 3 retries.");
+}
 
-    return batch.map(segment => ({
-        start: segment.start,
-        end: segment.end,
-        text: segment.text
-    }));
+async function translateAllBatch(segments, language, apiKey) {
+    const languageNames = { es: "Spanish", en: "English", ru: "Russian" };
+    const targetLanguage = languageNames[language];
+
+    if (!targetLanguage) throw new Error(`Idioma no soportado: ${language}`);
+    if (!Array.isArray(segments) || !segments.length) throw new Error("No hay segmentos para traducir.");
+
+    const BATCH_SIZE = 15; 
+    const allTranslated = [];
+
+    for (let i = 0; i < segments.length; i += BATCH_SIZE) {
+        const batch = segments.slice(i, i + BATCH_SIZE);
+        try {
+            const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
+            allTranslated.push(...translatedBatch);
+        } catch (error) {
+            console.warn(`[RESCATE BATCH] Falló un bloque de ${language}. Insertando texto original para salvar el archivo.`);
+            // Si el bloque falla entero, rellenamos con el texto original árabe en vez de tirar todo el archivo.
+            allTranslated.push(...batch); 
+        }
+        if (i + BATCH_SIZE < segments.length) await sleep(1200); 
+    }
+
+    return allTranslated;
 }
 
 /* =========================================================
-   SIGNED URL
+   SIGNED URL Y PRIVATE TRACK
    ========================================================= */
 
-async function signUrl(
-    supabase,
-    storagePath,
-    seconds
-) {
-    const {
-        data,
-        error
-    } =
-        await supabase.storage
-            .from(BUCKET)
-            .createSignedUrl(
-                storagePath,
-                seconds
-            );
-
-    if (error) {
-        throw error;
-    }
-
-    if (
-        !data ||
-        !data.signedUrl
-    ) {
-        throw new Error(
-            "Supabase no devolvió una URL firmada."
-        );
-    }
-
+async function signUrl(supabase, storagePath, seconds) {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, seconds);
+    if (error) throw error;
+    if (!data || !data.signedUrl) throw new Error("Supabase no devolvió una URL firmada.");
     return data.signedUrl;
 }
 
-/* =========================================================
-   PRIVATE TRACK MAPPER
-   ========================================================= */
-
-async function privateTrack(
-    supabase,
-    row
-) {
+async function privateTrack(supabase, row) {
     const subtitles = {};
-
-    for (
-        const [
-            language,
-            storagePath
-        ] of Object.entries(
-            row.subtitles || {}
-        )
-    ) {
-        if (
-            language.startsWith("__")
-        ) {
-            continue;
-        }
-
-        if (
-            typeof storagePath !==
-                "string" ||
-            !storagePath
-        ) {
-            continue;
-        }
-
+    for (const [language, storagePath] of Object.entries(row.subtitles || {})) {
+        if (language.startsWith("__") || typeof storagePath !== "string" || !storagePath) continue;
         try {
-            subtitles[language] =
-                await signUrl(
-                    supabase,
-                    storagePath,
-                    86400
-                );
+            subtitles[language] = await signUrl(supabase, storagePath, 86400);
         } catch (error) {
-            console.error(
-                `[PRIVATE TRACK] Error creando URL para ${language}:`,
-                error?.message || error
-            );
+            console.error(`[PRIVATE TRACK] Error creando URL para ${language}:`, error?.message || error);
         }
     }
 
     return {
-        id:
-            Number(row.id),
-
-        title:
-            row.title,
-
-        file:
-            await signUrl(
-                supabase,
-                row.audio_path,
-                86400
-            ),
-
-        cover:
-            row.cover_path
-                ? await signUrl(
-                    supabase,
-                    row.cover_path,
-                    86400
-                )
-                : "",
-
+        id: Number(row.id),
+        title: row.title,
+        file: await signUrl(supabase, row.audio_path, 86400),
+        cover: row.cover_path ? await signUrl(supabase, row.cover_path, 86400) : "",
         subtitles,
-
-        warning:
-            false,
-
-        private:
-            true,
-
-        status:
-            row.status,
-
-        created_at:
-            row.created_at
+        warning: false,
+        private: true,
+        status: row.status,
+        created_at: row.created_at
     };
 }
 
@@ -1127,1172 +957,264 @@ async function privateTrack(
    RUTAS PRINCIPALES DEL API
    ========================================================= */
 
-function registerUserNasheedRoutes({
-    app,
-    supabase,
-    groqApiKey
-}) {
+function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
 
-    app.get(
-        "/api/user-nasheeds",
-        async (
-            req,
-            res
-        ) => {
-            const currentUser =
-                await getUser(
-                    req,
-                    supabase
-                );
-
-            if (!currentUser) {
-                return res
-                    .status(401)
-                    .json({
-                        error:
-                            "Debes iniciar sesión."
-                    });
-            }
-
-            try {
-                const {
-                    data,
-                    error
-                } =
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .select(
-                            "id,title,status,error_message,created_at,upload_day"
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-                        .order(
-                            "created_at",
-                            {
-                                ascending:
-                                    false
-                            }
-                        );
-
-                if (error) {
-                    throw error;
-                }
-
-                return res.json({
-                    nasheeds:
-                        (
-                            data ||
-                            []
-                        ).map(
-                            (item) => ({
-                                id:
-                                    Number(
-                                        item.id
-                                    ),
-                                title:
-                                    item.title,
-                                status:
-                                    item.status,
-                                error:
-                                    item.error_message ||
-                                    null,
-                                created_at:
-                                    item.created_at,
-                                upload_day:
-                                    item.upload_day
-                            })
-                        )
-                });
-
-            } catch (error) {
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            "No se pudieron cargar tus nasheeds."
-                    });
-            }
+    app.get("/api/user-nasheeds", async (req, res) => {
+        const currentUser = await getUser(req, supabase);
+        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
+        try {
+            const { data, error } = await supabase.from("user_nasheeds").select("id,title,status,error_message,created_at,upload_day").eq("user_id", currentUser.id).order("created_at", { ascending: false });
+            if (error) throw error;
+            return res.json({
+                nasheeds: (data || []).map((item) => ({
+                    id: Number(item.id),
+                    title: item.title,
+                    status: item.status,
+                    error: item.error_message || null,
+                    created_at: item.created_at,
+                    upload_day: item.upload_day
+                }))
+            });
+        } catch (error) {
+            return res.status(500).json({ error: "No se pudieron cargar tus nasheeds." });
         }
-    );
+    });
 
-    app.post(
-        "/api/user-nasheeds/prepare",
-        async (
-            req,
-            res
-        ) => {
-            const currentUser =
-                await getUser(
-                    req,
-                    supabase
-                );
+    app.post("/api/user-nasheeds/prepare", async (req, res) => {
+        const currentUser = await getUser(req, supabase);
+        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
+        let uploadId = null;
+        try {
+            const title = String(req.body?.title || "").trim();
+            const audio = req.body?.audio || {};
+            const cover = req.body?.cover || null;
+            const translations = normalizeLanguages(req.body?.translations);
+            const audioSize = Number(audio.size);
+            const audioType = String(audio.type || "");
 
-            if (!currentUser) {
-                return res
-                    .status(401)
-                    .json({
-                        error:
-                            "Debes iniciar sesión."
-                    });
+            if (!title || title.length > 120) return res.status(400).json({ error: "El título es obligatorio (máx 120 caracteres)." });
+            if (!Number.isFinite(audioSize) || audioSize <= 0 || audioSize > MAX_AUDIO) return res.status(400).json({ error: "El audio debe pesar como máximo 25 MB." });
+            if (!AUDIO_TYPES.has(audioType)) return res.status(400).json({ error: "Formato de audio no compatible." });
+
+            if (cover) {
+                const coverSize = Number(cover.size);
+                const coverType = String(cover.type || "");
+                if (!Number.isFinite(coverSize) || coverSize <= 0 || coverSize > MAX_COVER || !COVER_TYPES.has(coverType)) {
+                    return res.status(400).json({ error: "La portada debe ser JPG, PNG o WebP (máx 5 MB)." });
+                }
             }
 
-            let uploadId =
-                null;
+            const uploadDay = day();
+            const existing = await supabase.from("user_nasheeds").select("id,status,title").eq("user_id", currentUser.id).eq("upload_day", uploadDay).maybeSingle();
+            if (existing.error) throw existing.error;
 
-            try {
-                const title =
-                    String(
-                        req.body?.title ||
-                        ""
-                    ).trim();
-
-                const audio =
-                    req.body?.audio ||
-                    {};
-
-                const cover =
-                    req.body?.cover ||
-                    null;
-
-                const translations =
-                    normalizeLanguages(
-                        req.body?.translations
-                    );
-
-                const audioSize =
-                    Number(
-                        audio.size
-                    );
-
-                const audioType =
-                    String(
-                        audio.type ||
-                        ""
-                    );
-
-                if (
-                    !title ||
-                    title.length > 120
-                ) {
-                    return res
-                        .status(400)
-                        .json({
-                            error:
-                                "El título es obligatorio (máx 120 caracteres)."
-                        });
-                }
-
-                if (
-                    !Number.isFinite(
-                        audioSize
-                    ) ||
-                    audioSize <= 0 ||
-                    audioSize >
-                        MAX_AUDIO
-                ) {
-                    return res
-                        .status(400)
-                        .json({
-                            error:
-                                "El audio debe pesar como máximo 25 MB."
-                        });
-                }
-
-                if (
-                    !AUDIO_TYPES.has(
-                        audioType
-                    )
-                ) {
-                    return res
-                        .status(400)
-                        .json({
-                            error:
-                                "Formato de audio no compatible."
-                        });
-                }
-
-                if (cover) {
-                    const coverSize =
-                        Number(
-                            cover.size
-                        );
-
-                    const coverType =
-                        String(
-                            cover.type ||
-                            ""
-                        );
-
-                    if (
-                        !Number.isFinite(
-                            coverSize
-                        ) ||
-                        coverSize <= 0 ||
-                        coverSize >
-                            MAX_COVER ||
-                        !COVER_TYPES.has(
-                            coverType
-                        )
-                    ) {
-                        return res
-                            .status(400)
-                            .json({
-                                error:
-                                    "La portada debe ser JPG, PNG o WebP (máx 5 MB)."
-                            });
-                    }
-                }
-
-                const uploadDay =
-                    day();
-
-                const existing =
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .select(
-                            "id,status,title"
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-                        .eq(
-                            "upload_day",
-                            uploadDay
-                        )
-                        .maybeSingle();
-
-                if (
-                    existing.error
-                ) {
-                    throw existing.error;
-                }
-
-                if (
-                    existing.data &&
-                    (
-                        String(
-                            existing.data.status ||
-                            ""
-                        ).startsWith(
-                            "processing"
-                        ) ||
-                        existing.data.status ===
-                            "ready"
-                    )
-                ) {
-                    return res
-                        .status(409)
-                        .json({
-                            error:
-                                "Ya tienes una subida en proceso o completada para hoy.",
-                            id:
-                                Number(
-                                    existing.data.id
-                                ),
-                            status:
-                                existing.data.status
-                        });
-                }
-
-                if (
-                    existing.data &&
-                    (
-                        existing.data.status ===
-                            "error" ||
-                        existing.data.status ===
-                            "canceled"
-                    )
-                ) {
-                    uploadId =
-                        Number(
-                            existing.data.id
-                        );
-
-                    const reset =
-                        await supabase
-                            .from(
-                                "user_nasheeds"
-                            )
-                            .update({
-                                title,
-                                audio_path:
-                                    "",
-                                cover_path:
-                                    null,
-                                subtitles: {
-                                    __requested:
-                                        translations
-                                },
-                                status:
-                                    "processing_0%",
-                                error_message:
-                                    null
-                            })
-                            .eq(
-                                "id",
-                                uploadId
-                            )
-                            .eq(
-                                "user_id",
-                                currentUser.id
-                            );
-
-                    if (
-                        reset.error
-                    ) {
-                        throw reset.error;
-                    }
-                }
-
-                if (!uploadId) {
-                    const inserted =
-                        await supabase
-                            .from(
-                                "user_nasheeds"
-                            )
-                            .insert({
-                                user_id:
-                                    currentUser.id,
-                                title,
-                                audio_path:
-                                    "",
-                                cover_path:
-                                    null,
-                                subtitles: {
-                                    __requested:
-                                        translations
-                                },
-                                status:
-                                    "processing_0%",
-                                error_message:
-                                    null,
-                                upload_day:
-                                    uploadDay
-                            })
-                            .select(
-                                "id"
-                            )
-                            .single();
-
-                    if (
-                        inserted.error
-                    ) {
-                        throw inserted.error;
-                    }
-
-                    uploadId =
-                        Number(
-                            inserted.data.id
-                        );
-                }
-
-                const prefix =
-                    `${currentUser.id}/${uploadDay}/${uploadId}-${rnd()}`;
-
-                const audioPath =
-                    `${prefix}/audio.${ext(
-                        audioType,
-                        audio.name
-                    )}`;
-
-                const coverPath =
-                    cover
-                        ? `${prefix}/cover.${ext(
-                            cover.type,
-                            cover.name
-                        )}`
-                        : null;
-
-                const audioSigned =
-                    await supabase
-                        .storage
-                        .from(
-                            BUCKET
-                        )
-                        .createSignedUploadUrl(
-                            audioPath,
-                            {
-                                upsert:
-                                    false
-                            }
-                        );
-
-                if (
-                    audioSigned.error
-                ) {
-                    throw audioSigned.error;
-                }
-
-                let coverSigned =
-                    null;
-
-                if (coverPath) {
-                    coverSigned =
-                        await supabase
-                            .storage
-                            .from(
-                                BUCKET
-                            )
-                            .createSignedUploadUrl(
-                                coverPath,
-                                {
-                                    upsert:
-                                        false
-                                }
-                            );
-
-                    if (
-                        coverSigned.error
-                    ) {
-                        throw coverSigned.error;
-                    }
-                }
-
-                await supabase
-                    .from(
-                        "user_nasheeds"
-                    )
-                    .update({
-                        audio_path:
-                            audioPath,
-                        cover_path:
-                            coverPath
-                    })
-                    .eq(
-                        "id",
-                        uploadId
-                    )
-                    .eq(
-                        "user_id",
-                        currentUser.id
-                    );
-
-                return res.json({
-                    success:
-                        true,
-
-                    id:
-                        uploadId,
-
-                    audio: {
-                        path:
-                            audioPath,
-                        token:
-                            audioSigned
-                                .data
-                                .token
-                    },
-
-                    cover:
-                        coverSigned
-                            ? {
-                                path:
-                                    coverPath,
-                                token:
-                                    coverSigned
-                                        .data
-                                        .token
-                            }
-                            : null
-                });
-
-            } catch (
-                error
-            ) {
-                if (uploadId) {
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .update({
-                            status:
-                                "error",
-                            error_message:
-                                String(
-                                    error.message ||
-                                    "Error preparando la subida."
-                                ).slice(
-                                    0,
-                                    500
-                                )
-                        })
-                        .eq(
-                            "id",
-                            uploadId
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        );
-                }
-
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            error.message ||
-                            "No se pudo preparar la subida."
-                    });
-            }
-        }
-    );
-
-    app.post(
-        "/api/user-nasheeds/:id/cancel",
-        async (
-            req,
-            res
-        ) => {
-            const currentUser =
-                await getUser(
-                    req,
-                    supabase
-                );
-
-            if (!currentUser) {
-                return res
-                    .status(401)
-                    .json({
-                        error:
-                            "Debes iniciar sesión."
-                    });
+            if (existing.data && (String(existing.data.status || "").startsWith("processing") || existing.data.status === "ready")) {
+                return res.status(409).json({ error: "Ya tienes una subida en proceso o completada para hoy.", id: Number(existing.data.id), status: existing.data.status });
             }
 
-            const id =
-                Number(
-                    req.params.id
-                );
-
-            if (
-                !Number.isSafeInteger(
-                    id
-                )
-            ) {
-                return res
-                    .status(400)
-                    .json({
-                        error:
-                            "ID no válido."
-                    });
+            if (existing.data && (existing.data.status === "error" || existing.data.status === "canceled")) {
+                uploadId = Number(existing.data.id);
+                const reset = await supabase.from("user_nasheeds").update({
+                    title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null
+                }).eq("id", uploadId).eq("user_id", currentUser.id);
+                if (reset.error) throw reset.error;
             }
 
-            await supabase
-                .from(
-                    "user_nasheeds"
-                )
-                .update({
-                    status:
-                        "canceled",
-                    error_message:
-                        "Proceso cancelado por el usuario."
-                })
-                .eq(
-                    "id",
-                    id
-                )
-                .eq(
-                    "user_id",
-                    currentUser.id
-                );
+            if (!uploadId) {
+                const inserted = await supabase.from("user_nasheeds").insert({
+                    user_id: currentUser.id, title, audio_path: "", cover_path: null, subtitles: { __requested: translations }, status: "processing_0%", error_message: null, upload_day: uploadDay
+                }).select("id").single();
+                if (inserted.error) throw inserted.error;
+                uploadId = Number(inserted.data.id);
+            }
+
+            const prefix = `${currentUser.id}/${uploadDay}/${uploadId}-${rnd()}`;
+            const audioPath = `${prefix}/audio.${ext(audioType, audio.name)}`;
+            const coverPath = cover ? `${prefix}/cover.${ext(cover.type, cover.name)}` : null;
+
+            const audioSigned = await supabase.storage.from(BUCKET).createSignedUploadUrl(audioPath, { upsert: false });
+            if (audioSigned.error) throw audioSigned.error;
+
+            let coverSigned = null;
+            if (coverPath) {
+                coverSigned = await supabase.storage.from(BUCKET).createSignedUploadUrl(coverPath, { upsert: false });
+                if (coverSigned.error) throw coverSigned.error;
+            }
+
+            await supabase.from("user_nasheeds").update({ audio_path: audioPath, cover_path: coverPath }).eq("id", uploadId).eq("user_id", currentUser.id);
 
             return res.json({
-                success:
-                    true,
-                message:
-                    "Proceso cancelado."
+                success: true, id: uploadId,
+                audio: { path: audioPath, token: audioSigned.data.token },
+                cover: coverSigned ? { path: coverPath, token: coverSigned.data.token } : null
             });
+        } catch (error) {
+            if (uploadId) {
+                await supabase.from("user_nasheeds").update({
+                    status: "error", error_message: String(error.message || "Error preparando la subida.").slice(0, 500)
+                }).eq("id", uploadId).eq("user_id", currentUser.id);
+            }
+            return res.status(500).json({ error: error.message || "No se pudo preparar la subida." });
         }
-    );
+    });
+
+    app.post("/api/user-nasheeds/:id/cancel", async (req, res) => {
+        const currentUser = await getUser(req, supabase);
+        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
+        const id = Number(req.params.id);
+        if (!Number.isSafeInteger(id)) return res.status(400).json({ error: "ID no válido." });
+
+        await supabase.from("user_nasheeds").update({ status: "canceled", error_message: "Proceso cancelado por el usuario." }).eq("id", id).eq("user_id", currentUser.id);
+        return res.json({ success: true, message: "Proceso cancelado." });
+    });
 
     /* =====================================================
        PROCESAR IA (TRADUCCIÓN Y VTT MULTI-IDIOMA)
        ===================================================== */
+    app.post("/api/user-nasheeds/:id/process", async (req, res) => {
+        const currentUser = await getUser(req, supabase);
+        if (!currentUser) return res.status(401).json({ error: "Debes iniciar sesión." });
+        if (!groqApiKey) return res.status(503).json({ error: "GROQ_API_KEY no está configurada." });
 
-    app.post(
-        "/api/user-nasheeds/:id/process",
-        async (
-            req,
-            res
-        ) => {
-            const currentUser =
-                await getUser(
-                    req,
-                    supabase
-                );
+        const id = Number(req.params.id);
+        if (!Number.isSafeInteger(id)) return res.status(400).json({ error: "ID no válido." });
 
-            if (!currentUser) {
-                return res
-                    .status(401)
-                    .json({
-                        error:
-                            "Debes iniciar sesión."
-                    });
+        try {
+            await checkIfCanceled(supabase, id, currentUser.id);
+            await updateProgress(supabase, id, currentUser.id, 10);
+
+            const query = await supabase.from("user_nasheeds").select("*").eq("id", id).eq("user_id", currentUser.id).single();
+            if (query.error || !query.data) return res.status(404).json({ error: "Nasheed no encontrado." });
+
+            const row = query.data;
+            if (!row.audio_path) return res.status(400).json({ error: "Falta el audio subido." });
+
+            const signedAudio = await supabase.storage.from(BUCKET).createSignedUrl(row.audio_path, 600);
+            if (signedAudio.error || !signedAudio.data?.signedUrl) throw new Error("No se pudo obtener la URL firmada del audio.");
+
+            await checkIfCanceled(supabase, id, currentUser.id);
+            await updateProgress(supabase, id, currentUser.id, 25);
+
+            let arabic = await transcribeArabic(signedAudio.data.signedUrl, groqApiKey);
+            const latinCount = arabic.filter((segment) => isMostlyLatin(segment.text)).length;
+            const arabicCount = arabic.filter((segment) => containsArabic(segment.text)).length;
+
+            if (latinCount > 0 && (latinCount >= arabicCount || arabicCount === 0)) {
+                await checkIfCanceled(supabase, id, currentUser.id);
+                await updateProgress(supabase, id, currentUser.id, 40);
+                arabic = await reconstructArabicText(arabic, groqApiKey);
             }
 
-            if (!groqApiKey) {
-                return res
-                    .status(503)
-                    .json({
-                        error:
-                            "GROQ_API_KEY no está configurada."
-                    });
-            }
+            arabic = normalizeSegments(arabic);
+            if (!arabic.length) throw new Error("La transcripción final quedó vacía.");
 
-            const id =
-                Number(
-                    req.params.id
-                );
+            await checkIfCanceled(supabase, id, currentUser.id);
+            await updateProgress(supabase, id, currentUser.id, 50);
 
-            if (
-                !Number.isSafeInteger(
-                    id
-                )
-            ) {
-                return res
-                    .status(400)
-                    .json({
-                        error:
-                            "ID no válido."
-                    });
-            }
+            const prefix = row.audio_path.split("/").slice(0, -1).join("/");
+            const subtitlePaths = {};
 
-            try {
-                await checkIfCanceled(
-                    supabase,
-                    id,
-                    currentUser.id
-                );
+            /* =================================================
+               SUBTITLE ARABIC
+               ================================================= */
+            const optimizedArabic = optimizeSegmentsProportional(arabic, 4);
+            const arabicPath = `${prefix}/subtitles/ar.vtt`;
+            const arabicVtt = makeVTT(optimizedArabic);
 
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    10
-                );
+            const arabicUpload = await supabase.storage.from(BUCKET).upload(
+                arabicPath, Buffer.from("\uFEFF" + arabicVtt, "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true }
+            );
 
-                const query =
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .select("*")
-                        .eq(
-                            "id",
-                            id
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-                        .single();
+            if (arabicUpload.error) throw arabicUpload.error;
+            subtitlePaths.ar = arabicPath;
 
-                if (
-                    query.error ||
-                    !query.data
-                ) {
-                    return res
-                        .status(404)
-                        .json({
-                            error:
-                                "Nasheed no encontrado."
-                        });
-                }
+            /* =================================================
+               TRADUCCIONES SECUENCIALES ABSOLUTAMENTE SEGURAS
+               ================================================= */
+            const requested = normalizeLanguages(row.subtitles?.__requested);
+            await updateProgress(supabase, id, currentUser.id, 65);
 
-                const row =
-                    query.data;
-
-                if (
-                    !row.audio_path
-                ) {
-                    return res
-                        .status(400)
-                        .json({
-                            error:
-                                "Falta el audio subido."
-                        });
-                }
-
-                const signedAudio =
-                    await supabase
-                        .storage
-                        .from(
-                            BUCKET
-                        )
-                        .createSignedUrl(
-                            row.audio_path,
-                            600
-                        );
-
-                if (
-                    signedAudio.error ||
-                    !signedAudio.data?.signedUrl
-                ) {
-                    throw new Error(
-                        "No se pudo obtener la URL firmada del audio."
-                    );
-                }
-
-                await checkIfCanceled(
-                    supabase,
-                    id,
-                    currentUser.id
-                );
-
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    25
-                );
-
-                let arabic =
-                    await transcribeArabic(
-                        signedAudio.data.signedUrl,
-                        groqApiKey
-                    );
-
-                const latinCount =
-                    arabic.filter(
-                        (segment) =>
-                            isMostlyLatin(
-                                segment.text
-                            )
-                    ).length;
-
-                const arabicCount =
-                    arabic.filter(
-                        (segment) =>
-                            containsArabic(
-                                segment.text
-                            )
-                    ).length;
-
-                if (
-                    latinCount > 0 &&
-                    (
-                        latinCount >=
-                            arabicCount ||
-                        arabicCount === 0
-                    )
-                ) {
-                    await checkIfCanceled(
-                        supabase,
-                        id,
-                        currentUser.id
-                    );
-
-                    await updateProgress(
-                        supabase,
-                        id,
-                        currentUser.id,
-                        40
-                    );
-
-                    arabic =
-                        await reconstructArabicText(
-                            arabic,
-                            groqApiKey
-                        );
-                }
-
-                arabic =
-                    normalizeSegments(
-                        arabic
-                    );
-
-                if (
-                    !arabic.length
-                ) {
-                    throw new Error(
-                        "La transcripción final quedó vacía."
-                    );
-                }
-
-                await checkIfCanceled(
-                    supabase,
-                    id,
-                    currentUser.id
-                );
-
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    50
-                );
-
-                const prefix =
-                    row.audio_path
-                        .split("/")
-                        .slice(
-                            0,
-                            -1
-                        )
-                        .join("/");
-
-                const subtitlePaths =
-                    {};
-
-                /* =================================================
-                   SUBTITLE ARABIC (KARAOKE 4 PALABRAS)
-                   ================================================= */
-
-                const optimizedArabic = optimizeSegmentsProportional(arabic, 4);
-                const arabicPath = `${prefix}/subtitles/ar.vtt`;
-                const arabicVtt = makeVTT(optimizedArabic);
-
-                const arabicUpload =
-                    await supabase
-                        .storage
-                        .from(
-                            BUCKET
-                        )
-                        .upload(
-                            arabicPath,
-                            Buffer.from(
-                                "\uFEFF" +
-                                arabicVtt,
-                                "utf8"
-                            ),
-                            {
-                                contentType:
-                                    "text/vtt; charset=utf-8",
-                                upsert:
-                                    true
-                            }
-                        );
-
-                if (
-                    arabicUpload.error
-                ) {
-                    throw arabicUpload.error;
-                }
-
-                subtitlePaths.ar =
-                    arabicPath;
-
-                /* =================================================
-                   TRADUCCIONES SECUENCIALES SEGUROS (ES, EN, RU)
-                   ================================================= */
-
-                const requested =
-                    normalizeLanguages(
-                        row.subtitles
-                            ?.__requested
-                    );
-
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    65
-                );
-
-                // Ejecutado 1 por 1 para evitar los errores 429 de Rate Limit
-                for (const language of requested) {
-                    try {
-                        await checkIfCanceled(
-                            supabase,
-                            id,
-                            currentUser.id
-                        );
-
-                        const translated = await translateAllBatch(arabic, language, groqApiKey);
-                        const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
-
-                        const translationPath = `${prefix}/subtitles/${language}.vtt`;
-                        const translationVtt = makeVTT(optimizedTranslation);
-
-                        const upload = await supabase
-                            .storage
-                            .from(BUCKET)
-                            .upload(
-                                translationPath,
-                                Buffer.from("\uFEFF" + translationVtt, "utf8"),
-                                { contentType: "text/vtt; charset=utf-8", upsert: true }
-                            );
-
-                        if (upload.error) {
-                            throw upload.error;
-                        }
-
-                        // Asignamos la ruta al JSON que va a Supabase de forma segura
-                        subtitlePaths[language] = translationPath;
-                        
-                        // Pausa de 2 segundos de respiro para Groq
-                        await sleep(2000); 
-
-                    } catch (error) {
-                        console.error(`[USER NASHEED] Error traduciendo idioma ${language}:`, error);
-                    }
-                }
-
-                /* =================================================
-                   READY CONSOLIDADO
-                   ================================================= */
-
-                await checkIfCanceled(
-                    supabase,
-                    id,
-                    currentUser.id
-                );
-
-                await updateProgress(
-                    supabase,
-                    id,
-                    currentUser.id,
-                    95
-                );
-
-                const saved =
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .update({
-                            subtitles:
-                                subtitlePaths,
-                            status:
-                                "ready",
-                            error_message:
-                                null
-                        })
-                        .eq(
-                            "id",
-                            id
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        );
-
-                if (
-                    saved.error
-                ) {
-                    throw saved.error;
-                }
-
-                return res.json({
-                    success:
-                        true,
-                    id,
-                    title:
-                        row.title,
-                    status:
-                        "ready"
-                });
-
-            } catch (
-                error
-            ) {
-                if (
-                    error?.message ===
-                    "PROCESO_CANCELADO"
-                ) {
-                    return res.json({
-                        success:
-                            false,
-                        message:
-                            "Proceso cancelado por el usuario."
-                    });
-                }
-
+            for (const language of requested) {
                 try {
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .update({
-                            status:
-                                "error",
-                            error_message:
-                                String(
-                                    error?.message ||
-                                    "Error"
-                                ).slice(
-                                    0,
-                                    500
-                                )
-                        })
-                        .eq(
-                            "id",
-                            id
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        );
-                } catch (updateError) {}
+                    await checkIfCanceled(supabase, id, currentUser.id);
 
-                return res
-                    .status(
-                        error?.status ===
-                            429
-                            ? 429
-                            : 500
-                    )
-                    .json({
-                        error:
-                            error?.message ||
-                            "No se pudo procesar el nasheed."
-                    });
+                    const translated = await translateAllBatch(arabic, language, groqApiKey);
+                    const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
+                    const translationPath = `${prefix}/subtitles/${language}.vtt`;
+                    const translationVtt = makeVTT(optimizedTranslation);
+
+                    const upload = await supabase.storage.from(BUCKET).upload(
+                        translationPath, Buffer.from("\uFEFF" + translationVtt, "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true }
+                    );
+
+                    if (upload.error) throw upload.error;
+
+                    // Si TODO sale bien, guardamos la ruta de la traducción correcta
+                    subtitlePaths[language] = translationPath;
+                    await sleep(2000); 
+
+                } catch (error) {
+                    console.error(`[USER NASHEED] Error masivo en traducción de ${language}:`, error);
+                    // AQUÍ ESTABA EL ERROR MORTAL QUE HACÍA DESAPARECER LOS BOTONES.
+                    // Si ocurre un error irrecuperable de red, guardamos la ruta del VTT de árabe 
+                    // como respaldo. Así, la interfaz siempre tendrá los idiomas disponibles en el menú.
+                    subtitlePaths[language] = subtitlePaths.ar;
+                }
             }
-        }
-    );
 
-    app.get(
-        "/api/nasheeds",
-        async (
-            req,
-            res
-        ) => {
+            /* =================================================
+               READY CONSOLIDADO
+               ================================================= */
+            await checkIfCanceled(supabase, id, currentUser.id);
+            await updateProgress(supabase, id, currentUser.id, 95);
+
+            const saved = await supabase.from("user_nasheeds").update({
+                subtitles: subtitlePaths, status: "ready", error_message: null
+            }).eq("id", id).eq("user_id", currentUser.id);
+
+            if (saved.error) throw saved.error;
+            return res.json({ success: true, id, title: row.title, status: "ready" });
+
+        } catch (error) {
+            if (error?.message === "PROCESO_CANCELADO") return res.json({ success: false, message: "Proceso cancelado por el usuario." });
             try {
-                const publicRows =
-                    await supabase
-                        .from(
-                            "nasheeds"
-                        )
-                        .select(
-                            "id,title,audio_url,cover_url,subtitles,warning_enabled,created_at"
-                        )
-                        .order(
-                            "created_at",
-                            {
-                                ascending:
-                                    false
-                            }
-                        );
-
-                if (
-                    publicRows.error
-                ) {
-                    throw publicRows.error;
-                }
-
-                const publicTracks =
-                    (
-                        publicRows.data ||
-                        []
-                    ).map(
-                        (item) => ({
-                            id:
-                                Number(
-                                    item.id
-                                ),
-                            title:
-                                item.title,
-                            file:
-                                item.audio_url,
-                            cover:
-                                item.cover_url ||
-                                "",
-                            subtitles:
-                                item.subtitles ||
-                                {},
-                            warning:
-                                Boolean(
-                                    item.warning_enabled
-                                ),
-                            private:
-                                false
-                        })
-                    );
-
-                const currentUser =
-                    await getUser(
-                        req,
-                        supabase
-                    );
-
-                if (!currentUser) {
-                    return res.json(
-                        publicTracks
-                    );
-                }
-
-                const privateRows =
-                    await supabase
-                        .from(
-                            "user_nasheeds"
-                        )
-                        .select(
-                            "id,title,audio_path,cover_path,subtitles,status,created_at"
-                        )
-                        .eq(
-                            "user_id",
-                            currentUser.id
-                        )
-                        .eq(
-                            "status",
-                            "ready"
-                        )
-                        .order(
-                            "created_at",
-                            {
-                                ascending:
-                                    false
-                            }
-                        );
-
-                if (
-                    privateRows.error
-                ) {
-                    throw privateRows.error;
-                }
-
-                const privateTracks =
-                    [];
-
-                for (
-                    const row of
-                    privateRows.data ||
-                    []
-                ) {
-                    if (
-                        !row.audio_path
-                    ) {
-                        continue;
-                    }
-
-                    try {
-                        privateTracks.push(
-                            await privateTrack(
-                                supabase,
-                                row
-                            )
-                        );
-                    } catch (privateError) {}
-                }
-
-                return res.json([
-                    ...privateTracks,
-                    ...publicTracks
-                ]);
-
-            } catch (error) {
-                return res
-                    .status(500)
-                    .json({
-                        error:
-                            "No se pudieron cargar los nasheeds."
-                    });
-            }
+                await supabase.from("user_nasheeds").update({ status: "error", error_message: String(error?.message || "Error").slice(0, 500) }).eq("id", id).eq("user_id", currentUser.id);
+            } catch (updateError) {}
+            return res.status(error?.status === 429 ? 429 : 500).json({ error: error?.message || "No se pudo procesar el nasheed." });
         }
-    );
+    });
+
+    app.get("/api/nasheeds", async (req, res) => {
+        try {
+            const publicRows = await supabase.from("nasheeds").select("id,title,audio_url,cover_url,subtitles,warning_enabled,created_at").order("created_at", { ascending: false });
+            if (publicRows.error) throw publicRows.error;
+
+            const publicTracks = (publicRows.data || []).map((item) => ({
+                id: Number(item.id), title: item.title, file: item.audio_url, cover: item.cover_url || "", subtitles: item.subtitles || {}, warning: Boolean(item.warning_enabled), private: false
+            }));
+
+            const currentUser = await getUser(req, supabase);
+            if (!currentUser) return res.json(publicTracks);
+
+            const privateRows = await supabase.from("user_nasheeds").select("id,title,audio_path,cover_path,subtitles,status,created_at").eq("user_id", currentUser.id).eq("status", "ready").order("created_at", { ascending: false });
+            if (privateRows.error) throw privateRows.error;
+
+            const privateTracks = [];
+            for (const row of privateRows.data || []) {
+                if (!row.audio_path) continue;
+                try {
+                    privateTracks.push(await privateTrack(supabase, row));
+                } catch (privateError) {}
+            }
+            return res.json([...privateTracks, ...publicTracks]);
+
+        } catch (error) {
+            return res.status(500).json({ error: "No se pudieron cargar los nasheeds." });
+        }
+    });
 }
 
 /* =========================================================
    EXPORT
    ========================================================= */
-
-module.exports = {
-    registerUserNasheedsRoutes: registerUserNasheedRoutes,
-    registerUserNasheedRoutes
-};
+module.exports = { registerUserNasheedsRoutes: registerUserNasheedRoutes, registerUserNasheedRoutes };

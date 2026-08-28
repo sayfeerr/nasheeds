@@ -7,36 +7,17 @@ const crypto = require("crypto");
    ========================================================= */
 
 const BUCKET = "UserNasheeds";
-
 const MAX_AUDIO = 25 * 1024 * 1024;
 const MAX_COVER = 5 * 1024 * 1024;
 
 const AUDIO_TYPES = new Set([
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/mp4",
-    "audio/x-m4a",
-    "audio/m4a",
-    "audio/ogg",
-    "audio/wav",
-    "audio/x-wav",
-    "audio/webm",
-    "audio/flac",
-    "video/mp4",
-    "video/webm"
+    "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a",
+    "audio/m4a", "audio/ogg", "audio/wav", "audio/x-wav",
+    "audio/webm", "audio/flac", "video/mp4", "video/webm"
 ]);
 
-const COVER_TYPES = new Set([
-    "image/jpeg",
-    "image/png",
-    "image/webp"
-]);
-
-const LANGS = new Set([
-    "es",
-    "en",
-    "ru"
-]);
+const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const LANGS = new Set(["es", "en", "ru"]);
 
 const GROQ_STT = "whisper-large-v3-turbo";
 const GROQ_TRANSLATION = "llama-3.1-8b-instant";
@@ -44,7 +25,7 @@ const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 const GROQ_MAX_RETRIES = 3;
 const GROQ_TIMEOUT_MS = 60000;
-const GROQ_MIN_REQUEST_INTERVAL = 1500; // Subido para dar respiro a Groq
+const GROQ_MIN_REQUEST_INTERVAL = 400;
 
 let lastGroqRequestAt = 0;
 
@@ -212,17 +193,6 @@ async function waitForGroqSlot() {
     lastGroqRequestAt = Date.now();
 }
 
-function getRetryDelay(attempt, response) {
-    const retryAfter = response?.headers?.get("retry-after");
-    if (retryAfter) {
-        const seconds = Number(retryAfter);
-        if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1000, 30000);
-    }
-    const base = Math.pow(2, attempt - 1) * 2000;
-    const jitter = Math.floor(Math.random() * 1000);
-    return Math.min(base + jitter, 30000);
-}
-
 async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) {
     if (!apiKey) throw new Error("GROQ_API_KEY no está configurada.");
     let lastError = null;
@@ -252,7 +222,7 @@ async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) 
                 const error = new Error(apiMessage);
                 error.status = response.status;
                 if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-                    await sleep(getRetryDelay(attempt, response));
+                    await sleep(2000 * attempt);
                     continue;
                 }
                 throw error;
@@ -261,7 +231,7 @@ async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) 
             if (!body || body.error) {
                 lastError = new Error(body?.error?.message || "Groq devolvió error o vacío.");
                 if (attempt < maxRetries) {
-                    await sleep(getRetryDelay(attempt, response));
+                    await sleep(2000 * attempt);
                     continue;
                 }
                 throw lastError;
@@ -270,7 +240,7 @@ async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) 
         } catch (error) {
             lastError = error;
             if (attempt >= maxRetries) break;
-            await sleep(getRetryDelay(attempt, null));
+            await sleep(2000 * attempt);
         } finally {
             if (timeout) clearTimeout(timeout);
         }
@@ -363,34 +333,34 @@ STRICT RULES:
 async function reconstructArabicText(segments, apiKey) {
     if (!Array.isArray(segments) || !segments.length) throw new Error("Sin segmentos para reconstruir.");
     const finalSegments = [];
-    for (let i = 0; i < segments.length; i += 15) {
-        const batch = segments.slice(i, i + 15);
+    for (let i = 0; i < segments.length; i += 50) {
+        const batch = segments.slice(i, i + 50);
         finalSegments.push(...await reconstructBatchChunk(batch, apiKey));
-        if (i + 15 < segments.length) await sleep(1000);
+        if (i + 50 < segments.length) await sleep(400);
     }
     return finalSegments;
 }
 
 /* =========================================================
-   TRADUCCIÓN DEFINITIVA EN MODO JSON NATIVO
+   TRADUCCIÓN PURA LÍNEA A LÍNEA (EVITA PROMPTS FILTRADOS)
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    const systemPrompt = `You are a strict, highly accurate translator. Translate the given Arabic nasheed lyrics into ${targetLanguage}.
-CRITICAL INSTRUCTIONS:
-1. Translate the meaning natively. Do not transliterate.
-2. You MUST return ONLY a valid JSON object.
-3. The JSON object must have a single key "translations" containing an array of strings.
-4. The array MUST contain exactly ${batch.length} strings, matching the exact order of the input.`;
+    const inputBlock = batch.map((s, i) => `[${i}] ${cleanText(s.text)}`).join("\n");
+    
+    const systemPrompt = `You are a professional translator. Translate the following Arabic subtitle lines into ${targetLanguage}.
+RULES:
+1. Translate each line accurately.
+2. Keep the exact same number of lines (${batch.length}).
+3. Start every line with its exact original bracketed index, e.g., "[0] translated text".
+4. Output ONLY the translated lines. No intro, no markdown blocks, no extra text.`;
 
     const requestBody = {
         model: GROQ_TRANSLATION,
         temperature: 0.1,
-        response_format: { type: "json_object" }, // ESTO OBLIGA A GROQ A RESPONDER SOLO JSON PERFECTO
         messages: [
             { role: "system", content: systemPrompt },
-            // Pasamos el texto como un array JSON limpio
-            { role: "user", content: JSON.stringify({ texts_to_translate: batch.map(s => cleanText(s.text)) }) }
+            { role: "user", content: inputBlock }
         ]
     };
 
@@ -404,26 +374,38 @@ CRITICAL INSTRUCTIONS:
 
             const rawContent = result?.choices?.[0]?.message?.content;
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const parsedJSON = JSON.parse(rawContent);
-                
-                if (parsedJSON.translations && Array.isArray(parsedJSON.translations)) {
-                    return batch.map((segment, index) => {
-                        const translated = cleanText(parsedJSON.translations[index]);
-                        return {
-                            start: segment.start,
-                            end: segment.end,
-                            // Si la IA falla en una línea, muestra un error claro, NUNCA el árabe.
-                            text: translated || "[Traducción omitida por la IA]"
-                        };
-                    });
+                const responseLines = rawContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                const translationMap = new Map();
+
+                for (const line of responseLines) {
+                    const match = line.match(/^\[(\d+)\]\s*(.*)/);
+                    if (match) {
+                        const idx = Number(match[1]);
+                        const text = cleanText(match[2]);
+                        if (text) translationMap.set(idx, text);
+                    }
                 }
+
+                return batch.map((segment, index) => {
+                    let translated = translationMap.get(index);
+                    // Plan B por posición si omitió corchetes
+                    if (!translated && responseLines[index]) {
+                        translated = cleanText(responseLines[index].replace(/^\[?\d+\]?\s*/, ""));
+                    }
+                    return {
+                        start: segment.start,
+                        end: segment.end,
+                        text: translated && !translated.includes("You are a professional") ? translated : "[Traducción no disponible]"
+                    };
+                });
             }
         } catch (error) {
-            console.error(`Error Groq JSON (intento ${attempt}):`, error);
-            if (attempt < 3) await sleep(2000 * attempt);
+            console.error(`Error en bloque de traducción (intento ${attempt}):`, error);
+            if (attempt < 3) await sleep(1500 * attempt);
         }
     }
-    throw new Error(`Fallo masivo al traducir a ${targetLanguage}`);
+    
+    return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
 }
 
 async function translateAllBatch(segments, language, apiKey) {
@@ -432,24 +414,17 @@ async function translateAllBatch(segments, language, apiKey) {
     if (!targetLanguage) throw new Error(`Idioma no soportado: ${language}`);
     
     const allTranslated = [];
-    for (let i = 0; i < segments.length; i += 15) {
-        const batch = segments.slice(i, i + 15);
-        try {
-            const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
-            allTranslated.push(...translatedBatch);
-        } catch (error) {
-            // SI FALLA LA RED, rellenamos con una advertencia en lugar de meter árabe. 
-            // Así los botones nunca desaparecen, y no verás árabe duplicado.
-            console.warn(`[RESCATE] Falló la API para ${language}. Insertando advertencia de red.`);
-            allTranslated.push(...batch.map(s => ({ ...s, text: `[Error de red: No se pudo traducir a ${language}]` }))); 
-        }
-        if (i + 15 < segments.length) await sleep(2000); 
+    for (let i = 0; i < segments.length; i += 50) {
+        const batch = segments.slice(i, i + 50);
+        const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
+        allTranslated.push(...translatedBatch);
+        if (i + 50 < segments.length) await sleep(400); 
     }
     return allTranslated;
 }
 
 /* =========================================================
-   RUTAS PRINCIPALES (SIGNED URLS Y APP)
+   RUTAS PRINCIPALES
    ========================================================= */
 
 async function signUrl(supabase, storagePath, seconds) {
@@ -581,7 +556,7 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             subtitlePaths.ar = arabicPath;
 
             /* =================================================
-               2. IDIOMAS EXTRANJEROS (JSON MODE SEGURO)
+               2. IDIOMAS EXTRANJEROS
                ================================================= */
             const requested = normalizeLanguages(row.subtitles?.__requested);
             await updateProgress(supabase, id, currentUser.id, 65);
@@ -596,7 +571,7 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
                     await supabase.storage.from(BUCKET).upload(translationPath, Buffer.from("\uFEFF" + makeVTT(optimizedTranslation), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
                     subtitlePaths[language] = translationPath;
                     
-                    await sleep(2500); // Pausa fuerte para no asfixiar a Groq
+                    await sleep(400); 
                 } catch (error) {
                     console.error(`Error procesando ${language}:`, error);
                 }
@@ -604,7 +579,6 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
 
             await updateProgress(supabase, id, currentUser.id, 95);
             
-            // Guardo las rutas generadas, incluso si alguna falló (la interfaz no se caerá)
             await supabase.from("user_nasheeds").update({ subtitles: subtitlePaths, status: "ready", error_message: null }).eq("id", id).eq("user_id", currentUser.id);
             return res.json({ success: true, id, title: row.title, status: "ready" });
         } catch (error) {

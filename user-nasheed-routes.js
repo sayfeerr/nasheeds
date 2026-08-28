@@ -914,7 +914,6 @@ async function reconstructArabicText(segments, apiKey) {
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    // 1. Usamos el anclaje [ID:X] para garantizar el mapeo
     const inputLines = batch.map(
         (segment, index) => `[ID:${index}] ${cleanText(segment.text)}`
     );
@@ -956,30 +955,37 @@ STRICT RULES:
             const rawContent = result?.choices?.[0]?.message?.content;
 
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const translatedLines = rawContent
+                const lines = rawContent
                     .split(/\r?\n/)
                     .map(l => cleanText(l))
                     .filter(Boolean);
 
-                return batch.map((segment, index) => {
-                    let translated = null;
-                    const targetTag = `[ID:${index}]`;
+                // MAPA FLEXIBLE: Lee [ID:0], [ID: 0], ID:0, etc. sin importar variaciones de la IA
+                const translatedMap = new Map();
+                for (const line of lines) {
+                    const tagMatch = line.match(/\[?ID\s*:\s*(\d+)\]?\s*(.*)/i);
+                    if (tagMatch) {
+                        const id = Number(tagMatch[1]);
+                        const text = cleanText(tagMatch[2]);
+                        if (text) {
+                            translatedMap.set(id, text);
+                        }
+                    }
+                }
 
-                    // Intento A: Buscar la línea que contenga el tag exacto [ID:X]
-                    const exactMatch = translatedLines.find(line => line.includes(targetTag));
-                    
-                    if (exactMatch) {
-                        translated = cleanText(exactMatch.replace(targetTag, ""));
-                    } 
-                    // Intento B: Si la IA olvidó el tag, tomamos la línea por su posición (índice)
-                    else if (translatedLines[index]) {
-                        translated = cleanText(translatedLines[index].replace(/\[ID:\d+\]/g, ""));
+                return batch.map((segment, index) => {
+                    let translated = translatedMap.get(index);
+
+                    // Plan B por posición de línea si la IA falló por completo con el ID
+                    if (!translated && lines[index]) {
+                        translated = cleanText(lines[index].replace(/\[?ID\s*:\s*\d+\]?/gi, ""));
                     }
 
                     return {
                         start: segment.start,
                         end: segment.end,
-                        text: translated || "[Traducción no disponible]" 
+                        // Si todo falla, devuelve el texto original en lugar de "Traducción no disponible"
+                        text: translated || segment.text 
                     };
                 });
             }
@@ -991,40 +997,8 @@ STRICT RULES:
     return batch.map(segment => ({
         start: segment.start,
         end: segment.end,
-        text: "[Traducción no disponible]"
+        text: segment.text
     }));
-}
-
-async function translateAllBatch(segments, language, apiKey) {
-    const languageNames = {
-        es: "Spanish",
-        en: "English",
-        ru: "Russian"
-    };
-
-    const targetLanguage = languageNames[language];
-
-    if (!targetLanguage) {
-        throw new Error(`Idioma no soportado: ${language}`);
-    }
-
-    if (!Array.isArray(segments) || !segments.length) {
-        throw new Error("No hay segmentos para traducir.");
-    }
-
-    const BATCH_SIZE = 15; 
-    const allTranslated = [];
-
-    for (let i = 0; i < segments.length; i += BATCH_SIZE) {
-        const batch = segments.slice(i, i + BATCH_SIZE);
-        const translatedBatch = await translateBatchChunk(batch, targetLanguage, apiKey);
-        allTranslated.push(...translatedBatch);
-        if (i + BATCH_SIZE < segments.length) {
-            await sleep(1000); 
-        }
-    }
-
-    return allTranslated;
 }
 
 /* =========================================================

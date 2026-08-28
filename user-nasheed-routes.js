@@ -76,9 +76,19 @@ function ext(type, name) {
             .toLowerCase();
 
     const allowed = [
-        "mp3", "m4a", "mp4", "mpga", "mpeg",
-        "ogg", "wav", "webm", "flac", "jpg",
-        "jpeg", "png", "webp"
+        "mp3",
+        "m4a",
+        "mp4",
+        "mpga",
+        "mpeg",
+        "ogg",
+        "wav",
+        "webm",
+        "flac",
+        "jpg",
+        "jpeg",
+        "png",
+        "webp"
     ];
 
     if (allowed.includes(extension)) {
@@ -221,7 +231,7 @@ function isMostlyLatin(text) {
 }
 
 /* =========================================================
-   SEGMENTOS Y OPTIMIZACIÓN (3-4 PALABRAS)
+   SEGMENTOS Y OPTIMIZACIÓN MATEMÁTICA (4 PALABRAS)
    ========================================================= */
 
 function normalizeSegments(segments) {
@@ -248,61 +258,37 @@ function normalizeSegments(segments) {
         );
 }
 
-// Trocea los segmentos devueltos por Whisper en bloques de ~4 palabras
-// para lograr un efecto karaoke vistoso y preciso.
-function optimizeSegments(whisperResult, maxWords = 4) {
-    let rawChunks = [];
-
-    // Intento primario: Usar timestamps exactos por palabra (si el modelo lo devolvió)
-    if (whisperResult.words && Array.isArray(whisperResult.words) && whisperResult.words.length > 0) {
-        let currentChunk = [];
-        for (const w of whisperResult.words) {
-            if (!w.word || !cleanText(w.word)) continue;
-            currentChunk.push(w);
-            if (currentChunk.length >= maxWords) {
-                rawChunks.push({
-                    start: Number(currentChunk[0].start),
-                    end: Number(currentChunk[currentChunk.length - 1].end),
-                    text: currentChunk.map(x => cleanText(x.word)).join(" ")
-                });
-                currentChunk = [];
-            }
+// Trocea frases largas en bloques exactos de 3-4 palabras recalculando el tiempo
+// de forma proporcional, ideal para VTT y sin saturar al modelo de IA.
+function optimizeSegmentsProportional(segments, maxWords = 4) {
+    const result = [];
+    
+    for (const seg of segments) {
+        const text = cleanText(seg.text);
+        if (!text) continue;
+        
+        const words = text.split(/\s+/);
+        if (words.length <= maxWords) {
+            result.push({ start: Number(seg.start), end: Number(seg.end), text });
+            continue;
         }
-        if (currentChunk.length > 0) {
-            rawChunks.push({
-                start: Number(currentChunk[0].start),
-                end: Number(currentChunk[currentChunk.length - 1].end),
-                text: currentChunk.map(x => cleanText(x.word)).join(" ")
+        
+        const duration = Number(seg.end) - Number(seg.start);
+        const timePerWord = duration / words.length;
+        
+        for (let i = 0; i < words.length; i += maxWords) {
+            const slice = words.slice(i, i + maxWords);
+            const chunkStart = Number(seg.start) + (i * timePerWord);
+            const chunkEnd = Number(seg.start) + ((i + slice.length) * timePerWord);
+            
+            result.push({
+                start: chunkStart,
+                end: chunkEnd,
+                text: slice.join(" ")
             });
         }
-    } 
-    // Intento secundario: Fallback matemático (cortar el segmento base en partes iguales)
-    else if (whisperResult.segments && Array.isArray(whisperResult.segments)) {
-        for (const seg of whisperResult.segments) {
-            const text = cleanText(seg.text);
-            if (!text) continue;
-            
-            const words = text.split(/\s+/);
-            if (words.length <= maxWords) {
-                rawChunks.push({ start: Number(seg.start), end: Number(seg.end), text });
-                continue;
-            }
-            
-            const duration = Number(seg.end) - Number(seg.start);
-            const timePerWord = duration / words.length;
-            
-            for (let i = 0; i < words.length; i += maxWords) {
-                const slice = words.slice(i, i + maxWords);
-                rawChunks.push({
-                    start: Number(seg.start) + (i * timePerWord),
-                    end: Number(seg.start) + ((i + slice.length) * timePerWord),
-                    text: slice.join(" ")
-                });
-            }
-        }
     }
-
-    return normalizeSegments(rawChunks);
+    return normalizeSegments(result);
 }
 
 /* =========================================================
@@ -367,15 +353,20 @@ function makeVTT(segments) {
         i < validSegments.length;
         i++
     ) {
-        const segment = validSegments[i];
-        const next = validSegments[i + 1] || null;
+        const segment =
+            validSegments[i];
 
-        let start = Math.max(0, segment.start);
-        let end = Math.max(start + 0.1, segment.end); // Asegurar duración mínima de 100ms
+        const next =
+            validSegments[i + 1] || null;
 
-        // Evitar overlap que rompe los parsers de VTT
+        let start =
+            Math.max(0, segment.start);
+
+        let end =
+            Math.max(start + 0.1, segment.end);
+
         if (next && end > next.start) {
-            end = Math.max(start + 0.1, next.start - 0.001); 
+            end = Math.max(start + 0.1, next.start - 0.001);
         }
 
         lines.push(
@@ -390,7 +381,7 @@ function makeVTT(segments) {
     }
 
     const vtt =
-        lines.join("\n").trim(); 
+        lines.join("\n").trim();
 
     if (
         !vtt ||
@@ -450,7 +441,7 @@ function getRetryDelay(attempt, response) {
     }
 
     const base =
-        Math.pow(2, attempt - 1) * 2000; 
+        Math.pow(2, attempt - 1) * 2000;
 
     const jitter =
         Math.floor(
@@ -519,7 +510,7 @@ async function groqRequest(
             console.log(
                 `[GROQ DEBUG] Endpoint: ${url.split('/').pop()} | HTTP ${response.status} | Intento ${attempt}/${maxRetries}`
             );
-            
+
             let body = null;
 
             if (raw.trim()) {
@@ -718,14 +709,14 @@ async function checkIfCanceled(
 }
 
 /* =========================================================
-   TRANSCRIPCIÓN ÁRABE
+   TRANSCRIPCIÓN ÁRABE (FULL VERSES PARA VELOCIDAD)
    ========================================================= */
 
 async function transcribeArabic(
     audioUrl,
     apiKey
 ) {
-    console.log("[USER NASHEED] Descargando audio desde Storage para enviar a Whisper...");
+    console.log("[USER NASHEED] Descargando audio desde Storage para Whisper...");
     
     let audioRes;
     try {
@@ -739,7 +730,7 @@ async function transcribeArabic(
     }
     
     const audioBlob = await audioRes.blob();
-    console.log(`[USER NASHEED] Audio descargado correctamente: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[USER NASHEED] Audio descargado: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB`);
 
     const form = new FormData();
 
@@ -764,22 +755,12 @@ async function transcribeArabic(
         "verbose_json"
     );
 
-    // Pedimos tiempos exactos de las palabras para hacer cortes perfectos a 3-4 palabras
-    form.append(
-        "timestamp_granularities[]",
-        "word"
-    );
-    form.append(
-        "timestamp_granularities[]",
-        "segment"
-    );
-
     form.append(
         "temperature",
         "0"
     );
 
-    // Prompt en árabe directo, para evitar que la IA alucine con texto en inglés
+    // Prompt en árabe directo, sin instrucciones inglesas
     form.append(
         "prompt",
         "نشيد إسلامي، الحمد لله، الله أكبر، كلمات عربية فصحى."
@@ -796,79 +777,31 @@ async function transcribeArabic(
             3
         );
 
-    console.log(
-        "[USER NASHEED] Resultado de Whisper parseado correctamente."
-    );
-
     if (
         !result ||
-        result.error
+        result.error ||
+        !Array.isArray(result.segments)
     ) {
         throw new Error(
             "Whisper devolvió una respuesta inválida tras el parseo."
         );
     }
 
-    if (
-        !Array.isArray(
-            result.segments
-        )
-    ) {
-        throw new Error(
-            "Groq Whisper no devolvió segmentos de transcripción."
-        );
-    }
-
-    // Usar la función de optimización para dividir todo en fragmentos de 4 palabras
-    const segments = optimizeSegments(result, 4);
+    const segments = normalizeSegments(result.segments);
 
     if (!segments.length) {
         throw new Error(
-            "La IA no devolvió segmentos de transcripción válidos (sin texto o tiempos inválidos)."
+            "La IA no devolvió segmentos de transcripción válidos."
         );
     }
 
-    const usable =
-        segments.filter(
-            (segment) =>
-                isUsefulText(
-                    segment.text
-                )
-        );
+    const usable = segments.filter(segment => isUsefulText(segment.text));
 
     if (!usable.length) {
         throw new Error(
             "La transcripción está estructuralmente bien pero no contiene texto utilizable."
         );
     }
-
-    const latinCount =
-        usable.filter(
-            (segment) =>
-                isMostlyLatin(
-                    segment.text
-                )
-        ).length;
-
-    const arabicCount =
-        usable.filter(
-            (segment) =>
-                containsArabic(
-                    segment.text
-                )
-        ).length;
-
-    console.log(
-        "[USER NASHEED] Resumen Whisper Optimizado:",
-        {
-            validChunks:
-                usable.length,
-            arabicSegments:
-                arabicCount,
-            latinSegments:
-                latinCount
-        }
-    );
 
     return usable;
 }
@@ -952,7 +885,7 @@ function parseNumberedOutput(
 }
 
 /* =========================================================
-   RECONSTRUCCIÓN DE ÁRABE BATCHED
+   RECONSTRUCCIÓN DE ÁRABE BATCHED (LOTES GRANDES)
    ========================================================= */
 
 async function reconstructBatchChunk(batch, apiKey) {
@@ -966,14 +899,13 @@ async function reconstructBatchChunk(batch, apiKey) {
 
     const systemPrompt = `
 You are an expert Arabic linguist.
-The input consists of short numbered fragments (3-4 words) from a nasheed.
 Reconstruct the ACTUAL ARABIC SCRIPT.
 
 STRICT RULES:
-1. Output Arabic Unicode script.
+1. Output Arabic Unicode script ONLY.
 2. NEVER output Latin transliteration.
 3. NEVER translate the lyrics.
-4. Keep the exact number of numbered lines.
+4. Keep the exact number of numbered lines. You MUST output EXACTLY ${batch.length} lines.
 5. Each line must contain ONLY the reconstructed Arabic text.
 6. Do not invent unrelated text.
 7. Output ONLY numbered lines, e.g.:
@@ -1048,7 +980,7 @@ async function reconstructArabicText(segments, apiKey) {
         throw new Error("No hay segmentos para reconstruir.");
     }
 
-    const BATCH_SIZE = 15;
+    const BATCH_SIZE = 40;
     const finalSegments = [];
 
     for (let i = 0; i < segments.length; i += BATCH_SIZE) {
@@ -1077,14 +1009,13 @@ async function translateBatchChunk(batch, targetLanguage, apiKey) {
 
     const systemPrompt = `
 You are a professional translator.
-The input consists of short numbered fragments (3-4 words each) from an Arabic nasheed.
-Translate each numbered fragment directly into ${targetLanguage}.
+Translate the Arabic lyrics directly into ${targetLanguage}.
 
 STRICT RULES:
-1. Translate the MEANING natively into ${targetLanguage}.
+1. Translate the MEANING natively.
 2. Do NOT transliterate Arabic.
-3. Do NOT reproduce Arabic words.
-4. Keep the exact numbered structure matching the input count.
+3. Do NOT reproduce Arabic words unless it's a proper name.
+4. Keep the exact numbered structure matching the input count. You MUST output EXACTLY ${batch.length} lines.
 5. Do not merge lines. Do not omit lines.
 6. Output ONLY the numbered translations. Example:
 1. Translation
@@ -1169,7 +1100,7 @@ async function translateAllBatch(segments, language, apiKey) {
         throw new Error("No hay segmentos de origen para traducir.");
     }
 
-    const BATCH_SIZE = 15; // Tamaño de lote vital para que los modelos no se pierdan contando
+    const BATCH_SIZE = 40; 
     const allTranslated = [];
 
     for (let i = 0; i < segments.length; i += BATCH_SIZE) {
@@ -1180,7 +1111,7 @@ async function translateAllBatch(segments, language, apiKey) {
         allTranslated.push(...translatedBatch);
         
         if (i + BATCH_SIZE < segments.length) {
-            await sleep(1500); // Pausa para no disparar limites de API de Groq
+            await sleep(1500); 
         }
     }
 
@@ -1216,7 +1147,7 @@ async function signUrl(
         !data.signedUrl
     ) {
         throw new Error(
-            "Supabase falló al generar la URL firmada (data vacío)."
+            "Supabase no devolvió una URL firmada."
         );
     }
 
@@ -1264,7 +1195,7 @@ async function privateTrack(
                 );
         } catch (error) {
             console.error(
-                `[PRIVATE TRACK] Error creando URL temporal para el VTT ${language}:`,
+                `[PRIVATE TRACK] Error creando URL para ${language}:`,
                 error?.message || error
             );
         }
@@ -1340,7 +1271,7 @@ function registerUserNasheedRoutes({
                     .status(401)
                     .json({
                         error:
-                            "Fallo de autenticación. Debes iniciar sesión."
+                            "Debes iniciar sesión."
                     });
             }
 
@@ -1400,7 +1331,7 @@ function registerUserNasheedRoutes({
 
             } catch (error) {
                 console.error(
-                    "[USER NASHEEDS LIST ERROR]",
+                    "[USER NASHEEDS LIST]",
                     error
                 );
 
@@ -1408,7 +1339,7 @@ function registerUserNasheedRoutes({
                     .status(500)
                     .json({
                         error:
-                            "Error interno al cargar la lista de tus nasheeds."
+                            "No se pudieron cargar tus nasheeds."
                     });
             }
         }
@@ -1435,7 +1366,7 @@ function registerUserNasheedRoutes({
                     .status(401)
                     .json({
                         error:
-                            "Debes iniciar sesión para subir archivos."
+                            "Debes iniciar sesión."
                     });
             }
 
@@ -1481,7 +1412,7 @@ function registerUserNasheedRoutes({
                         .status(400)
                         .json({
                             error:
-                                "El título es estrictamente obligatorio y no debe superar 120 caracteres."
+                                "El título es obligatorio y debe tener como máximo 120 caracteres."
                         });
                 }
 
@@ -1497,7 +1428,7 @@ function registerUserNasheedRoutes({
                         .status(400)
                         .json({
                             error:
-                                "Falta archivo de audio o sobrepasa el límite permitido de 25 MB."
+                                "El audio debe pesar como máximo 25 MB."
                         });
                 }
 
@@ -1510,7 +1441,7 @@ function registerUserNasheedRoutes({
                         .status(400)
                         .json({
                             error:
-                                "El MimeType del audio no figura en los formatos compatibles (ej. mp3, wav, mp4)."
+                                "Formato de audio no compatible."
                         });
                 }
 
@@ -1541,7 +1472,7 @@ function registerUserNasheedRoutes({
                             .status(400)
                             .json({
                                 error:
-                                    "Error en portada: debe ser JPG/PNG/WebP, con límite de tamaño de 5 MB."
+                                    "La portada debe ser JPG, PNG o WebP y pesar como máximo 5 MB."
                             });
                     }
                 }
@@ -1590,7 +1521,7 @@ function registerUserNasheedRoutes({
                         .status(409)
                         .json({
                             error:
-                                "Solo se permite subir y procesar un nasheed por día. Vuelve mañana.",
+                                "Ya tienes una subida para hoy.",
                             id:
                                 Number(
                                     existing.data.id
@@ -1813,7 +1744,7 @@ function registerUserNasheedRoutes({
                 error
             ) {
                 console.error(
-                    "[USER NASHEED PREPARE FATAL]",
+                    "[USER NASHEED PREPARE]",
                     error
                 );
 
@@ -1828,7 +1759,7 @@ function registerUserNasheedRoutes({
                             error_message:
                                 String(
                                     error.message ||
-                                    "Error preparando firma de subida."
+                                    "Error preparando la subida."
                                 ).slice(
                                     0,
                                     500
@@ -1849,7 +1780,7 @@ function registerUserNasheedRoutes({
                     .json({
                         error:
                             error.message ||
-                            "Error interno en preparación de subida."
+                            "No se pudo preparar la subida."
                     });
             }
         }
@@ -1876,7 +1807,7 @@ function registerUserNasheedRoutes({
                     .status(401)
                     .json({
                         error:
-                            "Debes iniciar sesión para cancelar operaciones."
+                            "Debes iniciar sesión."
                     });
             }
 
@@ -1894,7 +1825,7 @@ function registerUserNasheedRoutes({
                     .status(400)
                     .json({
                         error:
-                            "El ID proporcionado es inválido."
+                            "ID no válido."
                     });
             }
 
@@ -1907,7 +1838,7 @@ function registerUserNasheedRoutes({
                         status:
                             "canceled",
                         error_message:
-                            "Cancelación manual efectuada por el usuario."
+                            "Proceso cancelado por el usuario."
                     })
                     .eq(
                         "id",
@@ -1933,13 +1864,13 @@ function registerUserNasheedRoutes({
                 success:
                     true,
                 message:
-                    "Proceso interrumpido."
+                    "Proceso cancelado."
             });
         }
     );
 
     /* =====================================================
-       PROCESAR IA (TRADUCCIÓN Y VTT GENERATION)
+       PROCESAR IA (TRADUCCIÓN Y VTT GENERATION CONCURRENTE)
        ===================================================== */
 
     app.post(
@@ -1959,7 +1890,7 @@ function registerUserNasheedRoutes({
                     .status(401)
                     .json({
                         error:
-                            "Autenticación obligatoria."
+                            "Debes iniciar sesión."
                     });
             }
 
@@ -1968,7 +1899,7 @@ function registerUserNasheedRoutes({
                     .status(503)
                     .json({
                         error:
-                            "El servidor carece de claves de API Groq (GROQ_API_KEY)."
+                            "GROQ_API_KEY no está configurada."
                     });
             }
 
@@ -1986,7 +1917,7 @@ function registerUserNasheedRoutes({
                     .status(400)
                     .json({
                         error:
-                            "Formato de ID incorrecto."
+                            "ID no válido."
                     });
             }
 
@@ -2028,7 +1959,7 @@ function registerUserNasheedRoutes({
                         .status(404)
                         .json({
                             error:
-                                "Entrada de Nasheed inexistente en la DB."
+                                "Nasheed no encontrado."
                         });
                 }
 
@@ -2042,7 +1973,7 @@ function registerUserNasheedRoutes({
                         .status(400)
                         .json({
                             error:
-                                "El sistema no detecta registro de archivo de audio (audio_path nulo)."
+                                "Falta el audio subido."
                         });
                 }
 
@@ -2068,7 +1999,7 @@ function registerUserNasheedRoutes({
                     !signedAudio.data.signedUrl
                 ) {
                     throw new Error(
-                        "Fallo al recuperar una URL firmada de descarga del bucket."
+                        "No se pudo obtener la URL firmada del audio."
                     );
                 }
 
@@ -2086,7 +2017,7 @@ function registerUserNasheedRoutes({
                 );
 
                 console.log(
-                    "[USER NASHEED] Comenzando transcripción AI en modelo:",
+                    "[USER NASHEED] Transcribiendo:",
                     row.title
                 );
 
@@ -2097,7 +2028,7 @@ function registerUserNasheedRoutes({
                     );
 
                 console.log(
-                    "[USER NASHEED] Transcripción optimizada exitosa, total de segmentos (fragmentos cortos):",
+                    "[USER NASHEED] Segmentos iniciales completados:",
                     arabic.length
                 );
 
@@ -2126,7 +2057,7 @@ function registerUserNasheedRoutes({
                     )
                 ) {
                     console.warn(
-                        "[USER NASHEED] Detectada fuerte presencia de caracteres latinos (transliteración). Activando pipeline de reconstrucción..."
+                        "[USER NASHEED] Detectada transliteración. Reconstruyendo árabe..."
                     );
 
                     await checkIfCanceled(
@@ -2158,7 +2089,7 @@ function registerUserNasheedRoutes({
                     !arabic.length
                 ) {
                     throw new Error(
-                        "El texto se corrompió al validar segmentos post-reconstrucción. Abortando sin marcar como Ready."
+                        "La transcripción final quedó vacía."
                     );
                 }
 
@@ -2188,15 +2119,17 @@ function registerUserNasheedRoutes({
                     {};
 
                 /* =================================================
-                   CREACIÓN VTT ÁRABE BASE
+                   ÁRABE (CON CORTE MATEMÁTICO 4 PALABRAS)
                    ================================================= */
 
+                const optimizedArabic = optimizeSegmentsProportional(arabic, 4);
+                
                 const arabicPath =
                     `${prefix}/subtitles/ar.vtt`;
 
                 const arabicVtt =
                     makeVTT(
-                        arabic
+                        optimizedArabic
                     );
 
                 const arabicUpload =
@@ -2230,7 +2163,7 @@ function registerUserNasheedRoutes({
                     arabicPath;
 
                 /* =================================================
-                   TRADUCCIONES AUTOMÁTICAS VTT
+                   TRADUCCIONES CONCURRENTES (SÚPER RÁPIDO)
                    ================================================= */
 
                 const requested =
@@ -2240,94 +2173,67 @@ function registerUserNasheedRoutes({
                     );
 
                 console.log(
-                    "[USER NASHEED] Traducciones solicitadas:",
+                    "[USER NASHEED] Idiomas solicitados para procesar simultáneamente:",
                     requested
                 );
+                
+                await updateProgress(
+                    supabase,
+                    id,
+                    currentUser.id,
+                    65
+                );
 
-                const totalLangs =
-                    requested.length;
-
-                for (
-                    let i = 0;
-                    i < totalLangs;
-                    i++
-                ) {
-                    const language =
-                        requested[i];
-
+                const translationPromises = requested.map(async (language, index) => {
+                    // Stagger: esperar 1.5s entre peticiones para evitar Rate Limit 429 masivo
+                    await sleep(index * 1500); 
+                    
                     await checkIfCanceled(
                         supabase,
                         id,
                         currentUser.id
                     );
 
-                    const progressPct =
-                        Math.round(
-                            50 +
-                            (
-                                (i + 1) /
-                                totalLangs
-                            ) *
-                            40
+                    console.log(`[USER NASHEED] Lanzando traducción a ${language}...`);
+                    
+                    // Traducción sobre las frases enteras
+                    const translated = await translateAllBatch(arabic, language, groqApiKey);
+                    
+                    // Aplicar troceado matemático a 4 palabras
+                    const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
+
+                    const translationPath = `${prefix}/subtitles/${language}.vtt`;
+                    const translationVtt = makeVTT(optimizedTranslation);
+
+                    const upload = await supabase
+                        .storage
+                        .from(BUCKET)
+                        .upload(
+                            translationPath,
+                            Buffer.from("\uFEFF" + translationVtt, "utf8"),
+                            { contentType: "text/vtt; charset=utf-8", upsert: true }
                         );
 
-                    await updateProgress(
-                        supabase,
-                        id,
-                        currentUser.id,
-                        progressPct
-                    );
-
-                    const translated =
-                        await translateAllBatch(
-                            arabic,
-                            language,
-                            groqApiKey
-                        );
-
-                    const translationPath =
-                        `${prefix}/subtitles/${language}.vtt`;
-
-                    const translationVtt =
-                        makeVTT(
-                            translated
-                        );
-
-                    const upload =
-                        await supabase
-                            .storage
-                            .from(
-                                BUCKET
-                            )
-                            .upload(
-                                translationPath,
-                                Buffer.from(
-                                    "\uFEFF" +
-                                    translationVtt,
-                                    "utf8"
-                                ),
-                                {
-                                    contentType:
-                                        "text/vtt; charset=utf-8",
-                                    upsert:
-                                        true
-                                }
-                            );
-
-                    if (
-                        upload.error
-                    ) {
+                    if (upload.error) {
                         throw upload.error;
                     }
 
-                    subtitlePaths[
-                        language
-                    ] =
-                        translationPath;
+                    return { language, path: translationPath };
+                });
+
+                const translationResults = await Promise.allSettled(translationPromises);
+                
+                // Recolectar resultados exitosos
+                for (const result of translationResults) {
+                    if (result.status === "fulfilled") {
+                        subtitlePaths[result.value.language] = result.value.path;
+                    } else {
+                        console.error("[USER NASHEED] Falla en una de las traducciones concurrentes:", result.reason);
+                    }
                 }
 
                 /* =================================================
-                   GUARDADO FINAL ESTRICTO -> READY
+                   READY
                    ================================================= */
 
                 await checkIfCanceled(
@@ -2372,7 +2278,7 @@ function registerUserNasheedRoutes({
                 }
 
                 console.log(
-                    "[USER NASHEED] ✓ IA Y GUARDADO COMPLETADO DB:",
+                    "[USER NASHEED] PROCESAMIENTO COMPLETADO:",
                     id
                 );
 
@@ -2394,19 +2300,19 @@ function registerUserNasheedRoutes({
                     "PROCESO_CANCELADO"
                 ) {
                     console.log(
-                        `[USER NASHEED] El proceso ${id} detectó señal de ABORT/Cancel del usuario y fue detenido de forma controlada.`
+                        `[USER NASHEED] Subida ${id} abortada por el usuario.`
                     );
 
                     return res.json({
                         success:
                             false,
                         message:
-                            "Señal de interrupción manual procesada correctamente."
+                            "Proceso cancelado por el usuario."
                     });
                 }
 
                 console.error(
-                    "[USER NASHEED PIPELINE FATAL]",
+                    "[USER NASHEED PROCESS ERROR]",
                     error
                 );
 
@@ -2421,7 +2327,7 @@ function registerUserNasheedRoutes({
                             error_message:
                                 String(
                                     error?.message ||
-                                    "Excepción no controlada durante el pipeline."
+                                    "Error"
                                 ).slice(
                                     0,
                                     500
@@ -2439,7 +2345,7 @@ function registerUserNasheedRoutes({
                     updateError
                 ) {
                     console.error(
-                        "[USER NASHEED] Falla crítica al guardar estado de error en la base de datos:",
+                        "[USER NASHEED] No se pudo guardar el error:",
                         updateError
                     );
                 }
@@ -2454,14 +2360,14 @@ function registerUserNasheedRoutes({
                     .json({
                         error:
                             error?.message ||
-                            "Error de servidor persistente en la generación IA."
+                            "No se pudo procesar el nasheed."
                     });
             }
         }
     );
 
     /* =====================================================
-       PÚBLICOS Y PRIVADOS MIXTOS
+       PÚBLICOS + PRIVADOS
        ===================================================== */
 
     app.get(
@@ -2589,7 +2495,7 @@ function registerUserNasheedRoutes({
                         privateError
                     ) {
                         console.error(
-                            "[PRIVATE TRACK RETRIEVAL] Ignorado:",
+                            "[PRIVATE TRACK ERROR]",
                             privateError
                         );
                     }
@@ -2604,7 +2510,7 @@ function registerUserNasheedRoutes({
                 error
             ) {
                 console.error(
-                    "[NASHEEDS API FEED]",
+                    "[NASHEEDS API]",
                     error
                 );
 
@@ -2612,7 +2518,7 @@ function registerUserNasheedRoutes({
                     .status(500)
                     .json({
                         error:
-                            "Falla al combinar las playlists de nasheeds."
+                            "No se pudieron cargar los nasheeds."
                     });
             }
         }

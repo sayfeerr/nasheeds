@@ -859,12 +859,19 @@ STRICT RULES:
 
             if (typeof content === "string" && content.trim()) {
                 const parsed = parseNumberedOutput(content, batch.length);
+                const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
 
-                const reconstructed = batch.map((segment, index) => ({
-                    start: segment.start,
-                    end: segment.end,
-                    text: parsed.get(index) || segment.text
-                }));
+                const reconstructed = batch.map((segment, index) => {
+                    let text = parsed.get(index);
+                    if (!text && rawLines[index]) {
+                        text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
+                    }
+                    return {
+                        start: segment.start,
+                        end: segment.end,
+                        text: text || segment.text
+                    };
+                });
 
                 const arabicSegments = reconstructed.filter(seg => containsArabic(seg.text)).length;
 
@@ -889,7 +896,7 @@ async function reconstructArabicText(segments, apiKey) {
         throw new Error("No hay segmentos para reconstruir.");
     }
 
-    const BATCH_SIZE = 15; // Lote seguro de alta precisión
+    const BATCH_SIZE = 15;
     const finalSegments = [];
 
     for (let i = 0; i < segments.length; i += BATCH_SIZE) {
@@ -903,7 +910,7 @@ async function reconstructArabicText(segments, apiKey) {
 }
 
 /* =========================================================
-   TRADUCCIÓN CON BATCHING SEGURO (LOTE 15)
+   TRADUCCIÓN ROBUSTA CON BATCHING SEGURO (LOTE 15)
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
@@ -952,13 +959,20 @@ STRICT RULES:
 
             if (typeof rawContent === "string" && rawContent.trim()) {
                 const translatedMap = parseNumberedOutput(rawContent, batch.length);
+                const rawLines = rawContent.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
 
                 return batch.map((segment, index) => {
-                    const translated = translatedMap.get(index);
+                    let translated = translatedMap.get(index);
+                    
+                    // Fallback ultra-seguro por índice de línea si la IA omitió números pero respondió las líneas
+                    if (!translated && rawLines[index]) {
+                        translated = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
+                    }
+
                     return {
                         start: segment.start,
                         end: segment.end,
-                        text: translated || segment.text 
+                        text: translated || `[Traducción no disponible]` // Evita por completo inyectar árabe como respaldo
                     };
                 });
             }
@@ -970,7 +984,7 @@ STRICT RULES:
     return batch.map(segment => ({
         start: segment.start,
         end: segment.end,
-        text: segment.text || "[Traducción no disponible]"
+        text: "[Traducción no disponible]"
     }));
 }
 
@@ -2000,9 +2014,8 @@ function registerUserNasheedRoutes({
                     65
                 );
 
-                // Ejecutamos en paralelo de forma segura con lotes pequeños de 15 líneas
                 const translationPromises = requested.map(async (language, index) => {
-                    await sleep(index * 1200); // Stagger para evitar colapsar Groq
+                    await sleep(index * 1200); 
                     
                     await checkIfCanceled(
                         supabase,

@@ -742,23 +742,11 @@ async function transcribeArabic(
         "0"
     ); //[cite: 1]
 
+ // Le damos contexto previo directamente en árabe para forzar el alfabeto correcto
+    // y evitar que alucine instrucciones en inglés.
     form.append(
         "prompt",
-        [
-            "Arabic nasheed lyrics.",
-            "The audio contains Arabic religious singing.",
-            "TRANSCRIBE THE ACTUAL ARABIC SCRIPT.",
-            "Output Arabic letters, not Latin transliteration.",
-            "Do not translate.",
-            "Do not transliterate.",
-            "Do not romanize.",
-            "Do not summarize.",
-            "Preserve repeated verses.",
-            "Preserve repeated phrases.",
-            "Preserve Quranic and religious expressions.",
-            "Preserve names accurately.",
-            "Use Arabic Unicode characters whenever the speaker sings Arabic."
-        ].join(" ")
+        "نشيد إسلامي، الحمد لله، الله أكبر، كلمات عربية فصحى."
     ); //[cite: 1]
 
     const result =

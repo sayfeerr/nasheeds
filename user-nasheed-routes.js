@@ -910,15 +910,14 @@ async function reconstructArabicText(segments, apiKey) {
 }
 
 /* =========================================================
-   TRADUCCIÓN ROBUSTA CON BATCHING SEGURO (LOTE 15)
+   TRADUCCIÓN ROBUSTA CON BATCHING SEGURO Y PARSER TOLERANTE
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    const inputLines =
-        batch.map(
-            (segment, index) =>
-                `${index + 1}. ${cleanText(segment.text)}`
-        );
+    // 1. Usamos el anclaje [ID:X] para garantizar el mapeo
+    const inputLines = batch.map(
+        (segment, index) => `[ID:${index}] ${cleanText(segment.text)}`
+    );
 
     const systemPrompt = `
 You are a professional translator.
@@ -927,10 +926,9 @@ Translate the Arabic lyrics directly into ${targetLanguage}.
 STRICT RULES:
 1. Translate the MEANING natively.
 2. Do NOT transliterate Arabic.
-3. Keep the exact numbered structure matching the input count. You MUST output EXACTLY ${batch.length} lines.
-4. Output ONLY the numbered translations. Example:
-1. Translation
-2. Translation
+3. Keep the exact structure matching the input count. You MUST output EXACTLY ${batch.length} lines.
+4. Start EVERY single line with its original [ID:X] tag.
+5. Output ONLY the translated lines with their tags.
 `.trim();
 
     const requestBody = {
@@ -958,21 +956,30 @@ STRICT RULES:
             const rawContent = result?.choices?.[0]?.message?.content;
 
             if (typeof rawContent === "string" && rawContent.trim()) {
-                const translatedMap = parseNumberedOutput(rawContent, batch.length);
-                const rawLines = rawContent.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
+                const translatedLines = rawContent
+                    .split(/\r?\n/)
+                    .map(l => cleanText(l))
+                    .filter(Boolean);
 
                 return batch.map((segment, index) => {
-                    let translated = translatedMap.get(index);
+                    let translated = null;
+                    const targetTag = `[ID:${index}]`;
+
+                    // Intento A: Buscar la línea que contenga el tag exacto [ID:X]
+                    const exactMatch = translatedLines.find(line => line.includes(targetTag));
                     
-                    // Fallback ultra-seguro por índice de línea si la IA omitió números pero respondió las líneas
-                    if (!translated && rawLines[index]) {
-                        translated = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
+                    if (exactMatch) {
+                        translated = cleanText(exactMatch.replace(targetTag, ""));
+                    } 
+                    // Intento B: Si la IA olvidó el tag, tomamos la línea por su posición (índice)
+                    else if (translatedLines[index]) {
+                        translated = cleanText(translatedLines[index].replace(/\[ID:\d+\]/g, ""));
                     }
 
                     return {
                         start: segment.start,
                         end: segment.end,
-                        text: translated || `[Traducción no disponible]` // Evita por completo inyectar árabe como respaldo
+                        text: translated || "[Traducción no disponible]" 
                     };
                 });
             }
@@ -1998,7 +2005,7 @@ function registerUserNasheedRoutes({
                     arabicPath;
 
                 /* =================================================
-                   TRADUCCIONES CONCURRENTES (ES, EN, RU)
+                   TRADUCCIONES SECUENCIALES SEGUROS (ES, EN, RU)
                    ================================================= */
 
                 const requested =
@@ -2014,44 +2021,42 @@ function registerUserNasheedRoutes({
                     65
                 );
 
-                const translationPromises = requested.map(async (language, index) => {
-                    await sleep(index * 1200); 
-                    
-                    await checkIfCanceled(
-                        supabase,
-                        id,
-                        currentUser.id
-                    );
-
-                    const translated = await translateAllBatch(arabic, language, groqApiKey);
-                    const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
-
-                    const translationPath = `${prefix}/subtitles/${language}.vtt`;
-                    const translationVtt = makeVTT(optimizedTranslation);
-
-                    const upload = await supabase
-                        .storage
-                        .from(BUCKET)
-                        .upload(
-                            translationPath,
-                            Buffer.from("\uFEFF" + translationVtt, "utf8"),
-                            { contentType: "text/vtt; charset=utf-8", upsert: true }
+                // Ejecutado 1 por 1 para evitar los errores 429 de Rate Limit
+                for (const language of requested) {
+                    try {
+                        await checkIfCanceled(
+                            supabase,
+                            id,
+                            currentUser.id
                         );
 
-                    if (upload.error) {
-                        throw upload.error;
-                    }
+                        const translated = await translateAllBatch(arabic, language, groqApiKey);
+                        const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
 
-                    return { language, path: translationPath };
-                });
+                        const translationPath = `${prefix}/subtitles/${language}.vtt`;
+                        const translationVtt = makeVTT(optimizedTranslation);
 
-                const translationResults = await Promise.allSettled(translationPromises);
-                
-                for (const result of translationResults) {
-                    if (result.status === "fulfilled") {
-                        subtitlePaths[result.value.language] = result.value.path;
-                    } else {
-                        console.error("[USER NASHEED] Error traduciendo idioma:", result.reason);
+                        const upload = await supabase
+                            .storage
+                            .from(BUCKET)
+                            .upload(
+                                translationPath,
+                                Buffer.from("\uFEFF" + translationVtt, "utf8"),
+                                { contentType: "text/vtt; charset=utf-8", upsert: true }
+                            );
+
+                        if (upload.error) {
+                            throw upload.error;
+                        }
+
+                        // Asignamos la ruta al JSON que va a Supabase de forma segura
+                        subtitlePaths[language] = translationPath;
+                        
+                        // Pausa de 2 segundos de respiro para Groq
+                        await sleep(2000); 
+
+                    } catch (error) {
+                        console.error(`[USER NASHEED] Error traduciendo idioma ${language}:`, error);
                     }
                 }
 

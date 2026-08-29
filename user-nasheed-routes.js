@@ -360,12 +360,12 @@ async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
     const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
     const textsToTranslate = batch.map(s => cleanText(s.text));
 
-    const systemPrompt = `You are a professional translator. Translate this array of Arabic nasheed lyrics into ${targetLanguageName}.
+   const systemPrompt = `You are an expert poetic translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into beautiful, natural ${targetLanguageName}.
 CRITICAL RULES:
-1. You MUST return a valid JSON object.
-2. The JSON MUST contain a single key called "translations".
-3. The value of "translations" MUST be an array of exactly ${batch.length} strings.
-4. Do not include any other text, markdown, or explanations.`;
+1. POETIC MEANING: Do NOT do a literal, word-for-word translation. Translate the deep meaning, emotion, and spiritual context so it flows naturally and beautifully in ${targetLanguageName}.
+2. LINE BY LINE: You must translate line-by-line. DO NOT merge, combine, or group lines together, even if they belong to the same sentence.
+3. JSON FORMAT: You MUST return a valid JSON object with a single key "translations".
+4. ARRAY LENGTH: The "translations" array MUST contain EXACTLY ${batch.length} strings, keeping the exact same order as the input.`;
 
     const requestBody = {
         model: "openai/gpt-oss-120b", 

@@ -19,7 +19,7 @@ const AUDIO_TYPES = new Set([
 const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const LANGS = new Set(["es", "en", "ru"]);
 
-const GROQ_STT = "whisper-large-v3-turbo";
+const GROQ_STT = "whisper-large-v3";
 const GROQ_TRANSLATION = "openai/gpt-oss-120b";
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
@@ -360,10 +360,10 @@ async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
     const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
     const textsToTranslate = batch.map(s => cleanText(s.text));
 
-   const systemPrompt = `You are an expert poetic translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into beautiful, natural ${targetLanguageName}.
+  const systemPrompt = `You are a translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into ${targetLanguageName}.
 CRITICAL RULES:
-1. POETIC MEANING: Do NOT do a literal, word-for-word translation. Translate the deep meaning, emotion, and spiritual context so it flows naturally and beautifully in ${targetLanguageName}.
-2. LINE BY LINE: You must translate line-by-line. DO NOT merge, combine, or group lines together, even if they belong to the same sentence.
+1. EVERYDAY LANGUAGE: Use simple, everyday language that any normal person can easily understand. Do NOT use archaic, complex, or strange words. Preserve the spiritual meaning, but make it highly accessible.
+2. LINE BY LINE: You must translate line-by-line. DO NOT merge, combine, or group lines together.
 3. JSON FORMAT: You MUST return a valid JSON object with a single key "translations".
 4. ARRAY LENGTH: The "translations" array MUST contain EXACTLY ${batch.length} strings, keeping the exact same order as the input.`;
 

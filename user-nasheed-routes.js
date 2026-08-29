@@ -19,7 +19,7 @@ const AUDIO_TYPES = new Set([
 const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const LANGS = new Set(["es", "en", "ru"]);
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 
 /* =========================================================
    UTILIDADES
@@ -178,16 +178,20 @@ async function processAudioWithGemini(audioUrl, targetLanguages, apiKey) {
 
     const uploadRes = await fetch(uploadUrl, { method: "POST", body: uploadForm });
     const uploadData = await uploadRes.json();
-    const fileUri = uploadData?.file?.uri;
-    const mimeType = uploadData?.file?.mimeType || "audio/mp3";
+    
+    if (!uploadRes.ok || !uploadData?.file?.uri) {
+        console.error("Error en subida de archivo a Gemini:", uploadData);
+        throw new Error("No se pudo subir el archivo de audio a Gemini.");
+    }
 
-    if (!fileUri) throw new Error("No se pudo subir el archivo de audio a Gemini.");
+    const fileUri = uploadData.file.uri;
+    const mimeType = uploadData.file.mimeType || "audio/mp3";
 
     const langsRequested = Array.isArray(targetLanguages) ? targetLanguages : [];
 
-    // 2. Prompt estricto para extraer árabe y traducciones sincronizadas
+    // 2. Prompt estructurado para obtener transcripción y traducciones sincronizadas
     const promptText = `You are an expert Islamic nasheed transcriber and professional translator. 
-Listen to this audio file carefully from start to finish. Do not skip any part, vocal harmony, or chorus.
+Listen to this audio file carefully from start to finish. Do not skip any part or chorus.
 You must output a strict JSON object with this exact structure:
 {
   "arabic_segments": [
@@ -195,14 +199,12 @@ You must output a strict JSON object with this exact structure:
   ],
   "translations": {
     // For each requested language (${langsRequested.join(", ")}), provide an array of strings matching the exact quantity and order of arabic_segments.
-    // Example for 'es':
-    // "es": ["traducción línea 1", "traducción línea 2"]
   }
 }
 CRITICAL RULES:
 1. Provide accurate timestamps (start and end in seconds) for every line.
 2. Do not leave large gaps or skip sections where vocals are singing.
-3. Return ONLY valid JSON. No markdown ticks if possible, just the clean JSON string.`;
+3. Return ONLY valid JSON. No markdown ticks, just the clean JSON string.`;
 
     const generateUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
     
@@ -228,15 +230,20 @@ CRITICAL RULES:
     });
 
     const genData = await genRes.json();
-    const responseText = genData?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!responseText) throw new Error("Gemini no devolvió una respuesta válida.");
+    if (!genRes.ok || !genData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        console.error("RESPUESTA DE ERROR DE GEMINI:", JSON.stringify(genData, null, 2));
+        throw new Error(genData?.error?.message || "Gemini no devolvió una respuesta válida.");
+    }
+
+    const responseText = genData.candidates[0].content.parts[0].text;
 
     let parsedResult;
     try {
         const cleanJson = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
         parsedResult = JSON.parse(cleanJson);
     } catch (e) {
+        console.error("Texto recibido que falló al parsear como JSON:", responseText);
         throw new Error("Error al parsear el JSON estructurado devuelto por Gemini.");
     }
 
@@ -367,7 +374,7 @@ function registerUserNasheedRoutes({ app, supabase, geminiApiKey }) {
 
             const requested = normalizeLanguages(row.subtitles?.__requested);
 
-            // LLAMADA PRINCIPAL A GEMINI (Transcribe y traduce de una sola tacada)
+            // LLAMADA PRINCIPAL A GEMINI
             const geminiResult = await processAudioWithGemini(signedAudio.data.signedUrl, requested, geminiApiKey);
 
             if (!geminiResult || !Array.isArray(geminiResult.arabic_segments)) {

@@ -20,7 +20,7 @@ const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const LANGS = new Set(["es", "en", "ru"]);
 
 const GROQ_STT = "whisper-large-v3-turbo";
-const GROQ_TRANSLATION = "llama-3.1-8b-instant";
+const GROQ_TRANSLATION = "openai/gpt-oss-120b";
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 
 const GROQ_MAX_RETRIES = 3;
@@ -345,13 +345,18 @@ async function reconstructArabicText(segments, apiKey) {
    SISTEMA DE TRADUCCIÓN (MODO DIAGNÓSTICO ESTRICTO)
    ========================================================= */
 
-const LANG_MAP = {
-    "es": "Spanish",
-    "en": "English",
-    "ru": "Russian"
-};
+/* =========================================================
+   SISTEMA DE TRADUCCIÓN (MODELO GPT OSS 120B)
+   ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
+    // Diccionario movido DENTRO de la función para evitar el error "Cannot redeclare"
+    const LANG_MAP = {
+        "es": "Spanish",
+        "en": "English",
+        "ru": "Russian"
+    };
+    
     const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
     const textsToTranslate = batch.map(s => cleanText(s.text));
 
@@ -363,9 +368,9 @@ CRITICAL RULES:
 4. Do not include any other text, markdown, or explanations.`;
 
     const requestBody = {
-        model: "llama-3.1-8b-instant",
-        temperature: 0, // Temperatura 0 para evitar que el modelo invente formatos
-        response_format: { type: "json_object" }, // Forzamos JSON a nivel de servidor Groq
+        model: "openai/gpt-oss-120b", 
+        temperature: 0, 
+        response_format: { type: "json_object" }, 
         messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: JSON.stringify({ lines: textsToTranslate }) }
@@ -388,7 +393,7 @@ CRITICAL RULES:
                 try {
                     parsed = JSON.parse(rawContent);
                 } catch (e) {
-                    lastError = "Groq no devolvió un JSON válido";
+                    lastError = "La API no devolvió JSON válido";
                     continue;
                 }
 
@@ -403,19 +408,17 @@ CRITICAL RULES:
                         };
                     });
                 } else {
-                    lastError = "El JSON no tiene el array 'translations'";
+                    lastError = "El JSON no tiene array 'translations'";
                 }
             } else {
-                lastError = "Respuesta de la IA vacía";
+                lastError = "Respuesta vacía del modelo";
             }
         } catch (error) {
-            // Capturamos el error HTTP exacto o el de red
             lastError = String(error?.message || error).slice(0, 45);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
     
-    // AQUÍ ESTÁ LA MAGIA: Si falla, imprimimos el error en tu pantalla a través del VTT
     return batch.map(s => ({ start: s.start, end: s.end, text: `[Error IA: ${lastError}]` }));
 }
 
@@ -423,16 +426,13 @@ async function translateAllBatch(segments, targetLanguageCode, apiKey) {
     if (!Array.isArray(segments) || !segments.length) return [];
     const finalSegments = [];
     
-    // Bajamos a 20 líneas por bloque para asegurar que el JSON no se rompa por tamaño
     for (let i = 0; i < segments.length; i += 20) {
         const batch = segments.slice(i, i + 20);
         finalSegments.push(...await translateBatchChunk(batch, targetLanguageCode, apiKey));
-        // Pausa de 1.5s para evadir los estrictos límites de Groq
-        if (i + 20 < segments.length) await sleep(1500); 
+        if (i + 20 < segments.length) await sleep(1000); 
     }
     return finalSegments;
 }
-
 /* =========================================================
    RUTAS PRINCIPALES
    ========================================================= */

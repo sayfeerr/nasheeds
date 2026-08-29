@@ -249,7 +249,7 @@ async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) 
 }
 
 /* =========================================================
-   PROGRESO Y IA
+   PROGRESO Y IA (WHISPER LIMPIO)
    ========================================================= */
 
 async function updateProgress(supabase, id, userId, percentage) {
@@ -268,17 +268,10 @@ async function transcribeArabic(audioUrl, apiKey) {
     
     const audioBlob = await audioRes.blob();
     const form = new FormData();
-    form.append("model", GROQ_STT); // Asegúrate de que arriba siga siendo "whisper-large-v3" (sin turbo)
+    form.append("model", GROQ_STT);
     form.append("file", audioBlob, "audio.mp3");
     form.append("language", "ar");
     form.append("response_format", "verbose_json");
-    
-    // TRUCO PARA GROQ: Usar un prompt 100% en árabe con palabras comunes de nasheeds.
-    // Esto "despierta" el modelo y le obliga a no ignorar los cantos.
-    form.append("prompt", "نشيد إسلامي. كلمات واضحة ومستمرة. الله، يا، رحمن، رحيم، قلبي، نور.");
-    
-    // Volvemos a poner la temperatura a 0. En Whisper, el 0 activa un sistema de "rescate" 
-    // interno que reintenta leer el audio si se pierde.
     form.append("temperature", "0");
     
     const result = await groqRequest(`${GROQ_BASE_URL}/audio/transcriptions`, { method: "POST", body: form }, apiKey, 3);
@@ -313,7 +306,7 @@ STRICT RULES:
 2. Output EXACTLY ${batch.length} numbered lines.`.trim();
 
     const requestBody = {
-        model: GROQ_TRANSLATION, temperature: 0.1, max_completion_tokens: 3000,
+        model: GROQ_TRANSLATION, temperature: 0.1, max_tokens: 3000,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: input }]
     };
 
@@ -349,15 +342,10 @@ async function reconstructArabicText(segments, apiKey) {
 }
 
 /* =========================================================
-   SISTEMA DE TRADUCCIÓN (MODO DIAGNÓSTICO ESTRICTO)
-   ========================================================= */
-
-/* =========================================================
-   SISTEMA DE TRADUCCIÓN (MODELO GPT OSS 120B)
+   TRADUCCIÓN CON GPT OSS 120B (JSON ROBUSTO)
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
-    // Diccionario movido DENTRO de la función para evitar el error "Cannot redeclare"
     const LANG_MAP = {
         "es": "Spanish",
         "en": "English",
@@ -367,15 +355,15 @@ async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
     const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
     const textsToTranslate = batch.map(s => cleanText(s.text));
 
-  const systemPrompt = `You are a translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into ${targetLanguageName}.
+    const systemPrompt = `You are a professional translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into clear, natural, everyday ${targetLanguageName}.
 CRITICAL RULES:
-1. EVERYDAY LANGUAGE: Use simple, everyday language that any normal person can easily understand. Do NOT use archaic, complex, or strange words. Preserve the spiritual meaning, but make it highly accessible.
-2. LINE BY LINE: You must translate line-by-line. DO NOT merge, combine, or group lines together.
-3. JSON FORMAT: You MUST return a valid JSON object with a single key "translations".
-4. ARRAY LENGTH: The "translations" array MUST contain EXACTLY ${batch.length} strings, keeping the exact same order as the input.`;
+1. You MUST return a valid JSON object.
+2. The JSON MUST contain a single key called "translations".
+3. The value of "translations" MUST be an array of exactly ${batch.length} strings matching the exact input order.
+4. Do not include any other text, markdown, or explanations.`;
 
     const requestBody = {
-        model: "openai/gpt-oss-120b", 
+        model: GROQ_TRANSLATION,
         temperature: 0, 
         response_format: { type: "json_object" }, 
         messages: [
@@ -411,7 +399,7 @@ CRITICAL RULES:
                         return {
                             start: segment.start,
                             end: segment.end,
-                            text: text ? cleanText(text) : `[Falta línea ${index + 1}]`
+                            text: text ? cleanText(text) : "[Traducción no disponible]"
                         };
                     });
                 } else {
@@ -426,7 +414,7 @@ CRITICAL RULES:
         }
     }
     
-    return batch.map(s => ({ start: s.start, end: s.end, text: `[Error IA: ${lastError}]` }));
+    return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
 }
 
 async function translateAllBatch(segments, targetLanguageCode, apiKey) {
@@ -440,6 +428,7 @@ async function translateAllBatch(segments, targetLanguageCode, apiKey) {
     }
     return finalSegments;
 }
+
 /* =========================================================
    RUTAS PRINCIPALES
    ========================================================= */

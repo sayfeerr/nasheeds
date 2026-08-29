@@ -223,17 +223,22 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             formData.append("response_format", "verbose_json");
             formData.append("prompt", "Nasheed islámico con voces claras y continuas en árabe.");
 
-            const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+           const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${groqApiKey}` },
                 body: formData
             });
 
             const transcription = await groqRes.json();
-            if (!transcription.segments || transcription.segments.length === 0) {
-                throw new Error("La IA no pudo detectar segmentos de voz.");
+
+            // Si Groq devuelve un error, lo atrapamos y mostramos el motivo exacto
+            if (!groqRes.ok) {
+                throw new Error(`Error en la API de Groq: ${transcription.error?.message || JSON.stringify(transcription)}`);
             }
 
+            if (!transcription.segments || transcription.segments.length === 0) {
+                throw new Error("La IA no pudo detectar segmentos de voz en este audio.");
+            }
             const segments = transcription.segments;
             const requestedLangs = nasheed.translations || [];
             const allLangs = Array.from(new Set(["ar", ...requestedLangs]));

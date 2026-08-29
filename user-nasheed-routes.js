@@ -272,7 +272,14 @@ async function transcribeArabic(audioUrl, apiKey) {
     form.append("file", audioBlob, "audio.mp3");
     form.append("language", "ar");
     form.append("response_format", "verbose_json");
-    form.append("temperature", "0");
+    
+    // EL TRUCO DEFINITIVO CONTRA LOS HUECOS VACÍOS EN CANCIONES:
+    // Obliga a Whisper a procesar el audio en crudo sin predecir el futuro
+    form.append("condition_on_previous_text", "false");
+    
+    // El prompt para avisar de que es un nasheed cantado
+    form.append("prompt", "نشيد إسلامي. كلمات واضحة. The following is a nasheed with clear continuous Arabic vocals.");
+    form.append("temperature", "0.2");
     
     const result = await groqRequest(`${GROQ_BASE_URL}/audio/transcriptions`, { method: "POST", body: form }, apiKey, 3);
     if (!result || result.error || !Array.isArray(result.segments)) throw new Error("Whisper devolvió respuesta inválida.");

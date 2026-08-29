@@ -268,18 +268,18 @@ async function transcribeArabic(audioUrl, apiKey) {
     
     const audioBlob = await audioRes.blob();
     const form = new FormData();
-    form.append("model", GROQ_STT);
+    form.append("model", GROQ_STT); // Asegúrate de que arriba siga siendo "whisper-large-v3" (sin turbo)
     form.append("file", audioBlob, "audio.mp3");
     form.append("language", "ar");
     form.append("response_format", "verbose_json");
     
-    // EL TRUCO DEFINITIVO CONTRA LOS HUECOS VACÍOS EN CANCIONES:
-    // Obliga a Whisper a procesar el audio en crudo sin predecir el futuro
-    form.append("condition_on_previous_text", "false");
+    // TRUCO PARA GROQ: Usar un prompt 100% en árabe con palabras comunes de nasheeds.
+    // Esto "despierta" el modelo y le obliga a no ignorar los cantos.
+    form.append("prompt", "نشيد إسلامي. كلمات واضحة ومستمرة. الله، يا، رحمن، رحيم، قلبي، نور.");
     
-    // El prompt para avisar de que es un nasheed cantado
-    form.append("prompt", "نشيد إسلامي. كلمات واضحة. The following is a nasheed with clear continuous Arabic vocals.");
-    form.append("temperature", "0.2");
+    // Volvemos a poner la temperatura a 0. En Whisper, el 0 activa un sistema de "rescate" 
+    // interno que reintenta leer el audio si se pierde.
+    form.append("temperature", "0");
     
     const result = await groqRequest(`${GROQ_BASE_URL}/audio/transcriptions`, { method: "POST", body: form }, apiKey, 3);
     if (!result || result.error || !Array.isArray(result.segments)) throw new Error("Whisper devolvió respuesta inválida.");

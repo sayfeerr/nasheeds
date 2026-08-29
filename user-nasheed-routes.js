@@ -345,63 +345,80 @@ async function reconstructArabicText(segments, apiKey) {
    TRADUCCIÓN PURA LÍNEA A LÍNEA (EVITA PROMPTS FILTRADOS)
    ========================================================= */
 
-async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    const textsToTranslate = batch.map(s => cleanText(s.text));
+/* =========================================================
+   NUEVO SISTEMA DE TRADUCCIÓN (LISTAS NUMERADAS)
+   ========================================================= */
 
-    const systemPrompt = `You are a professional translator. Translate the following array of Arabic nasheed lyrics into ${targetLanguage}.
+async function translateBatchChunk(batch, targetLanguage, apiKey) {
+    // Usamos formato enumerado: "1. Texto", "2. Texto"...
+    const input = batch.map((s, index) => `${index + 1}. ${cleanText(s.text)}`).join("\n");
+
+    const systemPrompt = `You are an expert professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguage}.
 CRITICAL RULES:
 1. Translate natively and accurately. Do not transliterate Arabic.
-2. You MUST return a valid JSON object containing an array called "translations".
-3. The "translations" array must contain EXACTLY ${batch.length} items, matching the exact order of the input lines.
-Format required:
-{
-  "translations": ["traducción línea 1", "traducción línea 2", ...]
-}`;
+2. Output EXACTLY ${batch.length} numbered lines.
+3. Format each line exactly as "Number. Translated text".
+4. Do NOT output any JSON, introductions, or explanations. Just the numbered translation.`;
 
     const requestBody = {
-        model: GROQ_TRANSLATION,
+        // Te recomiendo subir temporalmente a llama3-70b-8192 para traducciones complejas
+        model: "llama3-70b-8192", 
         temperature: 0.1,
-        response_format: { type: "json_object" },
+        max_completion_tokens: 3000,
         messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: JSON.stringify({ lines: textsToTranslate }) }
+            { role: "user", content: input }
         ]
     };
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            const result = await groqRequest(
-                `${GROQ_BASE_URL}/chat/completions`,
-                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
-                apiKey
-            );
+            const result = await groqRequest(`${GROQ_BASE_URL}/chat/completions`, { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify(requestBody) 
+            }, apiKey);
 
-            const rawContent = result?.choices?.[0]?.message?.content;
-            if (typeof rawContent === "string" && rawContent.trim()) {
-                // Limpiamos cualquier bloque de código markdown si la IA lo llega a incluir
-                const cleanJsonStr = rawContent.replace(/```json/gi, "").replace(/```/g, "").trim();
-                const parsed = JSON.parse(cleanJsonStr);
-                const translatedList = parsed.translations || parsed.result || [];
-
-                if (Array.isArray(translatedList) && translatedList.length > 0) {
-                    return batch.map((segment, index) => {
-                        const translated = cleanText(translatedList[index]);
-                        return {
-                            start: segment.start,
-                            end: segment.end,
-                            // Si una línea específica falla, muestra un texto limpio en lugar de romper o mostrar árabe
-                            text: translated || "[Traducción no disponible]"
-                        };
-                    });
-                }
+            const content = result?.choices?.[0]?.message?.content;
+            if (typeof content === "string" && content.trim()) {
+                
+                // Reciclamos tu parseador inteligente que ya funciona de lujo
+                const parsed = parseNumberedOutput(content, batch.length);
+                const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
+                
+                return batch.map((segment, index) => {
+                    let text = parsed.get(index);
+                    if (!text && rawLines[index]) {
+                        text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
+                    }
+                    return {
+                        start: segment.start,
+                        end: segment.end,
+                        text: text || "[Traducción no disponible]"
+                    };
+                });
             }
         } catch (error) {
-            console.error(`Error en JSON de traducción (intento ${attempt}):`, error);
+            console.error(`Error en traducción a ${targetLanguage} (intento ${attempt}):`, error);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
     
     return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
+}
+
+async function translateAllBatch(segments, targetLanguage, apiKey) {
+    if (!Array.isArray(segments) || !segments.length) return [];
+    const finalSegments = [];
+    
+    // Agrupamos en bloques de 30 (mejor que 50 para no ahogar al modelo al traducir)
+    for (let i = 0; i < segments.length; i += 30) {
+        const batch = segments.slice(i, i + 30);
+        finalSegments.push(...await translateBatchChunk(batch, targetLanguage, apiKey));
+        // Pausa obligatoria para evitar Rate Limits de Groq
+        if (i + 30 < segments.length) await sleep(500); 
+    }
+    return finalSegments;
 }
 
 /* =========================================================

@@ -3,8 +3,10 @@
 const { Buffer } = require("buffer");
 
 function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
+    // Usamos el mismo bucket que ya usa tu server.js ("Nasheeds")
+    const STORAGE_BUCKET = "Nasheeds";
 
-    // 0. RUTA UNIFICADA PARA EL REPRODUCTOR PRINCIPAL (index.html)
+    // 0. RUTA UNIFICADA /api/nasheeds (Segura y tolerante a fallos para proteger los antiguos)
     app.get("/api/nasheeds", async (req, res) => {
         try {
             // 1. Obtener nasheeds públicos de la tabla general del admin
@@ -13,7 +15,9 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
                 .select("id, title, audio_url, cover_url, subtitles, warning_enabled, created_at")
                 .order("created_at", { ascending: false });
 
-            if (pubError) console.error("[PUB NASHEEDS ERROR]", pubError);
+            if (pubError) {
+                console.error("[PUB NASHEEDS ERROR]", pubError);
+            }
 
             const formattedPublic = (publicTracks || []).map(item => ({
                 id: Number(item.id),
@@ -27,71 +31,72 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
                 created_at: item.created_at
             }));
 
-            // 2. Intentar ver si hay un usuario autenticado para añadir sus nasheeds privados
+            // 2. Intentar obtener nasheeds privados del usuario (si está logueado)
             let formattedPrivate = [];
-            const authHeader = req.headers.authorization || "";
-            if (authHeader.startsWith("Bearer ")) {
-                const token = authHeader.slice(7).trim();
-                const { data: { user } } = await supabase.auth.getUser(token);
+            try {
+                const authHeader = req.headers.authorization || "";
+                if (authHeader.startsWith("Bearer ")) {
+                    const token = authHeader.slice(7).trim();
+                    const { data: { user } } = await supabase.auth.getUser(token);
 
-                if (user) {
-                    const { data: userTracks, error: userError } = await supabase
-                        .from("user_nasheeds")
-                        .select("*")
-                        .eq("user_id", user.id)
-                        .eq("status", "ready")
-                        .order("created_at", { ascending: false });
+                    if (user) {
+                        const { data: userTracks, error: userError } = await supabase
+                            .from("user_nasheeds")
+                            .select("*")
+                            .eq("user_id", user.id)
+                            .eq("status", "ready")
+                            .order("created_at", { ascending: false });
 
-                    if (!userError && userTracks) {
-                        for (const item of userTracks) {
-                            // Generar URLs públicas/firmadas para el audio del usuario
-                            const { data: audioPublic } = supabase.storage
-                                .from("UserNasheeds")
-                                .getPublicUrl(item.audio_path);
+                        if (!userError && userTracks) {
+                            for (const item of userTracks) {
+                                const { data: audioPublic } = supabase.storage
+                                    .from(STORAGE_BUCKET)
+                                    .getPublicUrl(item.audio_path);
 
-                            let coverUrl = "";
-                            if (item.cover_path) {
-                                const { data: coverPublic } = supabase.storage
-                                    .from("UserNasheeds")
-                                    .getPublicUrl(item.cover_path);
-                                coverUrl = coverPublic?.publicUrl || "";
-                            }
-
-                            // Mapear los subtítulos .vtt generados
-                            const subs = {};
-                            if (item.subtitles && typeof item.subtitles === "object") {
-                                for (const [lang, vttContent] of Object.entries(item.subtitles)) {
-                                    // Creamos una URL de Data URI base64 para que el reproductor los lea directamente sin fallos
-                                    subs[lang] = `data:text/vtt;charset=utf-8,${encodeURIComponent(vttContent)}`;
+                                let coverUrl = "";
+                                if (item.cover_path) {
+                                    const { data: coverPublic } = supabase.storage
+                                        .from(STORAGE_BUCKET)
+                                        .getPublicUrl(item.cover_path);
+                                    coverUrl = coverPublic?.publicUrl || "";
                                 }
-                            }
 
-                            formattedPrivate.push({
-                                id: Number(item.id),
-                                title: item.title,
-                                file: audioPublic?.publicUrl || "",
-                                cover: coverUrl,
-                                subtitles: subs,
-                                warning: false,
-                                private: true,
-                                status: "ready",
-                                created_at: item.created_at
-                            });
+                                const subs = {};
+                                if (item.subtitles && typeof item.subtitles === "object") {
+                                    for (const [lang, vttContent] of Object.entries(item.subtitles)) {
+                                        subs[lang] = `data:text/vtt;charset=utf-8,${encodeURIComponent(vttContent)}`;
+                                    }
+                                }
+
+                                formattedPrivate.push({
+                                    id: Number(item.id),
+                                    title: item.title,
+                                    file: audioPublic?.publicUrl || "",
+                                    cover: coverUrl,
+                                    subtitles: subs,
+                                    warning: false,
+                                    private: true,
+                                    status: "ready",
+                                    created_at: item.created_at
+                                });
+                            }
                         }
                     }
                 }
+            } catch (privErr) {
+                console.error("[PRIVATE NASHEEDS LOAD ERROR - Ignored]", privErr);
             }
 
-            // Devolver ambos combinados (los privados del usuario primero, luego los públicos)
+            // Devolver combinados los privados del usuario y los públicos de siempre
             return res.status(200).json([...formattedPrivate, ...formattedPublic]);
 
         } catch (err) {
-            console.error("[NASHEEDS API ERROR]", err);
+            console.error("[NASHEEDS API CRITICAL ERROR]", err);
             return res.status(500).json({ error: err.message });
         }
     });
 
-    // 1. Obtener lista para el panel de subida del usuario
+    // 1. Obtener lista para el panel de usuario
     app.get("/api/user-nasheeds", async (req, res) => {
         try {
             const authHeader = req.headers.authorization || "";
@@ -110,11 +115,12 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             if (error) throw error;
             return res.status(200).json({ nasheeds: nasheeds || [] });
         } catch (err) {
+            console.error("[USER NASHEEDS GET ERROR]", err);
             return res.status(500).json({ error: err.message });
         }
     });
 
-    // 2. Preparar subida (Valida límite diario de 1 subida y nombres limpios)
+    // 2. Preparar subida (Valida límite diario y limpia nombres)
     app.post("/api/user-nasheeds/prepare", async (req, res) => {
         try {
             const authHeader = req.headers.authorization || "";
@@ -141,10 +147,10 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             }
 
             const safeAudioName = audio.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-            const audioPath = `${user.id}/${Date.now()}_${safeAudioName}`;
+            const audioPath = `user-uploads/${user.id}/${Date.now()}_${safeAudioName}`;
 
             const safeCoverName = cover ? cover.name.replace(/[^a-zA-Z0-9_.-]/g, "_") : null;
-            const coverPath = cover ? `${user.id}/${Date.now()}_${safeCoverName}` : null;
+            const coverPath = cover ? `user-uploads/${user.id}/${Date.now()}_${safeCoverName}` : null;
 
             const { data: inserted, error: insertError } = await supabase
                 .from("user_nasheeds")
@@ -163,7 +169,7 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             if (insertError) throw insertError;
 
             const { data: audioUploadData, error: audioSignError } = await supabase.storage
-                .from("UserNasheeds")
+                .from(STORAGE_BUCKET)
                 .createSignedUploadUrl(audioPath);
 
             if (audioSignError) throw audioSignError;
@@ -171,7 +177,7 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             let coverUploadData = null;
             if (cover && coverPath) {
                 const { data: coverSignData, error: coverSignError } = await supabase.storage
-                    .from("UserNasheeds")
+                    .from(STORAGE_BUCKET)
                     .createSignedUploadUrl(coverPath);
                 if (!coverSignError) coverUploadData = coverSignData;
             }
@@ -187,7 +193,7 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
         }
     });
 
-    // 3. Procesar audio con Groq IA y generar subtítulos traducidos
+    // 3. Procesar audio con Groq IA y generar subtítulos sincronizados
     app.post("/api/user-nasheeds/:id/process", async (req, res) => {
         const { id } = req.params;
 
@@ -208,37 +214,38 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
 
             if (fetchError || !nasheed) return res.status(404).json({ error: "Nasheed no encontrado" });
 
+            console.log(`[PROCESS] Descargando audio del bucket '${STORAGE_BUCKET}':`, nasheed.audio_path);
             const { data: fileData, error: downloadError } = await supabase.storage
-                .from("UserNasheeds")
+                .from(STORAGE_BUCKET)
                 .download(nasheed.audio_path);
 
-            if (downloadError) throw downloadError;
+            if (downloadError) throw new Error(`Error descargando audio: ${downloadError.message}`);
 
             const arrayBuffer = await fileData.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
+            console.log("[PROCESS] Enviando audio a Groq Whisper (esto puede tardar unos segundos)...");
             const formData = new FormData();
             formData.append("file", new Blob([buffer]), "audio.mp3");
             formData.append("model", "whisper-large-v3-turbo");
             formData.append("response_format", "verbose_json");
             formData.append("prompt", "Nasheed islámico con voces claras y continuas en árabe.");
 
-           const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${groqApiKey}` },
                 body: formData
             });
 
             const transcription = await groqRes.json();
-
-            // Si Groq devuelve un error, lo atrapamos y mostramos el motivo exacto
             if (!groqRes.ok) {
-                throw new Error(`Error en la API de Groq: ${transcription.error?.message || JSON.stringify(transcription)}`);
+                throw new Error(`Groq API Error: ${transcription.error?.message || JSON.stringify(transcription)}`);
             }
 
             if (!transcription.segments || transcription.segments.length === 0) {
-                throw new Error("La IA no pudo detectar segmentos de voz en este audio.");
+                throw new Error("La IA no pudo detectar segmentos de voz en el audio.");
             }
+
             const segments = transcription.segments;
             const requestedLangs = nasheed.translations || [];
             const allLangs = Array.from(new Set(["ar", ...requestedLangs]));
@@ -307,9 +314,10 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
                 .update({ status: "ready", subtitles: subtitlesMap })
                 .eq("id", id);
 
+            console.log("[PROCESS] ¡Nasheed procesado y guardado con éxito!");
             return res.status(200).json({ success: true });
         } catch (err) {
-            console.error("[PROCESS ERROR]", err);
+            console.error("[PROCESS ERROR CRITICAL]", err);
             await supabase
                 .from("user_nasheeds")
                 .update({ status: "error", error: err.message })

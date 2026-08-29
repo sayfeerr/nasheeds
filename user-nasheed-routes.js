@@ -342,14 +342,9 @@ async function reconstructArabicText(segments, apiKey) {
 }
 
 /* =========================================================
-   NUEVO SISTEMA DE TRADUCCIÓN LÍNEA A LÍNEA (CORREGIDO)
+   SISTEMA DE TRADUCCIÓN (MODO DIAGNÓSTICO ESTRICTO)
    ========================================================= */
 
-/* =========================================================
-   SISTEMA DE TRADUCCIÓN LÍNEA A LÍNEA (CORREGIDO V2)
-   ========================================================= */
-
-// Diccionario para que la IA entienda el idioma exacto
 const LANG_MAP = {
     "es": "Spanish",
     "en": "English",
@@ -358,24 +353,26 @@ const LANG_MAP = {
 
 async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
     const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
-    const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
+    const textsToTranslate = batch.map(s => cleanText(s.text));
 
-    const systemPrompt = `You are a professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguageName}.
+    const systemPrompt = `You are a professional translator. Translate this array of Arabic nasheed lyrics into ${targetLanguageName}.
 CRITICAL RULES:
-1. Translate natively and accurately into ${targetLanguageName}. Do not transliterate Arabic.
-2. Output EXACTLY ${batch.length} numbered lines.
-3. Format each line exactly as "Number. Translated text".
-4. Do NOT output any JSON, introductions, or explanations. Just the numbered translation.`;
+1. You MUST return a valid JSON object.
+2. The JSON MUST contain a single key called "translations".
+3. The value of "translations" MUST be an array of exactly ${batch.length} strings.
+4. Do not include any other text, markdown, or explanations.`;
 
     const requestBody = {
-        model: "llama-3.1-8b-instant", // Volvemos al 8B: menos riesgo de Rate Limits
-        temperature: 0.1,
-        max_tokens: 3000, // IMPORTANTE: max_tokens en lugar de max_completion_tokens
+        model: "llama-3.1-8b-instant",
+        temperature: 0, // Temperatura 0 para evitar que el modelo invente formatos
+        response_format: { type: "json_object" }, // Forzamos JSON a nivel de servidor Groq
         messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: input }
+            { role: "user", content: JSON.stringify({ lines: textsToTranslate }) }
         ]
     };
+
+    let lastError = "Error desconocido";
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
@@ -385,40 +382,53 @@ CRITICAL RULES:
                 apiKey
             );
 
-            const content = result?.choices?.[0]?.message?.content;
-            if (typeof content === "string" && content.trim()) {
-                const parsed = parseNumberedOutput(content, batch.length);
-                const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
-                
-                return batch.map((segment, index) => {
-                    let text = parsed.get(index);
-                    if (!text && rawLines[index]) text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
-                    return {
-                        start: segment.start,
-                        end: segment.end,
-                        text: text || "[Traducción no disponible]"
-                    };
-                });
+            const rawContent = result?.choices?.[0]?.message?.content;
+            if (typeof rawContent === "string" && rawContent.trim()) {
+                let parsed;
+                try {
+                    parsed = JSON.parse(rawContent);
+                } catch (e) {
+                    lastError = "Groq no devolvió un JSON válido";
+                    continue;
+                }
+
+                const translatedList = parsed.translations;
+                if (Array.isArray(translatedList) && translatedList.length > 0) {
+                    return batch.map((segment, index) => {
+                        const text = translatedList[index];
+                        return {
+                            start: segment.start,
+                            end: segment.end,
+                            text: text ? cleanText(text) : `[Falta línea ${index + 1}]`
+                        };
+                    });
+                } else {
+                    lastError = "El JSON no tiene el array 'translations'";
+                }
+            } else {
+                lastError = "Respuesta de la IA vacía";
             }
         } catch (error) {
-            console.error(`Error en traducción a ${targetLanguageName} (intento ${attempt}):`, error?.message || error);
+            // Capturamos el error HTTP exacto o el de red
+            lastError = String(error?.message || error).slice(0, 45);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
     
-    return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
+    // AQUÍ ESTÁ LA MAGIA: Si falla, imprimimos el error en tu pantalla a través del VTT
+    return batch.map(s => ({ start: s.start, end: s.end, text: `[Error IA: ${lastError}]` }));
 }
 
 async function translateAllBatch(segments, targetLanguageCode, apiKey) {
     if (!Array.isArray(segments) || !segments.length) return [];
     const finalSegments = [];
     
-    for (let i = 0; i < segments.length; i += 30) {
-        const batch = segments.slice(i, i + 30);
+    // Bajamos a 20 líneas por bloque para asegurar que el JSON no se rompa por tamaño
+    for (let i = 0; i < segments.length; i += 20) {
+        const batch = segments.slice(i, i + 20);
         finalSegments.push(...await translateBatchChunk(batch, targetLanguageCode, apiKey));
-        
-        // Pausa de 1 segundo entre bloques para que Groq no nos bloquee (Rate Limit 429)
-        if (i + 30 < segments.length) await sleep(1000); 
+        // Pausa de 1.5s para evadir los estrictos límites de Groq
+        if (i + 20 < segments.length) await sleep(1500); 
     }
     return finalSegments;
 }

@@ -19,7 +19,7 @@ const AUDIO_TYPES = new Set([
 const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const LANGS = new Set(["es", "en", "ru"]);
 
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 /* =========================================================
    UTILIDADES

@@ -345,21 +345,32 @@ async function reconstructArabicText(segments, apiKey) {
    NUEVO SISTEMA DE TRADUCCIÓN LÍNEA A LÍNEA (CORREGIDO)
    ========================================================= */
 
-async function translateBatchChunk(batch, targetLanguage, apiKey) {
+/* =========================================================
+   SISTEMA DE TRADUCCIÓN LÍNEA A LÍNEA (CORREGIDO V2)
+   ========================================================= */
+
+// Diccionario para que la IA entienda el idioma exacto
+const LANG_MAP = {
+    "es": "Spanish",
+    "en": "English",
+    "ru": "Russian"
+};
+
+async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
+    const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
     const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
 
-    const systemPrompt = `You are a professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguage}.
+    const systemPrompt = `You are a professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguageName}.
 CRITICAL RULES:
-1. Translate natively and accurately. Do not transliterate Arabic.
+1. Translate natively and accurately into ${targetLanguageName}. Do not transliterate Arabic.
 2. Output EXACTLY ${batch.length} numbered lines.
 3. Format each line exactly as "Number. Translated text".
 4. Do NOT output any JSON, introductions, or explanations. Just the numbered translation.`;
 
     const requestBody = {
-        // Usamos un modelo mayor y más competente para traducir sin alucinaciones
-        model: "llama-3.1-70b-versatile",
+        model: "llama-3.1-8b-instant", // Volvemos al 8B: menos riesgo de Rate Limits
         temperature: 0.1,
-        max_completion_tokens: 3000,
+        max_tokens: 3000, // IMPORTANTE: max_tokens en lugar de max_completion_tokens
         messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: input }
@@ -390,7 +401,7 @@ CRITICAL RULES:
                 });
             }
         } catch (error) {
-            console.error(`Error en traducción (intento ${attempt}):`, error);
+            console.error(`Error en traducción a ${targetLanguageName} (intento ${attempt}):`, error?.message || error);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
@@ -398,15 +409,16 @@ CRITICAL RULES:
     return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
 }
 
-async function translateAllBatch(segments, targetLanguage, apiKey) {
+async function translateAllBatch(segments, targetLanguageCode, apiKey) {
     if (!Array.isArray(segments) || !segments.length) return [];
     const finalSegments = [];
     
-    // Bloques de 30 para no saturar los tokens de salida del modelo y asegurar exactitud
     for (let i = 0; i < segments.length; i += 30) {
         const batch = segments.slice(i, i + 30);
-        finalSegments.push(...await translateBatchChunk(batch, targetLanguage, apiKey));
-        if (i + 30 < segments.length) await sleep(500); 
+        finalSegments.push(...await translateBatchChunk(batch, targetLanguageCode, apiKey));
+        
+        // Pausa de 1 segundo entre bloques para que Groq no nos bloquee (Rate Limit 429)
+        if (i + 30 < segments.length) await sleep(1000); 
     }
     return finalSegments;
 }

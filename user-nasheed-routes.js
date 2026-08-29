@@ -3,7 +3,7 @@
 const crypto = require("crypto");
 
 /* =========================================================
-   CONFIG
+   CONFIGURACIÓN
    ========================================================= */
 
 const BUCKET = "UserNasheeds";
@@ -19,15 +19,7 @@ const AUDIO_TYPES = new Set([
 const COVER_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const LANGS = new Set(["es", "en", "ru"]);
 
-const GROQ_STT = "whisper-large-v3";
-const GROQ_TRANSLATION = "openai/gpt-oss-120b";
-const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
-
-const GROQ_MAX_RETRIES = 3;
-const GROQ_TIMEOUT_MS = 60000;
-const GROQ_MIN_REQUEST_INTERVAL = 400;
-
-let lastGroqRequestAt = 0;
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 /* =========================================================
    UTILIDADES
@@ -93,20 +85,8 @@ function isUsefulText(value) {
     return cleanText(value).length > 0;
 }
 
-function containsArabic(text) {
-    return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(text || ""));
-}
-
-function isMostlyLatin(text) {
-    const value = String(text || "").trim();
-    if (!value) return false;
-    const arabic = (value.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
-    const latin = (value.match(/[A-Za-zÀ-ÿ]/g) || []).length;
-    return arabic === 0 && latin >= 3;
-}
-
 /* =========================================================
-   SEGMENTOS (4 PALABRAS)
+   SEGMENTOS Y VTT
    ========================================================= */
 
 function normalizeSegments(segments) {
@@ -141,10 +121,6 @@ function optimizeSegmentsProportional(segments, maxWords = 4) {
     }
     return normalizeSegments(result);
 }
-
-/* =========================================================
-   VTT
-   ========================================================= */
 
 function vttTime(value) {
     const milliseconds = Math.max(0, Math.round(Number(value || 0) * 1000));
@@ -181,75 +157,94 @@ function makeVTT(segments) {
 }
 
 /* =========================================================
-   GROQ REQUESTS
+   PROCESAMIENTO NATIVO CON GEMINI (AUDIO Y TRADUCCIÓN)
    ========================================================= */
 
-async function waitForGroqSlot() {
-    const now = Date.now();
-    const elapsed = now - lastGroqRequestAt;
-    if (elapsed < GROQ_MIN_REQUEST_INTERVAL) {
-        await sleep(GROQ_MIN_REQUEST_INTERVAL - elapsed);
-    }
-    lastGroqRequestAt = Date.now();
+async function processAudioWithGemini(audioUrl, targetLanguages, apiKey) {
+    const key = apiKey || process.env.GEMINI_API_KEY;
+    if (!key) throw new Error("GEMINI_API_KEY no está configurada.");
+
+    let audioRes;
+    try { audioRes = await fetch(audioUrl); } catch { throw new Error("Fallo de red al descargar audio."); }
+    if (!audioRes.ok) throw new Error(`Error HTTP al descargar audio: ${audioRes.status}`);
+    
+    const audioBuffer = await audioRes.arrayBuffer();
+    const blob = new Blob([audioBuffer], { type: "audio/mp3" });
+
+    // 1. Subir a la API de archivos de Gemini
+    const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${key}`;
+    const uploadForm = new FormData();
+    uploadForm.append("file", blob, "nasheed.mp3");
+
+    const uploadRes = await fetch(uploadUrl, { method: "POST", body: uploadForm });
+    const uploadData = await uploadRes.json();
+    const fileUri = uploadData?.file?.uri;
+    const mimeType = uploadData?.file?.mimeType || "audio/mp3";
+
+    if (!fileUri) throw new Error("No se pudo subir el archivo de audio a Gemini.");
+
+    const langsRequested = Array.isArray(targetLanguages) ? targetLanguages : [];
+
+    // 2. Prompt estricto para extraer árabe y traducciones sincronizadas
+    const promptText = `You are an expert Islamic nasheed transcriber and professional translator. 
+Listen to this audio file carefully from start to finish. Do not skip any part, vocal harmony, or chorus.
+You must output a strict JSON object with this exact structure:
+{
+  "arabic_segments": [
+    { "start": 0.0, "end": 5.2, "text": "arabic text line" }
+  ],
+  "translations": {
+    // For each requested language (${langsRequested.join(", ")}), provide an array of strings matching the exact quantity and order of arabic_segments.
+    // Example for 'es':
+    // "es": ["traducción línea 1", "traducción línea 2"]
+  }
 }
+CRITICAL RULES:
+1. Provide accurate timestamps (start and end in seconds) for every line.
+2. Do not leave large gaps or skip sections where vocals are singing.
+3. Return ONLY valid JSON. No markdown ticks if possible, just the clean JSON string.`;
 
-async function groqRequest(url, options, apiKey, maxRetries = GROQ_MAX_RETRIES) {
-    if (!apiKey) throw new Error("GROQ_API_KEY no está configurada.");
-    let lastError = null;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        let controller = null;
-        let timeout = null;
-        try {
-            await waitForGroqSlot();
-            controller = new AbortController();
-            timeout = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
-            
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal,
-                headers: { ...(options.headers || {}), Authorization: `Bearer ${apiKey}` }
-            });
-            
-            const raw = await response.text();
-            let body = null;
-            if (raw.trim()) {
-                try { body = JSON.parse(raw); } catch { body = null; }
+    const generateUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+    
+    const requestBody = {
+        contents: [
+            {
+                parts: [
+                    { file_data: { file_uri: fileUri, mime_type: mimeType } },
+                    { text: promptText }
+                ]
             }
-            
-            if (!response.ok) {
-                const apiMessage = body?.error?.message || body?.message || raw || `Groq HTTP ${response.status}`;
-                const error = new Error(apiMessage);
-                error.status = response.status;
-                if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-                    await sleep(2000 * attempt);
-                    continue;
-                }
-                throw error;
-            }
-            
-            if (!body || body.error) {
-                lastError = new Error(body?.error?.message || "Groq devolvió error o vacío.");
-                if (attempt < maxRetries) {
-                    await sleep(2000 * attempt);
-                    continue;
-                }
-                throw lastError;
-            }
-            return body;
-        } catch (error) {
-            lastError = error;
-            if (attempt >= maxRetries) break;
-            await sleep(2000 * attempt);
-        } finally {
-            if (timeout) clearTimeout(timeout);
+        ],
+        generationConfig: {
+            temperature: 0.1,
+            response_mime_type: "application/json"
         }
+    };
+
+    const genRes = await fetch(generateUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody)
+    });
+
+    const genData = await genRes.json();
+    const responseText = genData?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!responseText) throw new Error("Gemini no devolvió una respuesta válida.");
+
+    let parsedResult;
+    try {
+        const cleanJson = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+        parsedResult = JSON.parse(cleanJson);
+    } catch (e) {
+        throw new Error("Error al parsear el JSON estructurado devuelto por Gemini.");
     }
-    throw (lastError || new Error("Groq no respondió tras los intentos máximos."));
+
+    return parsedResult;
 }
 
 /* =========================================================
-   PROGRESO Y IA (WHISPER LIMPIO)
+   PROGRESO Y CANCELACIÓN
    ========================================================= */
 
 async function updateProgress(supabase, id, userId, percentage) {
@@ -259,174 +254,6 @@ async function updateProgress(supabase, id, userId, percentage) {
 async function checkIfCanceled(supabase, id, userId) {
     const { data } = await supabase.from("user_nasheeds").select("status").eq("id", id).eq("user_id", userId).single();
     if (data && data.status === "canceled") throw new Error("PROCESO_CANCELADO");
-}
-
-async function transcribeArabic(audioUrl, apiKey) {
-    let audioRes;
-    try { audioRes = await fetch(audioUrl); } catch { throw new Error("Fallo de red al descargar audio."); }
-    if (!audioRes.ok) throw new Error(`Error HTTP ${audioRes.status}`);
-    
-    const audioBlob = await audioRes.blob();
-    const form = new FormData();
-    form.append("model", GROQ_STT);
-    form.append("file", audioBlob, "audio.mp3");
-    form.append("language", "ar");
-    form.append("response_format", "verbose_json");
-    form.append("temperature", "0");
-    
-    const result = await groqRequest(`${GROQ_BASE_URL}/audio/transcriptions`, { method: "POST", body: form }, apiKey, 3);
-    if (!result || result.error || !Array.isArray(result.segments)) throw new Error("Whisper devolvió respuesta inválida.");
-    
-    const segments = normalizeSegments(result.segments);
-    const usable = segments.filter(segment => isUsefulText(segment.text));
-    if (!usable.length) throw new Error("Transcripción sin texto utilizable.");
-    return usable;
-}
-
-function parseNumberedOutput(content, expectedCount) {
-    const map = new Map();
-    const lines = String(content || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    for (const line of lines) {
-        const match = line.match(/^\s*[*_]*(\d+)[*_]*\s*[\.\):\-]\s*(.+?)\s*$/);
-        if (!match) continue;
-        const number = Number(match[1]);
-        const index = number - 1;
-        if (index < 0 || index >= expectedCount) continue;
-        let text = cleanText(match[2]).replace(/^["'`]+/, "").replace(/["'`]+$/, "").trim();
-        if (text && !text.includes("```")) map.set(index, text);
-    }
-    return map;
-}
-
-async function reconstructBatchChunk(batch, apiKey) {
-    const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
-    const systemPrompt = `You are an expert Arabic linguist. Reconstruct the ACTUAL ARABIC SCRIPT.
-STRICT RULES:
-1. Output Arabic Unicode script ONLY.
-2. Output EXACTLY ${batch.length} numbered lines.`.trim();
-
-    const requestBody = {
-        model: GROQ_TRANSLATION, temperature: 0.1, max_tokens: 3000,
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: input }]
-    };
-
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            const result = await groqRequest(`${GROQ_BASE_URL}/chat/completions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) }, apiKey);
-            const content = result?.choices?.[0]?.message?.content;
-            if (typeof content === "string" && content.trim()) {
-                const parsed = parseNumberedOutput(content, batch.length);
-                const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
-                return batch.map((segment, index) => {
-                    let text = parsed.get(index);
-                    if (!text && rawLines[index]) text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
-                    return { start: segment.start, end: segment.end, text: text || segment.text };
-                });
-            }
-        } catch (error) {
-            if (attempt < 3) await sleep(1500 * attempt);
-        }
-    }
-    return batch.map(segment => ({ start: segment.start, end: segment.end, text: segment.text }));
-}
-
-async function reconstructArabicText(segments, apiKey) {
-    if (!Array.isArray(segments) || !segments.length) throw new Error("Sin segmentos para reconstruir.");
-    const finalSegments = [];
-    for (let i = 0; i < segments.length; i += 50) {
-        const batch = segments.slice(i, i + 50);
-        finalSegments.push(...await reconstructBatchChunk(batch, apiKey));
-        if (i + 50 < segments.length) await sleep(400);
-    }
-    return finalSegments;
-}
-
-/* =========================================================
-   TRADUCCIÓN CON GPT OSS 120B (JSON ROBUSTO)
-   ========================================================= */
-
-async function translateBatchChunk(batch, targetLanguageCode, apiKey) {
-    const LANG_MAP = {
-        "es": "Spanish",
-        "en": "English",
-        "ru": "Russian"
-    };
-    
-    const targetLanguageName = LANG_MAP[targetLanguageCode] || targetLanguageCode;
-    const textsToTranslate = batch.map(s => cleanText(s.text));
-
-    const systemPrompt = `You are a professional translator specializing in Islamic nasheeds. Translate this array of Arabic lyrics into clear, natural, everyday ${targetLanguageName}.
-CRITICAL RULES:
-1. You MUST return a valid JSON object.
-2. The JSON MUST contain a single key called "translations".
-3. The value of "translations" MUST be an array of exactly ${batch.length} strings matching the exact input order.
-4. Do not include any other text, markdown, or explanations.`;
-
-    const requestBody = {
-        model: GROQ_TRANSLATION,
-        temperature: 0, 
-        response_format: { type: "json_object" }, 
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: JSON.stringify({ lines: textsToTranslate }) }
-        ]
-    };
-
-    let lastError = "Error desconocido";
-
-    for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-            const result = await groqRequest(
-                `${GROQ_BASE_URL}/chat/completions`,
-                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
-                apiKey
-            );
-
-            const rawContent = result?.choices?.[0]?.message?.content;
-            if (typeof rawContent === "string" && rawContent.trim()) {
-                let parsed;
-                try {
-                    parsed = JSON.parse(rawContent);
-                } catch (e) {
-                    lastError = "La API no devolvió JSON válido";
-                    continue;
-                }
-
-                const translatedList = parsed.translations;
-                if (Array.isArray(translatedList) && translatedList.length > 0) {
-                    return batch.map((segment, index) => {
-                        const text = translatedList[index];
-                        return {
-                            start: segment.start,
-                            end: segment.end,
-                            text: text ? cleanText(text) : "[Traducción no disponible]"
-                        };
-                    });
-                } else {
-                    lastError = "El JSON no tiene array 'translations'";
-                }
-            } else {
-                lastError = "Respuesta vacía del modelo";
-            }
-        } catch (error) {
-            lastError = String(error?.message || error).slice(0, 45);
-            if (attempt < 3) await sleep(1500 * attempt);
-        }
-    }
-    
-    return batch.map(s => ({ start: s.start, end: s.end, text: "[Traducción no disponible]" }));
-}
-
-async function translateAllBatch(segments, targetLanguageCode, apiKey) {
-    if (!Array.isArray(segments) || !segments.length) return [];
-    const finalSegments = [];
-    
-    for (let i = 0; i < segments.length; i += 20) {
-        const batch = segments.slice(i, i + 20);
-        finalSegments.push(...await translateBatchChunk(batch, targetLanguageCode, apiKey));
-        if (i + 20 < segments.length) await sleep(1000); 
-    }
-    return finalSegments;
 }
 
 /* =========================================================
@@ -456,7 +283,7 @@ async function privateTrack(supabase, row) {
     };
 }
 
-function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
+function registerUserNasheedRoutes({ app, supabase, geminiApiKey }) {
 
     app.get("/api/user-nasheeds", async (req, res) => {
         const currentUser = await getUser(req, supabase);
@@ -529,57 +356,63 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
 
         try {
             await checkIfCanceled(supabase, id, currentUser.id);
-            await updateProgress(supabase, id, currentUser.id, 10);
+            await updateProgress(supabase, id, currentUser.id, 15);
 
             const query = await supabase.from("user_nasheeds").select("*").eq("id", id).eq("user_id", currentUser.id).single();
             const row = query.data;
             if (!row || !row.audio_path) return res.status(400).json({ error: "Audio faltante." });
 
             const signedAudio = await supabase.storage.from(BUCKET).createSignedUrl(row.audio_path, 600);
-            await updateProgress(supabase, id, currentUser.id, 25);
+            await updateProgress(supabase, id, currentUser.id, 30);
 
-            let arabic = await transcribeArabic(signedAudio.data.signedUrl, groqApiKey);
-            const latinCount = arabic.filter(s => isMostlyLatin(s.text)).length;
-            const arabicCount = arabic.filter(s => containsArabic(s.text)).length;
+            const requested = normalizeLanguages(row.subtitles?.__requested);
 
-            if (latinCount > 0 && (latinCount >= arabicCount || arabicCount === 0)) {
-                await updateProgress(supabase, id, currentUser.id, 40);
-                arabic = await reconstructArabicText(arabic, groqApiKey);
+            // LLAMADA PRINCIPAL A GEMINI (Transcribe y traduce de una sola tacada)
+            const geminiResult = await processAudioWithGemini(signedAudio.data.signedUrl, requested, geminiApiKey);
+
+            if (!geminiResult || !Array.isArray(geminiResult.arabic_segments)) {
+                throw new Error("Gemini no devolvió segmentos árabes válidos.");
             }
 
-            arabic = normalizeSegments(arabic);
-            await updateProgress(supabase, id, currentUser.id, 50);
+            let arabicSegments = normalizeSegments(geminiResult.arabic_segments);
+            await updateProgress(supabase, id, currentUser.id, 60);
 
             const prefix = row.audio_path.split("/").slice(0, -1).join("/");
             const subtitlePaths = {};
 
             /* =================================================
-               1. ARABE
+               1. ÁRABE
                ================================================= */
-            const optimizedArabic = optimizeSegmentsProportional(arabic, 4);
+            const optimizedArabic = optimizeSegmentsProportional(arabicSegments, 4);
             const arabicPath = `${prefix}/subtitles/ar.vtt`;
             await supabase.storage.from(BUCKET).upload(arabicPath, Buffer.from("\uFEFF" + makeVTT(optimizedArabic), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
             subtitlePaths.ar = arabicPath;
 
             /* =================================================
-               2. IDIOMAS EXTRANJEROS
+               2. IDIOMAS EXTRANJEROS (es, en, ru)
                ================================================= */
-            const requested = normalizeLanguages(row.subtitles?.__requested);
-            await updateProgress(supabase, id, currentUser.id, 65);
+            await updateProgress(supabase, id, currentUser.id, 80);
 
             for (const language of requested) {
                 try {
                     await checkIfCanceled(supabase, id, currentUser.id);
-                    const translated = await translateAllBatch(arabic, language, groqApiKey);
-                    const optimizedTranslation = optimizeSegmentsProportional(translated, 4);
-                    const translationPath = `${prefix}/subtitles/${language}.vtt`;
                     
-                    await supabase.storage.from(BUCKET).upload(translationPath, Buffer.from("\uFEFF" + makeVTT(optimizedTranslation), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
-                    subtitlePaths[language] = translationPath;
-                    
-                    await sleep(400); 
+                    const rawTranslations = geminiResult.translations?.[language];
+                    if (Array.isArray(rawTranslations) && rawTranslations.length > 0) {
+                        const translatedSegments = arabicSegments.map((seg, idx) => ({
+                            start: seg.start,
+                            end: seg.end,
+                            text: cleanText(rawTranslations[idx] || "[Traducción no disponible]")
+                        }));
+
+                        const optimizedTranslation = optimizeSegmentsProportional(translatedSegments, 4);
+                        const translationPath = `${prefix}/subtitles/${language}.vtt`;
+                        
+                        await supabase.storage.from(BUCKET).upload(translationPath, Buffer.from("\uFEFF" + makeVTT(optimizedTranslation), "utf8"), { contentType: "text/vtt; charset=utf-8", upsert: true });
+                        subtitlePaths[language] = translationPath;
+                    }
                 } catch (error) {
-                    console.error(`Error procesando ${language}:`, error);
+                    console.error(`Error procesando subtítulo ${language}:`, error);
                 }
             }
 

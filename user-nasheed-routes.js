@@ -342,18 +342,13 @@ async function reconstructArabicText(segments, apiKey) {
 }
 
 /* =========================================================
-   TRADUCCIÓN PURA LÍNEA A LÍNEA (EVITA PROMPTS FILTRADOS)
-   ========================================================= */
-
-/* =========================================================
-   NUEVO SISTEMA DE TRADUCCIÓN (LISTAS NUMERADAS)
+   NUEVO SISTEMA DE TRADUCCIÓN LÍNEA A LÍNEA (CORREGIDO)
    ========================================================= */
 
 async function translateBatchChunk(batch, targetLanguage, apiKey) {
-    // Usamos formato enumerado: "1. Texto", "2. Texto"...
-    const input = batch.map((s, index) => `${index + 1}. ${cleanText(s.text)}`).join("\n");
+    const input = batch.map((segment, index) => `${index + 1}. ${cleanText(segment.text)}`).join("\n");
 
-    const systemPrompt = `You are an expert professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguage}.
+    const systemPrompt = `You are a professional translator. Translate the following Arabic nasheed lyrics into ${targetLanguage}.
 CRITICAL RULES:
 1. Translate natively and accurately. Do not transliterate Arabic.
 2. Output EXACTLY ${batch.length} numbered lines.
@@ -361,8 +356,8 @@ CRITICAL RULES:
 4. Do NOT output any JSON, introductions, or explanations. Just the numbered translation.`;
 
     const requestBody = {
-        // Te recomiendo subir temporalmente a llama3-70b-8192 para traducciones complejas
-        model: "llama3-70b-8192", 
+        // Usamos un modelo mayor y más competente para traducir sin alucinaciones
+        model: "llama-3.1-70b-versatile",
         temperature: 0.1,
         max_completion_tokens: 3000,
         messages: [
@@ -373,24 +368,20 @@ CRITICAL RULES:
 
     for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-            const result = await groqRequest(`${GROQ_BASE_URL}/chat/completions`, { 
-                method: "POST", 
-                headers: { "Content-Type": "application/json" }, 
-                body: JSON.stringify(requestBody) 
-            }, apiKey);
+            const result = await groqRequest(
+                `${GROQ_BASE_URL}/chat/completions`,
+                { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) },
+                apiKey
+            );
 
             const content = result?.choices?.[0]?.message?.content;
             if (typeof content === "string" && content.trim()) {
-                
-                // Reciclamos tu parseador inteligente que ya funciona de lujo
                 const parsed = parseNumberedOutput(content, batch.length);
                 const rawLines = content.split(/\r?\n/).map(l => cleanText(l)).filter(Boolean);
                 
                 return batch.map((segment, index) => {
                     let text = parsed.get(index);
-                    if (!text && rawLines[index]) {
-                        text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
-                    }
+                    if (!text && rawLines[index]) text = cleanText(rawLines[index].replace(/^\d+[\.\):\-\s]+/, ""));
                     return {
                         start: segment.start,
                         end: segment.end,
@@ -399,7 +390,7 @@ CRITICAL RULES:
                 });
             }
         } catch (error) {
-            console.error(`Error en traducción a ${targetLanguage} (intento ${attempt}):`, error);
+            console.error(`Error en traducción (intento ${attempt}):`, error);
             if (attempt < 3) await sleep(1500 * attempt);
         }
     }
@@ -411,11 +402,10 @@ async function translateAllBatch(segments, targetLanguage, apiKey) {
     if (!Array.isArray(segments) || !segments.length) return [];
     const finalSegments = [];
     
-    // Agrupamos en bloques de 30 (mejor que 50 para no ahogar al modelo al traducir)
+    // Bloques de 30 para no saturar los tokens de salida del modelo y asegurar exactitud
     for (let i = 0; i < segments.length; i += 30) {
         const batch = segments.slice(i, i + 30);
         finalSegments.push(...await translateBatchChunk(batch, targetLanguage, apiKey));
-        // Pausa obligatoria para evitar Rate Limits de Groq
         if (i + 30 < segments.length) await sleep(500); 
     }
     return finalSegments;

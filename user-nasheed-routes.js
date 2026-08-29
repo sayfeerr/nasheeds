@@ -65,9 +65,12 @@ function registerUserNasheedRoutes({ app, supabase, groqApiKey }) {
             if (existingUpload) {
                 return res.status(400).json({ error: "Ya has realizado una subida hoy. Solo se permite una subida al día." });
             }
+// Limpiar el nombre del archivo para eliminar símbolos raros, espacios y barras que rompen Supabase Storage
+const safeAudioName = audio.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+const audioPath = `${user.id}/${Date.now()}_${safeAudioName}`;
 
-            const audioPath = `${user.id}/${Date.now()}_${audio.name}`;
-            const coverPath = cover ? `${user.id}/${Date.now()}_${cover.name}` : null;
+const safeCoverName = cover ? cover.name.replace(/[^a-zA-Z0-9_.-]/g, "_") : null;
+const coverPath = cover ? `${user.id}/${Date.now()}_${safeCoverName}` : null;
 
             // Insertar registro inicial en estado 'processing'
             const { data: inserted, error: insertError } = await supabase
